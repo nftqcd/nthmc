@@ -8,7 +8,7 @@ class Conf:
                nbatch = 32,
                nepoch = 64,
                nstepEpoch = 2048,
-               initDt = 0.5,
+               initDt = 0.2,
                stepPerTraj = 10,
                nthr = 4,
                nthrIop = 1,
@@ -37,8 +37,7 @@ class OneD(tl.Layer):
   def call(self, x):
     return self.action(x)
   def changePerEpoch(self, epoch, conf):
-    tf.print('changePerEpoch', summarize=-1)
-    self.beta.assign((1+epoch)/conf.nepoch*self.targetBeta)
+    self.beta.assign((epoch+1.0)/conf.nepoch*(self.targetBeta-1.0)+1.0)
   def initState(self, nbatch):
     return tf.Variable(2.0*math.pi*tf.random.uniform((nbatch, self.size), dtype=tf.float64)-math.pi)
   def regularize(self, x):
@@ -91,15 +90,15 @@ class Ident(tl.Layer):
   #  return 0.0
 
 class OneDNeighbor(tl.Layer):
-  def __init__(self, mask=0, name='OneDNeighbor', **kwargs):
+  def __init__(self, mask='even', name='OneDNeighbor', **kwargs):
     super(OneDNeighbor, self).__init__(autocast=False, name=name, **kwargs)
     self.alpha = tf.Variable(0.0, dtype=tf.float64)
     self.mask = mask
   def build(self, shape):
     o = tf.math.floormod(tf.range(shape[1],dtype=tf.float64),2.0)
-    if self.mask == 0:
+    if self.mask == 'even':
       self.mask = 1.0-o
-    else:
+    elif self.mask == 'odd':
       self.mask = o
   def call(self, x):
     s = tf.sin(tf.roll(x, shift=-1, axis=1) - x)
@@ -155,7 +154,7 @@ class LeapFrog(tl.Layer):
     self.initDt = conf.initDt
     self.stepPerTraj = conf.stepPerTraj
     self.action = action
-    tf.print(self.name, 'init with dt', self.dt, 'step/traj', self.stepPerTraj, summarize=-1)
+    tf.print(self.name, 'init with dt', self.initDt, 'step/traj', self.stepPerTraj, summarize=-1)
   def build(self, input_shape):
     tf.print(self.name, 'got input_shape', input_shape, summarize=-1)
     if self.dt is None:
@@ -186,11 +185,11 @@ class LossFun:
     #tf.print('LossFun called with', x, p, x0, p0, x1, p1, v0, t0, v1, t1, dH, acc, arand, summarize=-1)
     pp0 = self.action.plaqPhase(x0)
     pp = self.action.plaqPhase(x)
-    ldc = self.cCosDiff*tf.math.reduce_euclidean_norm(1-tf.cos(pp-pp0))/self.action.size
+    ldc = self.cCosDiff*tf.math.reduce_euclidean_norm(1-tf.cos(pp-pp0))/dH.shape[0]
     ldt = self.cTopoDiff*tf.math.reduce_euclidean_norm(
             self.action.topoChargeFourierFromPhase(pp,self.topoFourierN)
-            -self.action.topoChargeFourierFromPhase(pp0,self.topoFourierN))
-    ldh = self.cHDiff*tf.reduce_logsumexp(-tf.maximum(self.dHmin,dH))
+            -self.action.topoChargeFourierFromPhase(pp0,self.topoFourierN))/dH.shape[0]
+    ldh = self.cHDiff*tf.reduce_mean(tf.exp(-tf.maximum(self.dHmin,dH)))
     tf.print('cosDiff:', ldc, summarize=-1)
     tf.print('topoDiff:', ldt, summarize=-1)
     tf.print('hDiff:', ldh, summarize=-1)
@@ -220,19 +219,29 @@ def trainStep(mcmc, loss, opt, x0):
 # @tf.function
 def trainEpoch(mcmc, loss, opt, x0):
   x = x0
+  optw = None
   for step in range(conf.nstepEpoch):
     tf.print('# training step:', step, summarize=-1)
     x = trainStep(mcmc, loss, opt, x)
-  return x
+    if optw is None:
+      optw = opt.get_weights()
+  return (x, optw)
 
 # @tf.function
 def train(conf, mcmc, loss, opt, x0):
   x = x0
+  optw = None
   for epoch in range(conf.nepoch):
     mcmc.changePerEpoch(epoch, conf)
-    tf.print('-------- start epoch', epoch, '--------', summarize=-1)
+    if optw is not None:
+      opt.set_weights(optw)
+    t0 = tf.timestamp()
+    tf.print('-------- start epoch', epoch, '@', t0, '--------', summarize=-1)
     tf.print('beta:', loss.action.beta, summarize=-1)
-    x = trainEpoch(mcmc, loss, opt, x)
+    x, optw = trainEpoch(mcmc, loss, opt, x)
+    dt = tf.timestamp()-t0
+    tf.print('-------- end epoch', epoch,
+      'in', dt, 'sec,', dt/conf.nstepEpoch, 'sec/step --------', summarize=-1)
   return x
 
 def run(conf, action, loss, opt, x0):
@@ -254,22 +263,20 @@ def setup(conf):
   os.environ["KMP_AFFINITY"]= "granularity=fine,verbose,compact,1,0"
 
 if __name__ == '__main__':
-  #conf = Conf(nepoch=1, nstepEpoch=20, initDt=0.1)
+  #conf = Conf(nbatch=4, nepoch=2, nstepEpoch=20, initDt=0.1)
   conf = Conf()
   setup(conf)
   #action = OneD(transforms=[Ident()])
   action = OneD(transforms=[
-    OneDNeighbor(mask=0), OneDNeighbor(mask=1),
-    OneDNeighbor(mask=0), OneDNeighbor(mask=1),
-    OneDNeighbor(mask=0), OneDNeighbor(mask=1),
-    OneDNeighbor(mask=0), OneDNeighbor(mask=1),
-    OneDNeighbor(mask=0), OneDNeighbor(mask=1),
-    OneDNeighbor(mask=0), OneDNeighbor(mask=1),
-    OneDNeighbor(mask=0), OneDNeighbor(mask=1),
-    OneDNeighbor(mask=0), OneDNeighbor(mask=1)])
+    OneDNeighbor(mask='even'), OneDNeighbor(mask='odd'),
+    OneDNeighbor(mask='even'), OneDNeighbor(mask='odd'),
+    OneDNeighbor(mask='even'), OneDNeighbor(mask='odd'),
+    OneDNeighbor(mask='even'), OneDNeighbor(mask='odd'),
+    OneDNeighbor(mask='even'), OneDNeighbor(mask='odd'),
+    OneDNeighbor(mask='even'), OneDNeighbor(mask='odd'),
+    OneDNeighbor(mask='even'), OneDNeighbor(mask='odd'),
+    OneDNeighbor(mask='even'), OneDNeighbor(mask='odd')])
   loss = LossFun(action, cCosDiff=1.0, cTopoDiff=1.0, cHDiff=1.0, dHmin=1.0, topoFourierN=9)
-  #opt = tk.optimizers.SGD(learning_rate=0.0001)
-  #opt = tk.optimizers.Adagrad(learning_rate=0.1)
   opt = tk.optimizers.Adam(learning_rate=0.001)
   x0 = action.initState(conf.nbatch)
   run(conf, action, loss, opt, x0)

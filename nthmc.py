@@ -10,6 +10,7 @@ class Conf:
                nstepEpoch = 2048,
                initDt = 0.2,
                stepPerTraj = 10,
+               checkReverse = False,
                nthr = 4,
                nthrIop = 1,
                seed = 1331):
@@ -18,6 +19,7 @@ class Conf:
     self.nstepEpoch = nstepEpoch
     self.initDt = initDt
     self.stepPerTraj = stepPerTraj
+    self.checkReverse = checkReverse
     self.nthr = nthr
     self.nthrIop = nthrIop
     self.seed = seed
@@ -116,11 +118,13 @@ class Metropolis(tk.Model):
     super(Metropolis, self).__init__(autocast=False, name=name, **kwargs)
     tf.print(self.name, 'init with conf', conf, summarize=-1)
     self.generate = generator
+    self.checkReverse = conf.checkReverse
   def call(self, x0, p0):
     v0 = self.generate.action(x0)
     t0 = kineticEnergy(p0)
     x1, p1 = self.generate(x0, p0)
-    self.revCheck(x0, p0, x1, p1)
+    if self.checkReverse:
+      self.revCheck(x0, p0, x1, p1)
     v1 = self.generate.action(x1)
     t1 = kineticEnergy(p1)
     dH = (v1+t1) - (v0+t0)
@@ -178,7 +182,7 @@ class LossFun:
     self.action = action
     self.cCosDiff = cCosDiff
     self.cTopoDiff = cTopoDiff
-    self.dHmin = tf.constant(dHmin, dtype=tf.float64)
+    self.dHmin = dHmin
     self.topoFourierN = topoFourierN
   def __call__(self, x, p, x0, p0, x1, p1, v0, t0, v1, t1, dH, acc, arand):
     #tf.print('LossFun called with', x, p, x0, p0, x1, p1, v0, t0, v1, t1, dH, acc, arand, summarize=-1)
@@ -188,7 +192,7 @@ class LossFun:
     ldt = tf.math.squared_difference(
       self.action.topoChargeFourierFromPhase(pp1,self.topoFourierN),
       self.action.topoChargeFourierFromPhase(pp0,self.topoFourierN))
-    lap = tf.exp(-tf.maximum(self.dHmin,dH))
+    lap = tf.exp(-tf.maximum(dH,self.dHmin))
     tf.print('cosDiff:', ldc, summarize=-1)
     tf.print('topoDiff:', ldt, summarize=-1)
     tf.print('accProb:', lap, summarize=-1)
@@ -219,30 +223,24 @@ def trainStep(mcmc, loss, opt, x0):
   tf.print('topo:', loss.action.topoCharge(x), summarize=-1)
   return x
 
-# @tf.function
-def trainEpoch(mcmc, loss, opt, x0):
-  x = x0
-  optw = None
-  for step in range(conf.nstepEpoch):
-    tf.print('# training step:', step, summarize=-1)
-    x = trainStep(mcmc, loss, opt, x)
-    if optw is None:
-      optw = opt.get_weights()
-  return (x, optw)
-
-# @tf.function
 def train(conf, mcmc, loss, opt, x0):
   x = x0
   optw = None
   for epoch in range(conf.nepoch):
     mcmc.changePerEpoch(epoch, conf)
     if optw is not None:
-      tf.print('optw:', optw)
+      #tf.print('setOptWeights:', optw)
       opt.set_weights(optw)
     t0 = tf.timestamp()
     tf.print('-------- start epoch', epoch, '@', t0, '--------', summarize=-1)
     tf.print('beta:', loss.action.beta, summarize=-1)
-    x, optw = trainEpoch(mcmc, loss, opt, x)
+    for step in range(conf.nstepEpoch):
+      tf.print('# training step:', step, summarize=-1)
+      x = trainStep(mcmc, loss, opt, x)
+      if optw is None:
+        optw = opt.get_weights()
+        for i in range(len(optw)):
+          optw[i] = tf.zeros_like(optw[i])
     dt = tf.timestamp()-t0
     tf.print('-------- end epoch', epoch,
       'in', dt, 'sec,', dt/conf.nstepEpoch, 'sec/step --------', summarize=-1)
@@ -256,7 +254,7 @@ def run(conf, action, loss, opt, x0):
 
 def setup(conf):
   tf.random.set_seed(conf.seed)
-  tf.keras.backend.set_floatx('float64')
+  tk.backend.set_floatx('float64')
   tf.config.set_soft_device_placement(True)
   tf.config.optimizer.set_jit(True)
   tf.config.threading.set_inter_op_parallelism_threads(conf.nthrIop)  # ALCF suggests number of socket
@@ -267,9 +265,9 @@ def setup(conf):
   os.environ["KMP_AFFINITY"]= "granularity=fine,verbose,compact,1,0"
 
 if __name__ == '__main__':
-  #conf = Conf(nbatch=4, nepoch=2, nstepEpoch=20, initDt=0.1)
+  conf = Conf(nbatch=4, nepoch=2, nstepEpoch=20, initDt=0.1)
   #conf = Conf(nbatch=4, nepoch=2, nstepEpoch=2048, initDt=0.1)
-  conf = Conf()
+  #conf = Conf()
   setup(conf)
   #action = OneD(transforms=[Ident()])
   action = OneD(transforms=[

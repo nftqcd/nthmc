@@ -105,7 +105,7 @@ class OneDNeighbor(tl.Layer):
     f = self.beta()*self.mask*(tf.roll(s, shift=1, axis=1) - s)
     return tf.math.floormod(x+f+math.pi, 2*math.pi)-math.pi
   def beta(self):
-    return -0.5*(tf.math.expm1(self.alpha))
+    return tf.math.atan(self.alpha)/math.pi
   def logDetJacob(self, x):
     s = tf.cos(tf.roll(x, shift=-1, axis=1) - x)
     f = self.beta()*self.mask*(tf.roll(s, shift=1, axis=1) + s)
@@ -173,27 +173,26 @@ class LeapFrog(tl.Layer):
     self.action.changePerEpoch(epoch, conf)
 
 class LossFun:
-  def __init__(self, action, cCosDiff=1.0, cTopoDiff=1.0, cHDiff=1.0, dHmin=1.0, topoFourierN=9):
+  def __init__(self, action, cCosDiff=1.0, cTopoDiff=1.0, dHmin=1.0, topoFourierN=9):
     tf.print('LossFun init with action', action, summarize=-1)
     self.action = action
     self.cCosDiff = cCosDiff
     self.cTopoDiff = cTopoDiff
-    self.cHDiff = cHDiff
     self.dHmin = tf.constant(dHmin, dtype=tf.float64)
     self.topoFourierN = topoFourierN
   def __call__(self, x, p, x0, p0, x1, p1, v0, t0, v1, t1, dH, acc, arand):
     #tf.print('LossFun called with', x, p, x0, p0, x1, p1, v0, t0, v1, t1, dH, acc, arand, summarize=-1)
     pp0 = self.action.plaqPhase(x0)
-    pp = self.action.plaqPhase(x)
-    ldc = self.cCosDiff*tf.math.reduce_euclidean_norm(1-tf.cos(pp-pp0))/dH.shape[0]
-    ldt = self.cTopoDiff*tf.math.reduce_euclidean_norm(
-            self.action.topoChargeFourierFromPhase(pp,self.topoFourierN)
-            -self.action.topoChargeFourierFromPhase(pp0,self.topoFourierN))/dH.shape[0]
-    ldh = self.cHDiff*tf.reduce_mean(tf.exp(-tf.maximum(self.dHmin,dH)))
+    pp1 = self.action.plaqPhase(x1)
+    ldc = tf.math.reduce_mean(1-tf.cos(pp1-pp0), axis=1)
+    ldt = tf.math.squared_difference(
+      self.action.topoChargeFourierFromPhase(pp1,self.topoFourierN),
+      self.action.topoChargeFourierFromPhase(pp0,self.topoFourierN))
+    lap = tf.exp(-tf.maximum(self.dHmin,dH))
     tf.print('cosDiff:', ldc, summarize=-1)
     tf.print('topoDiff:', ldt, summarize=-1)
-    tf.print('hDiff:', ldh, summarize=-1)
-    return -(ldc+ldt+ldh)
+    tf.print('accProb:', lap, summarize=-1)
+    return -tf.math.reduce_mean((self.cCosDiff*ldc+self.cTopoDiff*ldt)*lap)
 
 @tf.function
 def trainStep(mcmc, loss, opt, x0):
@@ -202,7 +201,11 @@ def trainStep(mcmc, loss, opt, x0):
     x, p, x1, p1, v0, t0, v1, t1, dH, acc, arand = mcmc(x0, p0)
     lv = loss(x, p, x0, p0, x1, p1, v0, t0, v1, t1, dH, acc, arand)
   grads = tape.gradient(lv, mcmc.trainable_weights)
-  opt.apply_gradients(zip(grads, mcmc.trainable_weights))
+  tf.print('grads:', grads)
+  if tf.math.reduce_any(tf.math.is_nan(grads)):
+    tf.print('*** got grads nan ***')
+  else:
+    opt.apply_gradients(zip(grads, mcmc.trainable_weights))
   tf.print('V-old:', v0, summarize=-1)
   tf.print('T-old:', t0, summarize=-1)
   tf.print('V-prp:', v1, summarize=-1)
@@ -210,7 +213,7 @@ def trainStep(mcmc, loss, opt, x0):
   tf.print('dH:', dH, summarize=-1)
   tf.print('arand:', arand, summarize=-1)
   tf.print('accept:', acc, summarize=-1)
-  tf.print('mcmc:', mcmc.trainable_weights, summarize=-1)
+  tf.print('weights:', mcmc.trainable_weights, summarize=-1)
   tf.print('loss:', lv, summarize=-1)
   tf.print('plaq:', loss.action.plaquette(x), summarize=-1)
   tf.print('topo:', loss.action.topoCharge(x), summarize=-1)
@@ -234,6 +237,7 @@ def train(conf, mcmc, loss, opt, x0):
   for epoch in range(conf.nepoch):
     mcmc.changePerEpoch(epoch, conf)
     if optw is not None:
+      tf.print('optw:', optw)
       opt.set_weights(optw)
     t0 = tf.timestamp()
     tf.print('-------- start epoch', epoch, '@', t0, '--------', summarize=-1)
@@ -247,7 +251,7 @@ def train(conf, mcmc, loss, opt, x0):
 def run(conf, action, loss, opt, x0):
   mcmc = Metropolis(conf, LeapFrog(conf, action))
   x = train(conf, mcmc, loss, opt, x0)
-  tf.print('weights:', mcmc.get_weights())
+  tf.print('finalWeightsAll:', mcmc.get_weights())
   return x
 
 def setup(conf):
@@ -264,6 +268,7 @@ def setup(conf):
 
 if __name__ == '__main__':
   #conf = Conf(nbatch=4, nepoch=2, nstepEpoch=20, initDt=0.1)
+  #conf = Conf(nbatch=4, nepoch=2, nstepEpoch=2048, initDt=0.1)
   conf = Conf()
   setup(conf)
   #action = OneD(transforms=[Ident()])
@@ -276,7 +281,7 @@ if __name__ == '__main__':
     OneDNeighbor(mask='even'), OneDNeighbor(mask='odd'),
     OneDNeighbor(mask='even'), OneDNeighbor(mask='odd'),
     OneDNeighbor(mask='even'), OneDNeighbor(mask='odd')])
-  loss = LossFun(action, cCosDiff=1.0, cTopoDiff=1.0, cHDiff=1.0, dHmin=1.0, topoFourierN=9)
+  loss = LossFun(action, cCosDiff=1.0, cTopoDiff=1.0, dHmin=0.5, topoFourierN=9)
   opt = tk.optimizers.Adam(learning_rate=0.001)
   x0 = action.initState(conf.nbatch)
   run(conf, action, loss, opt, x0)

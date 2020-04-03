@@ -11,6 +11,7 @@ class Conf:
                initDt = 0.2,
                stepPerTraj = 10,
                checkReverse = False,
+               refreshOpt = True,
                nthr = 4,
                nthrIop = 1,
                seed = 1331):
@@ -20,6 +21,7 @@ class Conf:
     self.initDt = initDt
     self.stepPerTraj = stepPerTraj
     self.checkReverse = checkReverse
+    self.refreshOpt = refreshOpt
     self.nthr = nthr
     self.nthrIop = nthrIop
     self.seed = seed
@@ -237,7 +239,7 @@ def train(conf, mcmc, loss, opt, x0):
     for step in range(conf.nstepEpoch):
       tf.print('# training step:', step, summarize=-1)
       x = trainStep(mcmc, loss, opt, x)
-      if optw is None:
+      if conf.refreshOpt and optw is None:
         optw = opt.get_weights()
         for i in range(len(optw)):
           optw[i] = tf.zeros_like(optw[i])

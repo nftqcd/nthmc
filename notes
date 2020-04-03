@@ -1,0 +1,34 @@
+Sawtooth wave for regularize
+
+	sawtooth(x):=mod(x+%pi,2*%pi)-%pi
+	stf(n,x):=2*sum((-1)**(i-1)*sin(i*x)/i, i, 1, n)
+	sta(q,x):=2*sin(x)/(2*q*cos(x)+q^2+1)
+
+Oscillations in stf and its derivative are not good for optimizations.
+
+topological charge in 1d,
+
+	qt(x):=sum(sawtooth(x[mod(i+1,n)]-x[i]), i, 0, n-1)
+	qf(j,x):=sum(stf(j,x[mod(i+1,n)]-x[i]), i, 0, n-1)
+	qa(q,x):=sum(sta(q,x[mod(i+1,n)]-x[i]), i, 0, n-1)
+
+	plot2d(ev(
+		[sawtooth(x[2]-x[1])+sawtooth(x[1]-x[0]),
+		 stf(3,x[2]-x[1])+stf(3,x[1]-x[0]),
+		 sta(0.4,x[2]-x[1])+sta(0.4,x[1]-x[0]),
+		 sta(0.5,x[2]-x[1])+sta(0.5,x[1]-x[0])
+		], x[0]=1.1, x[2]=0.5
+	), [x[1], -2*%pi, 2*%pi])
+
+qa has one artifical local maxima.
+qf has many, except for n=1.
+
+	plot2d(ev(''(
+		map(lambda([f],diff(f,x[1])),
+		ev([qf(3,x), qf(9,x), qa(0.5,x), qa(0.6,x)], n=4))
+	), x[0]=0.1, x[2]=0.2), [x[1], -2*%pi, 2*%pi])
+
+qf has many oscillations in the derivative of the topological charge.
+qa is smooth.
+sin (qf, n=1) is smooth.
+

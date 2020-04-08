@@ -32,3 +32,18 @@ qf has many oscillations in the derivative of the topological charge.
 qa is smooth.
 sin (qf, n=1) is smooth.
 
+
+Gradient flow style update
+
+	y: x+beta*(sin(x-l)-sin(r-x))
+	f(x):=x+beta*(sin(x-l)-sin(r-x)) - beta*(sin(l)+sin(r))
+
+satisfies,
+
+	f(-%pi) = -%pi
+	f(%pi) = %pi
+	diff(f(x),x) > 0, if -0.5 < beta < 0.5
+
+so f(x) is bijective over domain [-π, π), so is the map
+
+	y: f(x) + beta*(sin(l)+sin(r))

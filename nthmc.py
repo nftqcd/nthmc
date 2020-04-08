@@ -109,14 +109,14 @@ class OneDNeighbor(tl.Layer):
     elif self.mask == 'odd':
       self.mask = o
   def call(self, x):
-    s = tf.sin(tf.roll(x, shift=-1, axis=1) - x)
-    f = self.beta()*self.mask*(tf.roll(s, shift=1, axis=1) - s)
+    s = tf.sin(tf.roll(x, shift=-self.distance, axis=1) - x)
+    f = self.beta()*self.mask*(tf.roll(s, shift=self.distance, axis=1) - s)
     return tf.math.floormod(x+f+math.pi, 2*math.pi)-math.pi
   def beta(self):
     return tf.math.atan(self.alpha)/math.pi
   def logDetJacob(self, x):
-    s = tf.cos(tf.roll(x, shift=-1, axis=1) - x)
-    f = self.beta()*self.mask*(tf.roll(s, shift=1, axis=1) + s)
+    s = tf.cos(tf.roll(x, shift=-self.distance, axis=1) - x)
+    f = self.beta()*self.mask*(tf.roll(s, shift=self.distance, axis=1) + s)
     return tf.reduce_sum(tf.math.log1p(f), axis=1)
 
 class Metropolis(tk.Model):

@@ -4,7 +4,7 @@ set output ARG0[*:strlen(ARG0)-2].'png'
 beta='6.0'
 batch=1024
 epoch=64
-steps=8192
+steps=512
 
 file=ARG0[*:strlen(ARG0)-2].'log'
 

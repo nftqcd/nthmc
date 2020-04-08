@@ -205,6 +205,48 @@ class LossFun:
     return -tf.math.reduce_mean((self.cCosDiff*ldc+self.cTopoDiff*ldt)*lap)
 
 @tf.function
+def inferStep(mcmc, loss, x0):
+  p0 = refreshP(x0.shape)
+  x, p, x1, p1, v0, t0, v1, t1, dH, acc, arand = mcmc(x0, p0)
+  lv = loss(x, p, x0, p0, x1, p1, v0, t0, v1, t1, dH, acc, arand)
+  tf.print('V-old:', v0, summarize=-1)
+  tf.print('T-old:', t0, summarize=-1)
+  tf.print('V-prp:', v1, summarize=-1)
+  tf.print('T-prp:', t1, summarize=-1)
+  tf.print('dH:', dH, summarize=-1)
+  tf.print('arand:', arand, summarize=-1)
+  tf.print('accept:', acc, summarize=-1)
+  tf.print('loss:', lv, summarize=-1)
+  tf.print('plaq:', loss.action.plaquette(x), summarize=-1)
+  tf.print('topo:', loss.action.topoCharge(x), summarize=-1)
+  return x
+
+def infer(conf, mcmc, loss, weights, x0):
+  tf.print('# run once and set weights')
+  inferStep(mcmc, loss, x0)
+  mcmc.set_weights(weights)
+  tf.print('# finished autograph run')
+  x = x0
+  for epoch in range(conf.nepoch):
+    mcmc.changePerEpoch(epoch, conf)
+    tf.print('weightsAll:', mcmc.get_weights())
+    t0 = tf.timestamp()
+    tf.print('-------- start epoch', epoch, '@', t0, '--------', summarize=-1)
+    tf.print('beta:', loss.action.beta, summarize=-1)
+    for step in range(conf.nstepEpoch):
+      tf.print('# traj:', step, summarize=-1)
+      x = inferStep(mcmc, loss, x)
+    dt = tf.timestamp()-t0
+    tf.print('-------- end epoch', epoch,
+      'in', dt, 'sec,', dt/conf.nstepEpoch, 'sec/step --------', summarize=-1)
+  return x
+
+def runInfer(conf, action, loss, weights, x0):
+  mcmc = Metropolis(conf, LeapFrog(conf, action))
+  x = infer(conf, mcmc, loss, weights, x0)
+  return x
+
+@tf.function
 def trainStep(mcmc, loss, opt, x0):
   p0 = refreshP(x0.shape)
   with tf.GradientTape() as tape:

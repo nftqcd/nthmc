@@ -199,9 +199,9 @@ class LossFun:
       self.action.topoChargeFourierFromPhase(pp1,self.topoFourierN),
       self.action.topoChargeFourierFromPhase(pp0,self.topoFourierN))
     lap = tf.exp(-tf.maximum(dH,self.dHmin))
-    tf.print('cosDiff:', ldc, summarize=-1)
-    tf.print('topoDiff:', ldt, summarize=-1)
-    tf.print('accProb:', lap, summarize=-1)
+    tf.print('cosDiff:', tf.reduce_mean(ldc), summarize=-1)
+    tf.print('topoDiff:', tf.reduce_mean(ldt), summarize=-1)
+    tf.print('accProb:', tf.reduce_mean(lap), summarize=-1)
     return -tf.math.reduce_mean((self.cCosDiff*ldc+self.cTopoDiff*ldt)*lap)
 
 @tf.function
@@ -211,21 +211,21 @@ def trainStep(mcmc, loss, opt, x0):
     x, p, x1, p1, v0, t0, v1, t1, dH, acc, arand = mcmc(x0, p0)
     lv = loss(x, p, x0, p0, x1, p1, v0, t0, v1, t1, dH, acc, arand)
   grads = tape.gradient(lv, mcmc.trainable_weights)
-  tf.print('grads:', grads)
+  tf.print('grads:', grads, summarize=-1)
   if tf.math.reduce_any(tf.math.is_nan(grads)):
     tf.print('*** got grads nan ***')
   else:
     opt.apply_gradients(zip(grads, mcmc.trainable_weights))
-  tf.print('V-old:', v0, summarize=-1)
-  tf.print('T-old:', t0, summarize=-1)
-  tf.print('V-prp:', v1, summarize=-1)
-  tf.print('T-prp:', t1, summarize=-1)
+  #tf.print('V-old:', v0, summarize=-1)
+  #tf.print('T-old:', t0, summarize=-1)
+  #tf.print('V-prp:', v1, summarize=-1)
+  #tf.print('T-prp:', t1, summarize=-1)
   tf.print('dH:', dH, summarize=-1)
-  tf.print('arand:', arand, summarize=-1)
-  tf.print('accept:', acc, summarize=-1)
+  #tf.print('arand:', arand, summarize=-1)
+  tf.print('accept:', tf.reduce_mean(tf.cast(acc,tf.float64)), summarize=-1)
   tf.print('weights:', mcmc.trainable_weights, summarize=-1)
   tf.print('loss:', lv, summarize=-1)
-  tf.print('plaq:', loss.action.plaquette(x), summarize=-1)
+  tf.print('plaq:', tf.reduce_mean(loss.action.plaquette(x)), summarize=-1)
   tf.print('topo:', loss.action.topoCharge(x), summarize=-1)
   return x
 

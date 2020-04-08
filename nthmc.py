@@ -94,12 +94,16 @@ class Ident(tl.Layer):
   #  return 0.0
 
 class OneDNeighbor(tl.Layer):
-  def __init__(self, mask='even', name='OneDNeighbor', **kwargs):
+  def __init__(self, distance=1, mask='even', name='OneDNeighbor', **kwargs):
     super(OneDNeighbor, self).__init__(autocast=False, name=name, **kwargs)
     self.alpha = tf.Variable(0.0, dtype=tf.float64)
     self.mask = mask
+    self.distance = distance
   def build(self, shape):
-    o = tf.math.floormod(tf.range(shape[1],dtype=tf.float64),2.0)
+    l = shape[1]
+    if l % self.distance != 0:
+      raise ValueError(f'OneDNeighbor with distance={self.distance} does not fit periodicly to model length {l}')
+    o = tf.cast(tf.less(self.distance-1, tf.math.floormod(tf.range(l),2*self.distance)), tf.float64)
     if self.mask == 'even':
       self.mask = 1.0-o
     elif self.mask == 'odd':

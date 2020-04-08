@@ -1,9 +1,9 @@
 #!/usr/bin/env gnuplot
 set term pngcairo size 1920,1200 font "Lucida Bright OT,16"
 set output ARG0[*:strlen(ARG0)-2].'png'
-beta='6.0'
+beta='2.09375'
 batch=1024
-epoch=64
+epoch=14
 steps=512
 
 file=ARG0[*:strlen(ARG0)-2].'log'

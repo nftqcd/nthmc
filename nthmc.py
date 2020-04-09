@@ -80,6 +80,11 @@ class OneD(tl.Layer):
       a = self.action(x)
     g = tape.gradient(a, x)
     return g
+  def invTransform(self, y):
+    x = y
+    for tran in reversed(self.transforms):
+      x = tran.inv(x)
+    return x
 
 class Ident(tl.Layer):
   def __init__(self, name='Ident', **kwargs):
@@ -92,6 +97,8 @@ class Ident(tl.Layer):
     return 0.0
   #def derivLogDetJacob(self, x):
   #  return 0.0
+  def inv(self, y):
+    return y
 
 class OneDNeighbor(tl.Layer):
   def __init__(self, distance=1, mask='even', name='OneDNeighbor', **kwargs):
@@ -101,7 +108,7 @@ class OneDNeighbor(tl.Layer):
     self.distance = distance
   def build(self, shape):
     l = shape[1]
-    if l % self.distance != 0:
+    if l % (2*self.distance) != 0:
       raise ValueError(f'OneDNeighbor with distance={self.distance} does not fit periodicly to model length {l}')
     o = tf.cast(tf.less(self.distance-1, tf.math.floormod(tf.range(l),2*self.distance)), tf.float64)
     if self.mask == 'even':
@@ -118,6 +125,16 @@ class OneDNeighbor(tl.Layer):
     s = tf.cos(tf.roll(x, shift=-self.distance, axis=1) - x)
     f = self.beta()*self.mask*(tf.roll(s, shift=self.distance, axis=1) + s)
     return tf.reduce_sum(tf.math.log1p(f), axis=1)
+  def inv(self, y):
+    tol = 1E-12
+    b = self.beta()
+    x = y
+    while True:
+      s = tf.sin(tf.roll(x, shift=-self.distance, axis=1) - x)
+      f = b*self.mask*(tf.roll(s, shift=self.distance, axis=1) - s)
+      if tol > tf.reduce_mean(tf.math.squared_difference(f, y-x)):
+        return tf.math.floormod(y-f+math.pi, 2*math.pi)-math.pi
+      x = y-f
 
 class Metropolis(tk.Model):
   def __init__(self, conf, generator, name='Metropolis', **kwargs):
@@ -161,14 +178,10 @@ class LeapFrog(tl.Layer):
   def __init__(self, conf, action, name='LeapFrog', **kwargs):
     super(LeapFrog, self).__init__(autocast=False, name=name, **kwargs)
     self.dt = None
-    self.initDt = conf.initDt
+    self.dt = self.add_weight(initializer=tk.initializers.Constant(conf.initDt), dtype=tf.float64)
     self.stepPerTraj = conf.stepPerTraj
     self.action = action
-    tf.print(self.name, 'init with dt', self.initDt, 'step/traj', self.stepPerTraj, summarize=-1)
-  def build(self, input_shape):
-    tf.print(self.name, 'got input_shape', input_shape, summarize=-1)
-    if self.dt is None:
-      self.dt = self.add_weight(initializer=tk.initializers.Constant(self.initDt), dtype=tf.float64)
+    tf.print(self.name, 'init with dt', self.dt, 'step/traj', self.stepPerTraj, summarize=-1)
   def call(self, x0, p0):
     dt = self.dt
     x = x0 + 0.5*dt*p0
@@ -226,7 +239,7 @@ def infer(conf, mcmc, loss, weights, x0):
   inferStep(mcmc, loss, x0)
   mcmc.set_weights(weights)
   tf.print('# finished autograph run')
-  x = x0
+  x = loss.action.invTransform(x0)
   for epoch in range(conf.nepoch):
     mcmc.changePerEpoch(epoch, conf)
     tf.print('weightsAll:', mcmc.get_weights())

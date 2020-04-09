@@ -59,10 +59,10 @@ class TestOneDNeighbor(unittest.TestCase):
   def test_jacob(self):
     tol = 1E-10
     n = 32
-    o = nthmc.OneDNeighbor()
+    o = nthmc.OneDNeighbor(distance=2)
     o.alpha.assign(-2.1)
-    m = tf.constant([1,0,1,0,1,0,1,0,1,0],dtype=tf.float64)
-    x = tf.random.uniform((n,10),dtype=tf.float64)*2*math.pi - math.pi
+    m = tf.constant([1,1,0,0,1,1,0,0,1,1,0,0],dtype=tf.float64)
+    x = tf.random.uniform((n,12),dtype=tf.float64)*2*math.pi - math.pi
     with tf.GradientTape(persistent=True) as t:  # persistent for jacobian without pfor
       t.watch(x)
       y = o(x)
@@ -82,6 +82,16 @@ class TestOneDNeighbor(unittest.TestCase):
         dj = tf.linalg.det(j[i,:,i,:])
         #tf.print('det j',i,dj,summarize=-1)
         self.assertTrue(tol > tf.math.squared_difference(ld[i], tf.math.log(dj)))
+
+  def test_inv(self):
+    tol = 1E-12
+    n = 32
+    o = nthmc.OneDNeighbor(distance=2,mask='odd')
+    o.alpha.assign(-2.1)
+    x = tf.random.uniform((n,12),dtype=tf.float64)*2*math.pi - math.pi
+    y = o(x)
+    z = o.inv(y)
+    self.assertTrue(tol > tf.reduce_mean(tf.math.squared_difference(x, z)))
 
 if __name__ == '__main__':
   unittest.main()

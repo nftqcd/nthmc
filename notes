@@ -47,3 +47,88 @@ satisfies,
 so f(x) is bijective over domain [-π, π), so is the map
 
 	y: f(x) + beta*(sin(l)+sin(r))
+
+
+Luscher's trivializing maps paper, Luscher (2010)
+describes field transformations with group manifold.
+Here is a summary in terms of linear algebra, matrices and vectors.
+
+Target is the functional integral,
+	⟨O⟩ = 1/Z ∫ dx O(x) exp(-S(x))
+where we consider x a vector, xₘ.
+
+Change of variable,
+	xₖ = Fₖ(y)
+with vector functions Fₖ,
+	⟨O⟩ = 1/Z ∫ dy |det(J(y))| O(F(y)) exp( -S(F(y)) )
+where the Jacobian matrix,
+	Jₖₗ(y) = ∂Fₖ(y) / ∂yₗ.
+F has to be:
+
+	- Injective (1 to 1), from the new integration domain to the old
+	- Continuously differentiable (or differentiable and have continuous inverse)
+
+Rewrite the integral as,
+	⟨O⟩ = 1/Z ∫ dy O(F(y)) exp( -S(F(y)) + ln|det(J(y))| )
+
+F is a trivializing map, when
+	S(F(y)) - ln|det(J(y))| = constant
+and our expectation value simplifies to
+	⟨O⟩ = 1/Z ∫ dy O(F(y))
+
+From Luscher:
+	Field transformations are invertible maps of this manifold
+	onto itself.  Such transformations will always be required to
+	be differentiable in both directions and
+	orientation-preserving (here and below, “differentiable” means
+	“infinitely often continuously differentiable”).
+
+He argues for the existence of a such trivializing map.
+
+In terms of HMC, we add the conjugate momenta to y,
+and use the equations of motien derived from the Hamilton function
+	ℋ(y,π) = ½π² + S(F(y)) - ln|det(J(y))|
+
+Consider a change of variable in π,
+	πₖ = Jₖₗ(y) pₗ = Jₖₗ(F⁻¹(x)) pₗ
+we get a Hamilton function
+	H(x,p) = ½ p^† M p + S(x) - ln|det(J)|
+where the positive definite M,
+	Mₖₗ(x) = J^*ₙₖ(F⁻¹(x)) Jₙₗ(F⁻¹(x))
+is the kernel of the kinetic term considered long ago by Duane et al
+(1986 and 1988).
+
+
+From
+	⟨O⟩ = 1/Z ∫ dx O(x) exp(-S(x))
+with a change of variable,
+	⟨O⟩ = 1/Z ∫ dy O(F(y)) exp( -S(F(y)) + ln|det(J(y))| )
+where
+	Jₖₗ(y) = ∂Fₖ(y) / ∂yₗ.
+Introducing the conjugate momenta, the Hamilton function becomes,
+	ℋ(y,π) = ½π² + S(F(y)) - ln|det(J(y))|
+which gives the equation of motion
+	d/dt π = -∂/∂y ℋ = - J(y) S'(F(y)) + Tr[ J⁻¹ d/dy(J) ]
+	d/dt y =  ∂/∂π ℋ = π
+This is separable and can use the usual explicit, symplectic and symmetric
+discrete integrators.
+Here is the leapfrog as an example,
+	π(τ+ε/2) = π(τ)     - ε/2 [ J(y(τ)) S'(F(y(τ))) - Tr[ J⁻¹ d/dy(J(y(τ))) ] ]
+	y(τ+ε)   = y(τ)     + ε π(τ+ε/2)
+	π(τ+ε)   = π(τ+ε/2) - ε/2 [ J(y(τ+ε)) S'(F(y(τ+ε))) - Tr[ J⁻¹ d/dy(J(y(τ+ε))) ] ]
+
+
+When the map F(y) = x is a trivializing map,
+	S(F(y)) - ln|det(J(y))| = constant
+thus,
+	d/dt π = -∂/∂y ℋ = J(y) S'(F(y)) - Tr[ J⁻¹ d/dy(J) ] ≈ 0
+
+It is possible to optimize and search for F and J that makes
+	∂/∂y ℋ = 0
+for all y.
+
+When d/dt π ≈ 0, π stays a constant, while y changes according to
+	d/dt y =  ∂/∂π ℋ = π
+which makes
+	d/dt x = J(y) d/dt y = J(y) π
+move through phase space more efficiently.

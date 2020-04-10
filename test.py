@@ -45,15 +45,17 @@ class TestOneDNeighbor(unittest.TestCase):
       o2o.mask == tf.constant([0,0,1,1,0,0,1,1],dtype=tf.float64)))
 
   def test_call(self):
+    tol = 1E-12
     o = nthmc.OneDNeighbor(distance=3, mask='odd')
     m = tf.constant([1,1,1,0,0,0,1,1,1,0,0,0],dtype=tf.float64)
 
     x = tf.random.uniform((1024,12),dtype=tf.float64)*2*math.pi - math.pi
-    y = o(x)
+    y, ld = o(x)
     self.assertTrue(tf.reduce_all(y == x))
+    self.assertGreater(tol, tf.math.reduce_euclidean_norm(ld))
 
     o.alpha.assign(1.0)
-    y = o(x)
+    y, _ = o(x)
     self.assertTrue(tf.reduce_all(m*y == m*x))
 
   def test_jacob(self):
@@ -65,7 +67,7 @@ class TestOneDNeighbor(unittest.TestCase):
     x = tf.random.uniform((n,12),dtype=tf.float64)*2*math.pi - math.pi
     with tf.GradientTape(persistent=True) as t:  # persistent for jacobian without pfor
       t.watch(x)
-      y = o(x)
+      y, ld = o(x)
     j = t.jacobian(y,x,experimental_use_pfor=False)  # pfor fails for roll op
 
     for i in range(n):
@@ -74,24 +76,24 @@ class TestOneDNeighbor(unittest.TestCase):
           with self.subTest(i=i, k=k):
             self.assertEqual(0, tf.math.reduce_euclidean_norm(j[i,:,k,:]))
 
-    ld = o.logDetJacob(x)
     #tf.print(ld, summarize=-1)
     for i in range(n):
       with self.subTest(i=i):
         #tf.print('j',i,j[i,:,i,:], summarize=-1)
         dj = tf.linalg.det(j[i,:,i,:])
         #tf.print('det j',i,dj,summarize=-1)
-        self.assertTrue(tol > tf.math.squared_difference(ld[i], tf.math.log(dj)))
+        self.assertGreater(tol, tf.math.squared_difference(ld[i], tf.math.log(dj)))
 
   def test_inv(self):
-    tol = 1E-12
+    tol = 1E-30
     n = 32
-    o = nthmc.OneDNeighbor(distance=2,mask='odd')
+    o = nthmc.OneDNeighbor(distance=2,mask='odd',invAbsR2=tol)
     o.alpha.assign(-2.1)
     x = tf.random.uniform((n,12),dtype=tf.float64)*2*math.pi - math.pi
-    y = o(x)
-    z = o.inv(y)
-    self.assertTrue(tol > tf.reduce_mean(tf.math.squared_difference(x, z)))
+    y, l = o(x)
+    z, m = o.inv(y)
+    self.assertGreater(tol, tf.reduce_mean(tf.math.squared_difference(x, z)))
+    self.assertGreater(tol, tf.reduce_mean(tf.math.squared_difference(l, -m)))
 
 if __name__ == '__main__':
   unittest.main()

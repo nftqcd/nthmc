@@ -30,29 +30,29 @@ def refreshP(shape):
   return tf.random.normal(shape, dtype=tf.float64)
 def kineticEnergy(p):
   return 0.5*tf.reduce_sum(tf.reshape(p, [p.shape[0], -1])**2, axis=1)
+def regularize(x):
+  return tf.math.floormod(x+math.pi, 2*math.pi)-math.pi
 
 class OneD(tl.Layer):
-  def __init__(self, transforms, beta = 5, size = 64, name='OneD', **kwargs):
+  def __init__(self, transform, beta = 5, size = 64, name='OneD', **kwargs):
     super(OneD, self).__init__(autocast=False, name=name, **kwargs)
     self.targetBeta = tf.constant(beta, dtype=tf.float64)
     self.beta = tf.Variable(beta, dtype=tf.float64, trainable=False)
     self.size = size
-    self.transforms = transforms
+    self.transform = transform
   def call(self, x):
     return self.action(x)
   def changePerEpoch(self, epoch, conf):
     self.beta.assign((epoch+1.0)/conf.nepoch*(self.targetBeta-1.0)+1.0)
   def initState(self, nbatch):
     return tf.Variable(2.0*math.pi*tf.random.uniform((nbatch, self.size), dtype=tf.float64)-math.pi)
-  def regularize(self, x):
-    return tf.math.floormod(x+math.pi, 2*math.pi)-math.pi
-  def plaqPhase(self, y):
-    x = y
-    for tran in self.transforms:
-      x = tran(x)
+  def plaqPhase(self, x):
+    y, _ = self.transform(x)
+    return self.plaqPhaseNoTrans(y)
+  def plaqPhaseNoTrans(self, x):
     return tf.roll(x, shift=-1, axis=1) - x
   def topoChargeFromPhase(self, p):
-    return tf.math.floordiv(0.1 + tf.reduce_sum(self.regularize(p), axis=1), 2*math.pi)
+    return tf.math.floordiv(0.1 + tf.reduce_sum(regularize(p), axis=1), 2*math.pi)
   def topoCharge(self, x):
     return self.topoChargeFromPhase(self.plaqPhase(x))
   def topoChargeFourierFromPhase(self, p, n):
@@ -70,42 +70,50 @@ class OneD(tl.Layer):
   def plaquette(self, x):
     return tf.reduce_mean(tf.cos(self.plaqPhase(x)), axis=1)
   def action(self, x):
-    a = self.beta*tf.reduce_sum(1.0-tf.cos(self.plaqPhase(x)), axis=1)
-    for tran in self.transforms:
-      a -= tran.logDetJacob(x)
-    return a
+    y, l = self.transform(x)
+    a = self.beta*tf.reduce_sum(1.0-tf.cos(self.plaqPhaseNoTrans(y)), axis=1)
+    return a-l
   def derivAction(self, x):
     with tf.GradientTape() as tape:
       tape.watch(x)
       a = self.action(x)
     g = tape.gradient(a, x)
     return g
-  def invTransform(self, y):
-    x = y
-    for tran in reversed(self.transforms):
-      x = tran.inv(x)
-    return x
 
 class Ident(tl.Layer):
   def __init__(self, name='Ident', **kwargs):
     super(Ident, self).__init__(autocast=False, name=name, **kwargs)
   def call(self, x):
-    return x
-  #def jacob(self, x, g):
-  #  return g
-  def logDetJacob(self, x):
-    return 0.0
-  #def derivLogDetJacob(self, x):
-  #  return 0.0
+    return (x, 0.0)
   def inv(self, y):
-    return y
+    return (y, 0.0)
+
+class TransformChain(tl.Layer):
+  def __init__(self, transforms, name='TransformChain', **kwargs):
+    super(TransformChain, self).__init__(autocast=False, name=name, **kwargs)
+    self.chain = transforms
+  def call(self, x):
+    y = x
+    l = tf.zeros(x.shape[0], dtype=tf.float64)
+    for f in self.chain:
+      y, t = f(y)
+      l += t
+    return (y, l)
+  def inv(self, y):
+    x = y
+    l = tf.zeros(y.shape[0], dtype=tf.float64)
+    for f in reversed(self.chain):
+      x, t = f.inv(x)
+      l += t
+    return (x, l)
 
 class OneDNeighbor(tl.Layer):
-  def __init__(self, distance=1, mask='even', name='OneDNeighbor', **kwargs):
+  def __init__(self, distance=1, alpha=0.0, mask='even', invAbsR2=1E-30, name='OneDNeighbor', **kwargs):
     super(OneDNeighbor, self).__init__(autocast=False, name=name, **kwargs)
-    self.alpha = tf.Variable(0.0, dtype=tf.float64)
+    self.alpha = tf.Variable(alpha, dtype=tf.float64)
     self.mask = mask
     self.distance = distance
+    self.invAbsR2 = invAbsR2
   def build(self, shape):
     l = shape[1]
     if l % (2*self.distance) != 0:
@@ -116,24 +124,26 @@ class OneDNeighbor(tl.Layer):
     elif self.mask == 'odd':
       self.mask = o
   def call(self, x):
-    s = tf.sin(tf.roll(x, shift=-self.distance, axis=1) - x)
-    f = self.beta()*self.mask*(tf.roll(s, shift=self.distance, axis=1) - s)
-    return tf.math.floormod(x+f+math.pi, 2*math.pi)-math.pi
+    b = self.beta()
+    f = self.shift(b, x)
+    c = tf.cos(tf.roll(x, shift=-self.distance, axis=1) - x)
+    d = b*self.mask*(tf.roll(c, shift=self.distance, axis=1) + c)
+    return (regularize(x+f), tf.reduce_sum(tf.math.log1p(d), axis=1))
   def beta(self):
     return tf.math.atan(self.alpha)/math.pi
-  def logDetJacob(self, x):
-    s = tf.cos(tf.roll(x, shift=-self.distance, axis=1) - x)
-    f = self.beta()*self.mask*(tf.roll(s, shift=self.distance, axis=1) + s)
-    return tf.reduce_sum(tf.math.log1p(f), axis=1)
+  def shift(self, beta, x):
+    s = tf.sin(tf.roll(x, shift=-self.distance, axis=1) - x)
+    f = beta*self.mask*(tf.roll(s, shift=self.distance, axis=1) - s)
+    return f
   def inv(self, y):
-    tol = 1E-12
     b = self.beta()
     x = y
     while True:
-      s = tf.sin(tf.roll(x, shift=-self.distance, axis=1) - x)
-      f = b*self.mask*(tf.roll(s, shift=self.distance, axis=1) - s)
-      if tol > tf.reduce_mean(tf.math.squared_difference(f, y-x)):
-        return tf.math.floormod(y-f+math.pi, 2*math.pi)-math.pi
+      f = self.shift(b, x)
+      if self.invAbsR2 > tf.reduce_mean(tf.math.squared_difference(f, y-x)):
+        x = regularize(y-f)
+        _, l = self(x)
+        return (x, -l)
       x = y-f
 
 class Metropolis(tk.Model):
@@ -190,7 +200,7 @@ class LeapFrog(tl.Layer):
       x += dt*p
       p -= dt*self.action.derivAction(x)
     x += 0.5*dt*p
-    x = self.action.regularize(x)
+    x = regularize(x)
     return (x, -p)
   def changePerEpoch(self, epoch, conf):
     self.action.changePerEpoch(epoch, conf)
@@ -239,7 +249,7 @@ def infer(conf, mcmc, loss, weights, x0):
   inferStep(mcmc, loss, x0)
   mcmc.set_weights(weights)
   tf.print('# finished autograph run')
-  x = loss.action.invTransform(x0)
+  x, _ = loss.action.transform.inv(x0)
   for epoch in range(conf.nepoch):
     mcmc.changePerEpoch(epoch, conf)
     tf.print('weightsAll:', mcmc.get_weights())
@@ -330,8 +340,8 @@ if __name__ == '__main__':
   #conf = Conf(nbatch=4, nepoch=2, nstepEpoch=2048, initDt=0.1)
   #conf = Conf()
   setup(conf)
-  #action = OneD(transforms=[Ident()])
-  action = OneD(transforms=[
+  #action = OneD(TransformChain([Ident()]))
+  action = OneD(TransformChain([
     OneDNeighbor(mask='even'), OneDNeighbor(mask='odd'),
     OneDNeighbor(mask='even'), OneDNeighbor(mask='odd'),
     OneDNeighbor(mask='even'), OneDNeighbor(mask='odd'),
@@ -339,7 +349,7 @@ if __name__ == '__main__':
     OneDNeighbor(mask='even'), OneDNeighbor(mask='odd'),
     OneDNeighbor(mask='even'), OneDNeighbor(mask='odd'),
     OneDNeighbor(mask='even'), OneDNeighbor(mask='odd'),
-    OneDNeighbor(mask='even'), OneDNeighbor(mask='odd')])
+    OneDNeighbor(mask='even'), OneDNeighbor(mask='odd')]))
   loss = LossFun(action, cCosDiff=1.0, cTopoDiff=1.0, dHmin=0.5, topoFourierN=9)
   opt = tk.optimizers.Adam(learning_rate=0.001)
   x0 = action.initState(conf.nbatch)

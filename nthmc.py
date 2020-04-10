@@ -8,6 +8,7 @@ class Conf:
                nbatch = 32,
                nepoch = 64,
                nstepEpoch = 2048,
+               nstepMixing = 64,
                initDt = 0.2,
                stepPerTraj = 10,
                checkReverse = False,
@@ -18,6 +19,7 @@ class Conf:
     self.nbatch = nbatch
     self.nepoch = nepoch
     self.nstepEpoch = nstepEpoch
+    self.nstepMixing = nstepMixing
     self.initDt = initDt
     self.stepPerTraj = stepPerTraj
     self.checkReverse = checkReverse
@@ -108,11 +110,12 @@ class TransformChain(tl.Layer):
     return (x, l)
 
 class OneDNeighbor(tl.Layer):
-  def __init__(self, distance=1, alpha=0.0, mask='even', invAbsR2=1E-30, name='OneDNeighbor', **kwargs):
+  def __init__(self, distance=1, alpha=0.0, order=1, mask='even', invAbsR2=1E-30, name='OneDNeighbor', **kwargs):
     super(OneDNeighbor, self).__init__(autocast=False, name=name, **kwargs)
     self.alpha = tf.Variable(alpha, dtype=tf.float64)
     self.mask = mask
     self.distance = distance
+    self.order = order
     self.invAbsR2 = invAbsR2
   def build(self, shape):
     l = shape[1]
@@ -123,17 +126,20 @@ class OneDNeighbor(tl.Layer):
       self.mask = 1.0-o
     elif self.mask == 'odd':
       self.mask = o
+    else:
+      raise ValueError(f'OneDNeighbor with unknown mask={self.mask}.  Valid options are: even, odd.')
+    super(OneDNeighbor, self).build(shape)
   def call(self, x):
     b = self.beta()
     f = self.shift(b, x)
-    c = tf.cos(tf.roll(x, shift=-self.distance, axis=1) - x)
+    c = tf.cos((tf.roll(x, shift=-self.distance, axis=1) - x)*self.order)
     d = b*self.mask*(tf.roll(c, shift=self.distance, axis=1) + c)
     return (regularize(x+f), tf.reduce_sum(tf.math.log1p(d), axis=1))
   def beta(self):
     return tf.math.atan(self.alpha)/math.pi
   def shift(self, beta, x):
-    s = tf.sin(tf.roll(x, shift=-self.distance, axis=1) - x)
-    f = beta*self.mask*(tf.roll(s, shift=self.distance, axis=1) - s)
+    s = tf.sin((tf.roll(x, shift=-self.distance, axis=1) - x)*self.order)
+    f = beta/self.order*self.mask*(tf.roll(s, shift=self.distance, axis=1) - s)
     return f
   def inv(self, y):
     b = self.beta()
@@ -213,7 +219,7 @@ class LossFun:
     self.cTopoDiff = cTopoDiff
     self.dHmin = dHmin
     self.topoFourierN = topoFourierN
-  def __call__(self, x, p, x0, p0, x1, p1, v0, t0, v1, t1, dH, acc, arand):
+  def __call__(self, x, p, x0, p0, x1, p1, v0, t0, v1, t1, dH, acc, arand, print=True):
     #tf.print('LossFun called with', x, p, x0, p0, x1, p1, v0, t0, v1, t1, dH, acc, arand, summarize=-1)
     pp0 = self.action.plaqPhase(x0)
     pp1 = self.action.plaqPhase(x1)
@@ -222,31 +228,40 @@ class LossFun:
       self.action.topoChargeFourierFromPhase(pp1,self.topoFourierN),
       self.action.topoChargeFourierFromPhase(pp0,self.topoFourierN))
     lap = tf.exp(-tf.maximum(dH,self.dHmin))
-    tf.print('cosDiff:', tf.reduce_mean(ldc), summarize=-1)
-    tf.print('topoDiff:', tf.reduce_mean(ldt), summarize=-1)
-    tf.print('accProb:', tf.reduce_mean(lap), summarize=-1)
+    if print:
+      tf.print('cosDiff:', tf.reduce_mean(ldc), summarize=-1)
+      tf.print('topoDiff:', tf.reduce_mean(ldt), summarize=-1)
+      tf.print('accProb:', tf.reduce_mean(lap), summarize=-1)
     return -tf.math.reduce_mean((self.cCosDiff*ldc+self.cTopoDiff*ldt)*lap)
 
 @tf.function
-def inferStep(mcmc, loss, x0):
+def inferStep(mcmc, loss, x0, print=True, detail=True):
   p0 = refreshP(x0.shape)
   x, p, x1, p1, v0, t0, v1, t1, dH, acc, arand = mcmc(x0, p0)
-  lv = loss(x, p, x0, p0, x1, p1, v0, t0, v1, t1, dH, acc, arand)
-  tf.print('V-old:', v0, summarize=-1)
-  tf.print('T-old:', t0, summarize=-1)
-  tf.print('V-prp:', v1, summarize=-1)
-  tf.print('T-prp:', t1, summarize=-1)
-  tf.print('dH:', dH, summarize=-1)
-  tf.print('arand:', arand, summarize=-1)
-  tf.print('accept:', acc, summarize=-1)
-  tf.print('loss:', lv, summarize=-1)
-  tf.print('plaq:', loss.action.plaquette(x), summarize=-1)
-  tf.print('topo:', loss.action.topoCharge(x), summarize=-1)
+  lv = loss(x, p, x0, p0, x1, p1, v0, t0, v1, t1, dH, acc, arand, print=print)
+  if print:
+    if detail:
+      tf.print('V-old:', v0, summarize=-1)
+      tf.print('T-old:', t0, summarize=-1)
+      tf.print('V-prp:', v1, summarize=-1)
+      tf.print('T-prp:', t1, summarize=-1)
+      tf.print('dH:', dH, summarize=-1)
+      tf.print('arand:', arand, summarize=-1)
+      tf.print('accept:', acc, summarize=-1)
+      tf.print('loss:', lv, summarize=-1)
+      tf.print('plaq:', loss.action.plaquette(x), summarize=-1)
+      tf.print('topo:', loss.action.topoCharge(x), summarize=-1)
+    else:
+      tf.print('dH:', tf.reduce_mean(dH), summarize=-1)
+      tf.print('accept:', tf.reduce_mean(tf.cast(acc,tf.float64)), summarize=-1)
+      tf.print('loss:', lv, summarize=-1)
+      tf.print('plaq:', tf.reduce_mean(loss.action.plaquette(x)), summarize=-1)
+      tf.print('topo:', loss.action.topoCharge(x), summarize=-1)
   return x
 
 def infer(conf, mcmc, loss, weights, x0):
   tf.print('# run once and set weights')
-  inferStep(mcmc, loss, x0)
+  inferStep(mcmc, loss, x0, print=False)
   mcmc.set_weights(weights)
   tf.print('# finished autograph run')
   x, _ = loss.action.transform.inv(x0)
@@ -285,7 +300,7 @@ def trainStep(mcmc, loss, opt, x0):
   #tf.print('T-old:', t0, summarize=-1)
   #tf.print('V-prp:', v1, summarize=-1)
   #tf.print('T-prp:', t1, summarize=-1)
-  tf.print('dH:', dH, summarize=-1)
+  tf.print('dH:', tf.reduce_mean(dH), summarize=-1)
   #tf.print('arand:', arand, summarize=-1)
   tf.print('accept:', tf.reduce_mean(tf.cast(acc,tf.float64)), summarize=-1)
   tf.print('weights:', mcmc.trainable_weights, summarize=-1)
@@ -305,6 +320,13 @@ def train(conf, mcmc, loss, opt, x0):
     t0 = tf.timestamp()
     tf.print('-------- start epoch', epoch, '@', t0, '--------', summarize=-1)
     tf.print('beta:', loss.action.beta, summarize=-1)
+    for step in range(conf.nstepMixing):
+      tf.print('# inference step:', step, summarize=-1)
+      x = inferStep(mcmc, loss, x, detail=False)
+    dt = tf.timestamp()-t0
+    tf.print('-------- done mixing epoch', epoch,
+      'in', dt, 'sec,', dt/conf.nstepMixing, 'sec/step --------', summarize=-1)
+    t0 = tf.timestamp()
     for step in range(conf.nstepEpoch):
       tf.print('# training step:', step, summarize=-1)
       x = trainStep(mcmc, loss, opt, x)

@@ -35,8 +35,11 @@ sin (qf, n=1) is smooth.
 
 Gradient flow style update
 
-	y: x+beta*(sin(x-l)-sin(r-x))
-	f(x):=x+beta*(sin(x-l)-sin(r-x)) - beta*(sin(l)+sin(r))
+	w: -beta*(cos(n*(x-l))+cos(n*(r-x)))/n²
+	y: x+diff(w,x)  →  x+beta*(sin(n*(x-l))-sin(n*(r-x)))/n
+	f(x):=x+beta*(sin(n*(x-l))-sin(n*(r-x)))/n - beta*(sin(n*l)+sin(n*r))/n  for n odd
+	f(x):=x+beta*(sin(n*(x-l))-sin(n*(r-x)))/n + beta*(sin(n*l)+sin(n*r))/n  for n even
+	diff(f(x),x)  →  1 + beta*(cos(n*(x-r))+cos(n*(x-l)))
 
 satisfies,
 
@@ -44,9 +47,30 @@ satisfies,
 	f(%pi) = %pi
 	diff(f(x),x) > 0, if -0.5 < beta < 0.5
 
-so f(x) is bijective over domain [-π, π), so is the map
+so f(x) is bijective over domain [-π, π], so is the map
 
-	y: f(x) + beta*(sin(l)+sin(r))
+	y: f(x) +/- beta*n*(sin(n*l)+sin(n*r))
+
+
+Loss function
+
+Cosine difference of plaquettes, p0, and p1
+	E[⟨1-cos(p0-p1)⟩]
+	= 1 - E[⟨sin(p0) sin(p1)⟩] - E[⟨cos(p0) cos(p1)⟩]
+for uncorrelated,
+	= 1 - E[⟨cos(p)⟩]²
+or
+	E[⟨1-cos(p0-p1)⟩]
+	= E[⟨2 sin²((p0-p1)/2)⟩]
+	= 2 E[⟨sin²((p0-p1)/2)⟩]
+where ⟨⟩ configuration average, E[] ensemble expectation value.
+For topology, approximation with sine, 1st term in Fourier series,
+	E[ ( V ⟨sin(p0)⟩ - V ⟨sin(p1)⟩ )² ]
+	= V² E[ ⟨sin(p0)⟩² + ⟨sin(p1)⟩² - 2 ⟨sin(p0)⟩ ⟨sin(p1)⟩ ]
+	= V² { E[⟨sin(p0)⟩²] + E[⟨sin(p1)⟩²] - 2 E[⟨sin(p0)⟩ ⟨sin(p1)⟩] }
+for uncorrelated
+	= 2 V² { E[⟨sin(p)⟩²] - E[⟨sin(p)⟩]² }
+	= 2 V² E[⟨sin(p)⟩²]
 
 
 Luscher's trivializing maps paper, Luscher (2010)

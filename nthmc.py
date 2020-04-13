@@ -234,6 +234,12 @@ class LossFun:
       tf.print('accProb:', tf.reduce_mean(lap), summarize=-1)
     return -tf.math.reduce_mean((self.cCosDiff*ldc+self.cTopoDiff*ldt)*lap)
 
+def initRun(mcmc, loss, x0, weights):
+  tf.print('# run once and set weights')
+  inferStep(mcmc, loss, x0, print=False)
+  mcmc.set_weights(weights)
+  tf.print('# finished autograph run')
+
 @tf.function
 def inferStep(mcmc, loss, x0, print=True, detail=True):
   p0 = refreshP(x0.shape)
@@ -260,10 +266,7 @@ def inferStep(mcmc, loss, x0, print=True, detail=True):
   return x
 
 def infer(conf, mcmc, loss, weights, x0):
-  tf.print('# run once and set weights')
-  inferStep(mcmc, loss, x0, print=False)
-  mcmc.set_weights(weights)
-  tf.print('# finished autograph run')
+  initRun(mcmc, loss, x0, weights)
   x, _ = loss.action.transform.inv(x0)
   for epoch in range(conf.nepoch):
     mcmc.changePerEpoch(epoch, conf)
@@ -309,7 +312,9 @@ def trainStep(mcmc, loss, opt, x0):
   tf.print('topo:', loss.action.topoCharge(x), summarize=-1)
   return x
 
-def train(conf, mcmc, loss, opt, x0):
+def train(conf, mcmc, loss, opt, x0, weights=None):
+  if weights is not None:
+    initRun(mcmc, loss, x0, weights)
   x = x0
   optw = None
   for epoch in range(conf.nepoch):
@@ -339,9 +344,9 @@ def train(conf, mcmc, loss, opt, x0):
       'in', dt, 'sec,', dt/conf.nstepEpoch, 'sec/step --------', summarize=-1)
   return x
 
-def run(conf, action, loss, opt, x0):
+def run(conf, action, loss, opt, x0, weights=None):
   mcmc = Metropolis(conf, LeapFrog(conf, action))
-  x = train(conf, mcmc, loss, opt, x0)
+  x = train(conf, mcmc, loss, opt, x0, weights=weights)
   tf.print('finalWeightsAll:', mcmc.get_weights())
   return x
 

@@ -2,7 +2,7 @@ import tensorflow as tf
 import tensorflow.keras as tk
 import nthmc
 
-conf = nthmc.Conf(nbatch=2048, nepoch=1, nstepEpoch=2048, nstepMixing=64, initDt=0.4, refreshOpt=False, nthr=8)
+conf = nthmc.Conf(nbatch=2048, nepoch=1, nstepEpoch=2048, nstepMixing=512, initDt=0.4, refreshOpt=False, nthr=8)
 beta=3.5
 nthmc.setup(conf)
 action = nthmc.OneD(beta=beta, transform=nthmc.TransformChain([

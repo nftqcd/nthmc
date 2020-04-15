@@ -265,7 +265,7 @@ def inferStep(mcmc, loss, x0, print=True, detail=True):
       tf.print('topo:', loss.action.topoCharge(x), summarize=-1)
   return x
 
-def infer(conf, mcmc, loss, weights, x0):
+def infer(conf, mcmc, loss, weights, x0, detail=True):
   initRun(mcmc, loss, x0, weights)
   x, _ = loss.action.transform.inv(x0)
   for epoch in range(conf.nepoch):
@@ -276,15 +276,15 @@ def infer(conf, mcmc, loss, weights, x0):
     tf.print('beta:', loss.action.beta, summarize=-1)
     for step in range(conf.nstepEpoch):
       tf.print('# traj:', step, summarize=-1)
-      x = inferStep(mcmc, loss, x)
+      x = inferStep(mcmc, loss, x, detail=detail)
     dt = tf.timestamp()-t0
     tf.print('-------- end epoch', epoch,
       'in', dt, 'sec,', dt/conf.nstepEpoch, 'sec/step --------', summarize=-1)
   return x
 
-def runInfer(conf, action, loss, weights, x0):
+def runInfer(conf, action, loss, weights, x0, detail=True):
   mcmc = Metropolis(conf, LeapFrog(conf, action))
-  x = infer(conf, mcmc, loss, weights, x0)
+  x = infer(conf, mcmc, loss, weights, x0, detail=detail)
   return x
 
 @tf.function
@@ -312,9 +312,13 @@ def trainStep(mcmc, loss, opt, x0):
   tf.print('topo:', loss.action.topoCharge(x), summarize=-1)
   return x
 
-def train(conf, mcmc, loss, opt, x0, weights=None):
+def train(conf, mcmc, loss, opt, x0, weights=None, requireInv=False):
   if weights is not None:
     initRun(mcmc, loss, x0, weights)
+    if requireInv:
+      x0, _ = loss.action.transform.inv(x0)
+  elif requireInv:
+    raise ValueError(f'Inverse transform required without weights.')
   x = x0
   optw = None
   for epoch in range(conf.nepoch):
@@ -344,9 +348,9 @@ def train(conf, mcmc, loss, opt, x0, weights=None):
       'in', dt, 'sec,', dt/conf.nstepEpoch, 'sec/step --------', summarize=-1)
   return x
 
-def run(conf, action, loss, opt, x0, weights=None):
+def run(conf, action, loss, opt, x0, weights=None, requireInv=False):
   mcmc = Metropolis(conf, LeapFrog(conf, action))
-  x = train(conf, mcmc, loss, opt, x0, weights=weights)
+  x = train(conf, mcmc, loss, opt, x0, weights=weights, requireInv=requireInv)
   tf.print('finalWeightsAll:', mcmc.get_weights())
   return x
 

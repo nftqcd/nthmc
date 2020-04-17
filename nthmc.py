@@ -358,7 +358,7 @@ def setup(conf):
   tf.random.set_seed(conf.seed)
   tk.backend.set_floatx('float64')
   tf.config.set_soft_device_placement(True)
-  tf.config.optimizer.set_jit(True)
+  tf.config.optimizer.set_jit(False)
   tf.config.threading.set_inter_op_parallelism_threads(conf.nthrIop)  # ALCF suggests number of socket
   tf.config.threading.set_intra_op_parallelism_threads(conf.nthr)  # ALCF suggests number of physical cores
   os.environ["OMP_NUM_THREADS"] = str(conf.nthr)

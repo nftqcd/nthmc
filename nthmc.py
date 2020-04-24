@@ -10,6 +10,7 @@ class Conf:
                nstepEpoch = 2048,
                nstepMixing = 64,
                initDt = 0.2,
+               trainDt = True,
                stepPerTraj = 10,
                checkReverse = False,
                refreshOpt = True,
@@ -21,6 +22,7 @@ class Conf:
     self.nstepEpoch = nstepEpoch
     self.nstepMixing = nstepMixing
     self.initDt = initDt
+    self.trainDt = trainDt
     self.stepPerTraj = stepPerTraj
     self.checkReverse = checkReverse
     self.refreshOpt = refreshOpt
@@ -193,8 +195,7 @@ class Metropolis(tk.Model):
 class LeapFrog(tl.Layer):
   def __init__(self, conf, action, name='LeapFrog', **kwargs):
     super(LeapFrog, self).__init__(autocast=False, name=name, **kwargs)
-    self.dt = None
-    self.dt = self.add_weight(initializer=tk.initializers.Constant(conf.initDt), dtype=tf.float64)
+    self.dt = self.add_weight(initializer=tk.initializers.Constant(conf.initDt), dtype=tf.float64, trainable=conf.trainDt)
     self.stepPerTraj = conf.stepPerTraj
     self.action = action
     tf.print(self.name, 'init with dt', self.dt, 'step/traj', self.stepPerTraj, summarize=-1)

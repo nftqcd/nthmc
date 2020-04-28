@@ -1,2 +1,9 @@
 __pycache__/
 *.log
+*.aux
+*.bcf
+*.blg
+*.fdb_latexmk
+*.fls
+*.out
+*.run.xml

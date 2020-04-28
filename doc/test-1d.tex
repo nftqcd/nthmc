@@ -55,8 +55,8 @@ our smearing update from $θ$ to $θ'$ is
 In order to have a tractable Jacobian determinant,
 we update ``even'' and ``odd'' sites separately,
 \begin{align}
-	\text{even: } & \mod(x,2d)<d, \\
-	\text{odd: }  & \mod(x,2d)≥d.
+	\text{even: } & x \mod 2d <d, \\
+	\text{odd: }  & x \mod 2d ≥d.
 \end{align}
 This defines a series of diffeomorphism with positive definite
 Jacobian determinant with
@@ -69,7 +69,7 @@ by minimize the loss function defined as,
 \begin{equation}
 \begin{split}
 	l(θ',π'|θ,π) &= - \frac{1}{N_{\text{batch}}} \sum_{\text{batch}}
-	e^{H(θ,π)-H(θ',π')} \\
+	\max\left\{1, e^{H(θ,π)-H(θ',π')}\right\} \\
 	&\Bigg(
 		λ \frac{1}{N} \sum_x \left[ 1-\cos\left((θ'ₓ₊₁-θ'ₓ)-(θₓ₊₁-θₓ)\right) \right] \\
 		&+ μ \left[ \sum_x \sin(θ'ₓ₊₁-θ'ₓ)-\sum_x \sin(θₓ₊₁-θₓ) \right]²
@@ -90,6 +90,8 @@ In addition we also train the leapfrog step size.
 We train these 97 parameters during HMC with changing $β$
 from small to large in steps,
 everytime allow thermolizating after changing $β$ before starting optimization.
+We train the model on a system with the number of sites, $N=64$,
+and apply the trained model to a system with the number of sites, $N=256$.
 
 \begin{figure}
 	\centering

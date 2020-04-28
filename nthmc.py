@@ -83,6 +83,8 @@ class OneD(tl.Layer):
       a = self.action(x)
     g = tape.gradient(a, x)
     return g
+  def showTransform(self, **kwargs):
+    self.transform.showTransform(**kwargs)
 
 class Ident(tl.Layer):
   def __init__(self, name='Ident', **kwargs):
@@ -91,6 +93,8 @@ class Ident(tl.Layer):
     return (x, 0.0)
   def inv(self, y):
     return (y, 0.0)
+  def showTransform(self, **kwargs):
+    tf.print(self.name, **kwargs)
 
 class TransformChain(tl.Layer):
   def __init__(self, transforms, name='TransformChain', **kwargs):
@@ -110,6 +114,12 @@ class TransformChain(tl.Layer):
       x, t = f.inv(x)
       l += t
     return (x, l)
+  def showTransform(self, **kwargs):
+    n = len(self.chain)
+    tf.print(self.name, '[', n, ']', **kwargs)
+    for i in range(n):
+      tf.print(i, ':', end='')
+      self.chain[i].showTransform(**kwargs)
 
 class OneDNeighbor(tl.Layer):
   def __init__(self, distance=1, alpha=0.0, order=1, mask='even', invAbsR2=1E-30, name='OneDNeighbor', **kwargs):
@@ -153,6 +163,8 @@ class OneDNeighbor(tl.Layer):
         _, l = self(x)
         return (x, -l)
       x = y-f
+  def showTransform(self, **kwargs):
+    tf.print(self.name, self.mask, 'D:', self.distance, 'O:', self.order, 'β:', self.beta(), **kwargs)
 
 class Metropolis(tk.Model):
   def __init__(self, conf, generator, name='Metropolis', **kwargs):
@@ -287,6 +299,12 @@ def runInfer(conf, action, loss, weights, x0, detail=True):
   mcmc = Metropolis(conf, LeapFrog(conf, action))
   x = infer(conf, mcmc, loss, weights, x0, detail=detail)
   return x
+
+def showTransform(conf, action, loss, weights, **kwargs):
+  mcmc = Metropolis(conf, LeapFrog(conf, action))
+  x0 = action.initState(conf.nbatch)
+  initRun(mcmc, loss, x0, weights)
+  action.showTransform(**kwargs)
 
 @tf.function
 def trainStep(mcmc, loss, opt, x0):

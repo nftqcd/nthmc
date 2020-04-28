@@ -1,0 +1,63 @@
+Following the arguments of ``Trivializing maps''~\cite{Luscher:2009eq},
+to evaluate,
+\begin{equation}
+	⟨O⟩ = 1/Z ∫ \dd x O(x) e^{-S(x)},
+\end{equation}
+we perform a change of variable,
+\begin{equation}
+	x = F(y)
+\end{equation}
+with a vector functions $F$, we have
+\begin{equation}
+	⟨O⟩ = \frac{1}{Z} ∫ \dd y \left|\det[J(y)]\right| O\left(F(y)\right) e^{ -S\left(F(y)\right) },
+\end{equation}
+where the Jacobian matrix,
+\begin{equation}
+	J(y) = \frac{∂F(y)}{∂y}.
+\end{equation}
+$F$ has to satisfy,
+\begin{itemize}
+	\item Injective (1 to 1), from the new integration domain to the old.
+	\item Continuously differentiable (or differentiable and have continuous inverse).
+\end{itemize}
+
+Rewrite the integral as,
+\begin{equation}
+	⟨O⟩ = \frac{1}{Z} ∫ \dd y O\left(F(y)\right) e^{ -S\left(F(y)\right) + \ln\left|\det[J(y)]\right| }.
+\end{equation}
+F is a trivializing map, when
+\begin{equation}
+	S(F(y)) - \ln\left|\det[J(y)]\right| = \text{constant}
+\end{equation}
+and our expectation value simplifies to
+\begin{equation}
+	⟨O⟩ = \frac{1}{Z} ∫ \dd y O\left(F(y)\right).
+\end{equation}
+
+In terms of HMC, we add the conjugate momenta, $π$,
+and use the equations of motion derived from the Hamiltonian,
+\begin{equation}
+	ℋ(y,π) = ½π² + S\left(F(y)\right) - \ln\left|\det[J(y)]\right|,
+\end{equation}
+as
+\begin{align}
+	\frac{\dd}{\dd t} π &= -\frac{∂}{∂y} ℋ = - J(y) S'\left(F(y)\right) + \tr\left[ J⁻¹ \frac{\dd}{\dd y}J \right], \\
+	\frac{\dd}{\dd t} y &= \phantom{-}\frac{∂}{∂y} ℋ = π.
+\end{align}
+This is separable and can use the usual explicit, symplectic and symmetric
+discrete integrators.
+
+Consider a change of variable in π,
+\begin{equation}
+	π = J(y) p = J\left(F⁻¹(x)\right) p
+\end{equation}
+we get a new Hamiltonian,
+\begin{equation}
+	H(x,p) = ½ p^† M p + S(x) - \ln\left|\det[J]\right|
+\end{equation}
+where the positive definite M,
+\begin{equation}
+	M(x) = J^†\left(F⁻¹(x)\right) J\left(F⁻¹(x)\right)
+\end{equation}
+is the kernel of the kinetic term considered
+Duane et al~\cite{Duane:1986fy,Duane:1988vr}.

@@ -1,0 +1,172 @@
+% $ biblatex auxiliary file $
+% $ biblatex bbl format version 3.1 $
+% Do not modify the above lines!
+%
+% This is an auxiliary file used by the 'biblatex' package.
+% This file may safely be deleted. It will be recreated by
+% biber as required.
+%
+\begingroup
+\makeatletter
+\@ifundefined{ver@biblatex.sty}
+  {\@latex@error
+     {Missing 'biblatex' package}
+     {The bibliography requires the 'biblatex' package.}
+      \aftergroup\endinput}
+  {}
+\endgroup
+
+
+\refsection{0}
+  \datalist[entry]{none/global//global/global}
+    \entry{Luscher:2009eq}{article}{}
+      \name{author}{1}{}{%
+        {{hash=1d976c1272281b1020b3bca95b327167}{%
+           family={Luscher},
+           familyi={L\bibinitperiod},
+           given={Martin},
+           giveni={M\bibinitperiod}}}%
+      }
+      \strng{namehash}{1d976c1272281b1020b3bca95b327167}
+      \strng{fullhash}{1d976c1272281b1020b3bca95b327167}
+      \strng{bibnamehash}{1d976c1272281b1020b3bca95b327167}
+      \strng{authorbibnamehash}{1d976c1272281b1020b3bca95b327167}
+      \strng{authornamehash}{1d976c1272281b1020b3bca95b327167}
+      \strng{authorfullhash}{1d976c1272281b1020b3bca95b327167}
+      \field{sortinit}{1}
+      \field{sortinithash}{50c6687d7fc80f50136d75228e3c59ba}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{eprintclass}{hep-lat}
+      \field{eprinttype}{arXiv}
+      \field{journaltitle}{Commun. Math. Phys.}
+      \field{title}{{Trivializing maps, the Wilson flow and the HMC algorithm}}
+      \field{volume}{293}
+      \field{year}{2010}
+      \field{pages}{899\bibrangedash 919}
+      \range{pages}{21}
+      \verb{doi}
+      \verb 10.1007/s00220-009-0953-7
+      \endverb
+      \verb{eprint}
+      \verb 0907.5491
+      \endverb
+    \endentry
+    \entry{Duane:1986fy}{article}{}
+      \name{author}{4}{}{%
+        {{hash=bdebd6ef9e8e1b043aff76bf2f764e33}{%
+           family={Duane},
+           familyi={D\bibinitperiod},
+           given={Simon},
+           giveni={S\bibinitperiod}}}%
+        {{hash=99f5022fab5c083d9d7f1a1c2d7230a2}{%
+           family={Kenway},
+           familyi={K\bibinitperiod},
+           given={Richard},
+           giveni={R\bibinitperiod}}}%
+        {{hash=e79e74b3caf12b77e3b62a5b4d078861}{%
+           family={Pendleton},
+           familyi={P\bibinitperiod},
+           given={Brian\bibnamedelima J.},
+           giveni={B\bibinitperiod\bibinitdelim J\bibinitperiod}}}%
+        {{hash=f373ac3ca3b70772140ff348ba2d50d5}{%
+           family={Roweth},
+           familyi={R\bibinitperiod},
+           given={Duncan},
+           giveni={D\bibinitperiod}}}%
+      }
+      \strng{namehash}{87d02c47c1dd23e727ec407c868c8be0}
+      \strng{fullhash}{95b537d80b3cae0dc35a1ae5b06a3585}
+      \strng{bibnamehash}{87d02c47c1dd23e727ec407c868c8be0}
+      \strng{authorbibnamehash}{87d02c47c1dd23e727ec407c868c8be0}
+      \strng{authornamehash}{87d02c47c1dd23e727ec407c868c8be0}
+      \strng{authorfullhash}{95b537d80b3cae0dc35a1ae5b06a3585}
+      \field{sortinit}{2}
+      \field{sortinithash}{ed39bb39cf854d5250e95b1c1f94f4ed}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{journaltitle}{Phys. Lett.}
+      \field{title}{{Acceleration of Gauge Field Dynamics}}
+      \field{volume}{B176}
+      \field{year}{1986}
+      \field{pages}{143}
+      \range{pages}{1}
+      \verb{doi}
+      \verb 10.1016/0370-2693(86)90940-8
+      \endverb
+    \endentry
+    \entry{Duane:1988vr}{article}{}
+      \name{author}{2}{}{%
+        {{hash=bdebd6ef9e8e1b043aff76bf2f764e33}{%
+           family={Duane},
+           familyi={D\bibinitperiod},
+           given={Simon},
+           giveni={S\bibinitperiod}}}%
+        {{hash=e79e74b3caf12b77e3b62a5b4d078861}{%
+           family={Pendleton},
+           familyi={P\bibinitperiod},
+           given={Brian\bibnamedelima J.},
+           giveni={B\bibinitperiod\bibinitdelim J\bibinitperiod}}}%
+      }
+      \strng{namehash}{462870a19a434a8a41bf532485a02d11}
+      \strng{fullhash}{462870a19a434a8a41bf532485a02d11}
+      \strng{bibnamehash}{462870a19a434a8a41bf532485a02d11}
+      \strng{authorbibnamehash}{462870a19a434a8a41bf532485a02d11}
+      \strng{authornamehash}{462870a19a434a8a41bf532485a02d11}
+      \strng{authorfullhash}{462870a19a434a8a41bf532485a02d11}
+      \field{sortinit}{2}
+      \field{sortinithash}{ed39bb39cf854d5250e95b1c1f94f4ed}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{journaltitle}{Phys. Lett.}
+      \field{title}{{GAUGE INVARIANT FOURIER ACCELERATION}}
+      \field{volume}{B206}
+      \field{year}{1988}
+      \field{pages}{101\bibrangedash 106}
+      \range{pages}{6}
+      \verb{doi}
+      \verb 10.1016/0370-2693(88)91270-1
+      \endverb
+    \endentry
+    \entry{Morningstar:2003gk}{article}{}
+      \name{author}{2}{}{%
+        {{hash=c936bb0493fd888c6e599e1f89ab497f}{%
+           family={Morningstar},
+           familyi={M\bibinitperiod},
+           given={Colin},
+           giveni={C\bibinitperiod}}}%
+        {{hash=ea708bc039584363aa772b770ebbffbe}{%
+           family={Peardon},
+           familyi={P\bibinitperiod},
+           given={Mike\bibnamedelima J.},
+           giveni={M\bibinitperiod\bibinitdelim J\bibinitperiod}}}%
+      }
+      \strng{namehash}{a18f96413bd7b42596da9b1996de828a}
+      \strng{fullhash}{a18f96413bd7b42596da9b1996de828a}
+      \strng{bibnamehash}{a18f96413bd7b42596da9b1996de828a}
+      \strng{authorbibnamehash}{a18f96413bd7b42596da9b1996de828a}
+      \strng{authornamehash}{a18f96413bd7b42596da9b1996de828a}
+      \strng{authorfullhash}{a18f96413bd7b42596da9b1996de828a}
+      \field{sortinit}{3}
+      \field{sortinithash}{a37a8ef248a93c322189792c34fc68c9}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{eprintclass}{hep-lat}
+      \field{eprinttype}{arXiv}
+      \field{journaltitle}{Phys. Rev.}
+      \field{title}{{Analytic smearing of SU(3) link variables in lattice QCD}}
+      \field{volume}{D69}
+      \field{year}{2004}
+      \field{pages}{054501}
+      \range{pages}{1}
+      \verb{doi}
+      \verb 10.1103/PhysRevD.69.054501
+      \endverb
+      \verb{eprint}
+      \verb hep-lat/0311018
+      \endverb
+    \endentry
+  \enddatalist
+\endrefsection
+\endinput
+

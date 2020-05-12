@@ -38,16 +38,17 @@ def regularize(x):
   return tf.math.floormod(x+math.pi, 2*math.pi)-math.pi
 
 class OneD(tl.Layer):
-  def __init__(self, transform, beta = 5, size = 64, name='OneD', **kwargs):
+  def __init__(self, transform, beta = 5.0, beta0 = 1.0, size = 64, name='OneD', **kwargs):
     super(OneD, self).__init__(autocast=False, name=name, **kwargs)
     self.targetBeta = tf.constant(beta, dtype=tf.float64)
     self.beta = tf.Variable(beta, dtype=tf.float64, trainable=False)
+    self.beta0 = beta0
     self.size = size
     self.transform = transform
   def call(self, x):
     return self.action(x)
   def changePerEpoch(self, epoch, conf):
-    self.beta.assign((epoch+1.0)/conf.nepoch*(self.targetBeta-1.0)+1.0)
+    self.beta.assign((epoch+1.0)/conf.nepoch*(self.targetBeta-self.beta0)+self.beta0)
   def initState(self, nbatch):
     return tf.Variable(2.0*math.pi*tf.random.uniform((nbatch, self.size), dtype=tf.float64)-math.pi)
   def plaqPhase(self, x):

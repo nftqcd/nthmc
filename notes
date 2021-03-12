@@ -156,3 +156,167 @@ When d/dt π ≈ 0, π stays a constant, while y changes according to
 which makes
 	d/dt x = J(y) d/dt y = J(y) π
 move through phase space more efficiently.
+
+
+
+GENERAL SMEARING
+
+For MD, we have
+
+	U' <- U Exp[dt * ProjectTAH(M)]
+
+where U is covariant and M (being sum of loops) is invariant under gauge transformation.
+
+The most generic form would be
+
+	U(x,mu)' <- ProjectSU Sum_L a_L OrderedProduct[L(x,mu)]
+
+where L(x,mu) is any line connecting gauge links from x to x+mu, a_L is a scalar coefficient.
+L(x,mu) may or may not need to go through U(x,mu).
+It may also have loops in it, and results in a polynomial of such loop after sum.
+
+The ProjectSU has to satisfy the constraint that
+
+	X ProjectSU(M) Y = ProjectSU(X M Y)
+
+for any X and Y in the group.
+I'm not sure how to construct such ProjectSU.
+
+I can, however, rewrite the equation to be similar to the MD update,
+
+	U(x,mu)' <- ProjectSU Sum_L a_L U(x,mu) U(x,mu)^dag OrdProd[L(x,mu)]
+
+such that
+
+	U(x,mu)^dag OrdProd[L(x,mu)]
+
+becomes a complete loop, which is gauge invariant.
+We then have it in a simplified form,
+
+	U' <- ProjectSU Sum_R a_R U R
+
+where R is any loop that start and stop at x+mu.
+
+We may write it in terms of
+
+	U' <- ProjectSU Sum_LR a_LR L U R
+
+such that L is any loop that start and stop at x, but since we can always pull the U to the left by multiplying U U^dag, the most generic form is simply,
+
+	U' <- ProjectSU[ U (Sum_R a_R R) ]
+
+where R is any loop that start and stop at x+mu, and may or may not go through U.
+
+I can multiply U U^dag again, so it becomes
+
+	U' <- U { U^dag ProjectSU[ U (Sum_R a_R R) ] }
+
+If we had a ProjectSU that satisfies
+
+	X ProjectSU(M) Y = ProjectSU(X M Y)
+
+the above update would become
+
+	U' <- U ProjectSU[ Sum_R a_R R ]
+
+though we need ProjectSU satisfy a different constraint,
+
+	X ProjectSU(M) X^dag = ProjectSU(X M X^dag)
+
+If I were allowed to do the above change of constraint to ProjectSU, it seems I could just use the projection in MD update,
+
+	U' <- U Exp[ ProjectTAH( Sum_R a_R R ) ]
+
+Question: did we lose any generality in the above derivation?
+
+It looks like we are only one step away from
+
+	U' <- U Exp{ [d/dU] F( ReTr A, ReTr B, ReTr C, ... ) }
+
+where F is any analytical function or neural network, and A,B,C,... are any closed
+loops may or may not passing U.
+
+we can simplify it by moving the U independent loops out and keeping
+the U dependent loops simple.
+
+	U' <- U Exp{ c atan[F(ReTr X, ReTr Y, ...)] [d/dU] ReTr[W] }
+
+so that F(ReTr X, ReTr Y, ...) only depends on U independent loops,
+while W contains U dependent loops, c*atan(F) is for restricting
+the Jacobian to be positive definite, and W is a sum of any loop
+and its symmetrized versions including U.
+
+
+Optimize Wilson line computations
+
+Giving path [±d,...] for d ∈ [1,...], we want to optimize the ordered
+product computation.
+
+Example:
+
+plaquette: 1 2 -1 -2
+L[1,2] ← U[1] U[2](+x1)
+L[2,1] ← U[2] U[1](+x2)
+L[1,2,-1,-2] ← L[1,2] L[2,1]⁺
+3 mul, 2 sft, 2 xfer
+
+rectangle: 1 2 2 -1 -2 -2
+L[2,2] ← U[2] U[2](+x2)
+L[1,2,2] ← U[1] L[2,2](+x1)
+L[2,2,1] ← L[2,2] U[1](+2x2)
+L[1,2,2,-1,-2,-2] ← L[1,2,2] L[2,2,1]⁺
+4 mul, 3 sft, 4 xfer
+
+Combined: [1 2 -1 -2] [1 2 2 -1 -2 -2]
+L[1,2] ← U[1] U[2](+x1)
+L[2,1] ← U[2] U[1](+x2)
+L[1,2,-1,-2] ← L[1,2] L[2,1]⁺
+L[1,2,2] ← L[1,2] U[2](+x1+x2)
+L[2,2,1] ← U[2] L[2,1](+x2)
+L[1,2,2,-1,-2,-2] ← L[1,2,2] L[2,2,1]⁺
+6 mul, 4 sft, 5 xfer < separated 7 mul 5 sft 6 xfer
+
+We are looking for the optimal split,
+path = p0 p1 p2 ... pj pk pl ... pz
+	← [p0 p1 p2 ... pj] * [pk pl ... pz]
+
+Difficult to recurse down from top, because the optimal split
+depends on the optimal split of other paths.
+So we start looking from short segments.
+
+0. Find the pair that repeats maximal times in all the paths.
+1. Find the next pair that repeats maximal times,
+	after fixing those maximal repeating pairs.
+2. Find all the pairs with their repeating counts.
+3. Looking at pairs of elements that consist of the pairs found
+	previously and the left out singletons.
+
+We perform the above iteratively, the type of the path:
+	path: (dim, adjoint?) | ((path, ...), adjoint?)
+	dim: 0 | 1 | ...
+	adjoint?: t | f
+
+The choice of whether to save path segment or its adjoint
+depends on how many shifts and transfers we need.
+
+For a tree of operation for path X
+
+X ← L R
+	L ← LL LR
+		LL ← LLL LLR
+		LR ← LRL LRR
+	R ← RL RR
+		RL ← RLL RLR
+		RR ← RRL RRR
+
+if change R to RR RL adj,
+	R's location change from RL to RR,
+	X's shifts change because of R's location, so do others depending on R
+
+
+--------
+
+os rc -c 'path=($home/py-ML/bin $path) python -i'
+import importlib as il
+il.reload(field)
+op = field.OrderedPaths(2, ((1,2,-1,-2),(1, 1, 2, 2, -1, -1, -2, -2)))

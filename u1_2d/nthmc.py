@@ -37,7 +37,7 @@ class Conf:
 def refreshP(shape):
     return tf.random.normal(shape, dtype=tf.float64)
 def kineticEnergy(p):
-    return 0.5*tf.reduce_sum(tf.reshape(p, [p.shape[0], -1])**2, axis=1)
+    return 0.5*tf.reduce_sum(p**2, axis=range(1,len(p.shape)))
 def project(x):
     return tf.math.floormod(x+math.pi, 2*math.pi)-math.pi
 
@@ -62,7 +62,7 @@ class U1d2(tl.Layer):
     def plaqPhaseNoTrans(self, x):
         return x[:,0,:,:] + tf.roll(x[:,1,:,:], shift=-1, axis=1) - tf.roll(x[:,0,:,:], shift=-1, axis=2) - x[:,1,:,:]
     def topoChargeFromPhase(self, p):
-        return tf.math.floordiv(0.1 + tf.reduce_sum(project(p), axis=1), 2*math.pi)
+        return tf.math.floordiv(0.1 + tf.reduce_sum(project(p), axis=range(1,len(p.shape))), 2*math.pi)
     def topoCharge(self, x):
         return self.topoChargeFromPhase(self.plaqPhase(x))
     def topoChargeFourierFromPhase(self, p, n):
@@ -74,11 +74,11 @@ class U1d2(tl.Layer):
                 t -= dt
             else:
                 t += dt
-        return tf.reduce_sum(t, axis=[1,2])/math.pi
+        return tf.reduce_sum(t, axis=range(1,len(t.shape)))/math.pi
     def topoChargeFourier(self, x, n):
         return self.topoChargeFourierFromPhase(self.plaqPhase(x), n)
     def plaquette(self, x):
-        return tf.reduce_mean(tf.cos(self.plaqPhase(x)), axis=[1,2])
+        return tf.reduce_mean(tf.cos(self.plaqPhase(x)), range(1,len(x.shape)-1))
     def action(self, x):
         y, l = self.transform(x)
         a = self.beta*tf.reduce_sum(1.0-tf.cos(self.plaqPhaseNoTrans(y)), axis=range(1,len(x.shape)-1))
@@ -420,7 +420,7 @@ def setup(conf):
     os.environ["KMP_AFFINITY"]= "granularity=fine,verbose,compact,1,0"
 
 if __name__ == '__main__':
-    conf = Conf(nbatch=4, nepoch=2, nstepEpoch=16, initDt=0.1)
+    conf = Conf(nbatch=16, nepoch=16, nstepEpoch=32, initDt=0.1)
     #conf = Conf(nbatch=4, nepoch=2, nstepEpoch=2048, initDt=0.1)
     #conf = Conf()
     setup(conf)

@@ -317,7 +317,7 @@ def infer(conf, mcmc, loss, weights, x0, detail=True):
     x, _ = loss.action.transform.inv(x0)
     for epoch in range(conf.nepoch):
         mcmc.changePerEpoch(epoch, conf)
-        tf.print('weightsAll:', mcmc.get_weights())
+        tf.print('weightsAll:', mcmc.get_weights(), summarize=-1)
         t0 = tf.timestamp()
         tf.print('-------- start epoch', epoch, '@', t0, '--------', summarize=-1)
         tf.print('beta:', loss.action.beta, summarize=-1)
@@ -404,7 +404,7 @@ def train(conf, mcmc, loss, opt, x0, weights=None, requireInv=False):
 def run(conf, action, loss, opt, x0, weights=None, requireInv=False):
     mcmc = Metropolis(conf, LeapFrog(conf, action))
     x = train(conf, mcmc, loss, opt, x0, weights=weights, requireInv=requireInv)
-    tf.print('finalWeightsAll:', mcmc.get_weights())
+    tf.print('finalWeightsAll:', mcmc.get_weights(), summarize=-1)
     return x
 
 def setup(conf):

@@ -1,6 +1,8 @@
 import sys
 sys.path.append("../lib")
 import field as f
+import group as g
+import tensorflow as tf
 import unittest as ut
 
 class TestOrderedPaths(ut.TestCase):
@@ -21,28 +23,24 @@ class TestOrderedPaths(ut.TestCase):
         with self.assertRaises(TypeError):
             s.split(2)
     """
-    def test_adjoint(self):
-        p = f.OrderedPaths(2, ())
-        self.assertEqual(p.adjoint(1), -1)
-        self.assertEqual(p.adjoint(-2), 2)
-        self.assertEqual(p.adjoint([]), [])
-        self.assertEqual(p.adjoint((1, True)), (1, False))
-        self.assertEqual(p.adjoint((1, False)), (1, True))
-        self.assertEqual(p.adjoint((-1, True)), (-1, False))
-        self.assertEqual(p.adjoint((-1, False)), (-1, True))
-        self.assertEqual(p.adjoint(((1, 2), False)), ((1, 2), True))
-        self.assertEqual(p.adjoint((((1, 2), False), ((-2,-1), True))), (((-2,-1), False), ((1, 2), True)))
-        self.assertEqual(p.adjoint([((-2,-1), True), ((1, 2), False)]), [((1, 2), True), ((-2,-1), False)])
-    def test_flatpath(self):
-        p = f.OrderedPaths(2, ())
-        self.assertEqual(p.flatpath((-2,1)), (-2,1))
-        self.assertEqual(p.flatpath((-2,((1,-2), False))), (-2,1,-2))
-        self.assertEqual(p.flatpath((-2,((1,-2), True))), (-2,2,-1))
-        self.assertEqual(p.flatpath((-2,((1,((1,2), False)), True))), (-2,-2,-1,-1))
-        self.assertEqual(p.flatpath((-2,1),True), (-1,2))
-        self.assertEqual(p.flatpath((-2,((1,-2), False)),True), (2,-1,2))
-        self.assertEqual(p.flatpath((-2,((1,-2), True)),True), (1,-2,2))
-        self.assertEqual(p.flatpath((-2,((1,((1,2), False)), True)),True), (1,1,2,2))
+    def setUp(self):
+        self.x = tf.reshape(tf.linspace(0, 1, 3*2*4*4), [3,2,4,4])
+        p = f.OrdPaths(
+            f.topath(((1,2,-1,-2), (1,-2,-1,2),
+                (1,1,2,-1,-1,-2), (1,1,-2,-1,-1,2),
+                (1,2,-1,-1,-2,1), (1,-2,-1,-1,2,1))))
+        self.o = f.OrdProduct(p, self.x, g.U1Phase)
+        self.tol = 1E-14
+
+    def test_path12_1_2(self):
+        a = self.o.prod((1,2,-1,-2))
+        b = self.x[:,0,:,:] + tf.roll(self.x[:,1,:,:], shift=-1, axis=1) - tf.roll(self.x[:,0,:,:], shift=-1, axis=2) - self.x[:,1,:,:]
+        self.assertGreater(self.tol, tf.reduce_mean(tf.math.squared_difference(a, b)))
+
+    def test_path1_2_12(self):
+        a = self.o.prod((1,-2,-1,2))
+        b = self.x[:,0,:,:] - tf.roll(self.x[:,1,:,:], shift=[-1,1], axis=[1,2]) - tf.roll(self.x[:,0,:,:], shift=1, axis=2) + tf.roll(self.x[:,1,:,:], shift=1, axis=2)
+        self.assertGreater(self.tol, tf.reduce_mean(tf.math.squared_difference(a, b)))
 
 if __name__ == '__main__':
     ut.main()

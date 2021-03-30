@@ -318,7 +318,11 @@ class OrdProduct:
         return [self.prod(p.flatten()) for p in self.ordPaths.paths]
     def prod(self, pathRaw):
         path, isadjoint = self.ordPaths.optimal(pathRaw)
-        return self.prod_helper(path, isadjoint)
+        z = self.prod_helper(path, isadjoint)
+        p = path.position().x
+        if any([x != 0 for x in p]):
+            z = tf.roll(z, shift=[0]+[-i for i in p], axis=tuple(range(len(p)+1)))
+        return z
     def prod_helper(self, path, isadjoint = False):
         if path in self.segments:
             z = self.segments[path]
@@ -338,7 +342,7 @@ class OrdProduct:
             z = self.g.mul(self.prod_helper(l), tf.roll(self.prod_helper(r), shift=(0,)+s, axis=tuple(range(len(s)+1))))
             self.segments[path] = z
             if isadjoint:
-              z = self.g.adjoint(z)
+                z = self.g.adjoint(z)
         elif isinstance(path, OrdPathSeg):
             z = self.prod_helper(path.path, path.isadjoint != isadjoint)
         else:

@@ -34,13 +34,40 @@ class TestOrderedPaths(ut.TestCase):
 
     def test_path12_1_2(self):
         a = self.o.prod((1,2,-1,-2))
-        b = self.x[:,0,:,:] + tf.roll(self.x[:,1,:,:], shift=-1, axis=1) - tf.roll(self.x[:,0,:,:], shift=-1, axis=2) - self.x[:,1,:,:]
-        self.assertGreater(self.tol, tf.reduce_mean(tf.math.squared_difference(a, b)))
+        b = self.x[:,0] + tf.roll(self.x[:,1], shift=-1, axis=1) - tf.roll(self.x[:,0], shift=-1, axis=2) - self.x[:,1]
+        self.checkEqv(a, b)
 
     def test_path1_2_12(self):
         a = self.o.prod((1,-2,-1,2))
-        b = self.x[:,0,:,:] - tf.roll(self.x[:,1,:,:], shift=[-1,1], axis=[1,2]) - tf.roll(self.x[:,0,:,:], shift=1, axis=2) + tf.roll(self.x[:,1,:,:], shift=1, axis=2)
-        self.assertGreater(self.tol, tf.reduce_mean(tf.math.squared_difference(a, b)))
+        b = self.x[:,0] - tf.roll(self.x[:,1], shift=[-1,1], axis=[1,2]) - tf.roll(self.x[:,0], shift=1, axis=2) + tf.roll(self.x[:,1], shift=1, axis=2)
+        self.checkEqv(a, b)
+
+    def test_path112_1_1_2(self):
+        a = self.o.prod((1,1,2,-1,-1,-2))
+        b = self.x[:,0] + tf.roll(self.x[:,0], shift=-1, axis=1) + tf.roll(self.x[:,1], shift=-2, axis=1) - tf.roll(self.x[:,0], shift=[-1,-1], axis=[1,2]) - tf.roll(self.x[:,0], shift=-1, axis=2) - self.x[:,1]
+        self.checkEqv(a, b)
+
+    def test_path11_2_1_12(self):
+        a = self.o.prod((1,1,-2,-1,-1,2))
+        b = self.x[:,0] + tf.roll(self.x[:,0], shift=-1, axis=1) - tf.roll(self.x[:,1], shift=[-2,1], axis=[1,2]) - tf.roll(self.x[:,0], shift=[-1,1], axis=[1,2]) - tf.roll(self.x[:,0], shift=1, axis=2) + tf.roll(self.x[:,1], shift=1, axis=2)
+        self.checkEqv(a, b)
+
+    def test_path12_1_1_21(self):
+        a = self.o.prod((1,2,-1,-1,-2,1))
+        b = self.x[:,0] + tf.roll(self.x[:,1], shift=-1, axis=1) - tf.roll(self.x[:,0], shift=-1, axis=2) - tf.roll(self.x[:,0], shift=[1,-1], axis=[1,2]) - tf.roll(self.x[:,1], shift=1, axis=1) + tf.roll(self.x[:,0], shift=1, axis=1)
+        self.checkEqv(a, b)
+
+    def test_path1_2_1_121(self):
+        a = self.o.prod((1,-2,-1,-1,2,1))
+        b = self.x[:,0] - tf.roll(self.x[:,1], shift=[-1,1], axis=[1,2]) - tf.roll(self.x[:,0], shift=1, axis=2) - tf.roll(self.x[:,0], shift=[1,1], axis=[1,2]) + tf.roll(self.x[:,1], shift=[1,1], axis=[1,2]) + tf.roll(self.x[:,0], shift=1, axis=1)
+        self.checkEqv(a, b)
+
+    def checkEqv(self,a,b):
+        m = tf.reduce_mean(tf.math.squared_difference(a, b))
+        if self.tol <= m:
+            print(f'received {a}')
+            print(f'expected {b}')
+        self.assertGreater(self.tol, m)
 
 if __name__ == '__main__':
     ut.main()

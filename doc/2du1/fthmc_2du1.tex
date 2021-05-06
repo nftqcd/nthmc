@@ -1,0 +1,49 @@
+\input{pre.tex}
+\input{def.tex}
+
+\author{Xiao-Yong Jin for Lattice QCD ECP}
+\date{\today}
+\title{Field Transformation HMC}
+\hypersetup{
+ pdfauthor={Xiao-Yong Jin},
+ pdftitle={Field Transformation HMC},
+ pdfkeywords={Machine Learning, HMC, Ensemble, Lattice Gauge Theories},
+ pdfsubject={Summary notes},
+ pdflang={English}}
+
+\begin{document}
+\maketitle
+\tableofcontents
+
+\section*{Versions}
+\label{sec:versions}
+
+\begin{itemize}
+\item April 20, 2021, version 0\\
+Some text borrowed from the previous 1D XY model report.
+\end{itemize}
+
+\section{Introduction}
+\label{sec:intro}
+\input{intro.tex}
+
+\section{Generalized field transformation}
+\label{sec:gen-ft}
+\input{genft.tex}
+
+\section{Test with 2D U(1) model without explicit neural networks}
+\label{sec:test-wo-nn}
+\input{test-wo-nn.tex}
+
+\section{Discussions and plans}
+\label{sec:discuss-plans}
+\input{discuss-plans.tex}
+
+\ifdefined\directlua
+  \printbibliography
+\else
+  \bibliographystyle{JHEP}
+  \bibliography{ref}
+\fi
+
+\end{document}

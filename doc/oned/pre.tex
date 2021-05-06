@@ -1,0 +1,31 @@
+\ifdefined\directlua
+  \directlua{pdf.setminorversion(7)}    %% In case some pdf figures have higher versions.
+\fi
+\documentclass[letterpaper,10pt]{article}
+
+\ifdefined\directlua
+  \usepackage[style=numeric-comp,sorting=none,backref=true]{biblatex}
+  \addbibresource{ref.bib}
+\fi
+
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{amssymb}
+%\usepackage{listings}
+
+\ifdefined\directlua
+  % Unicode fonts setup for lualatex/xelatex only
+  \usepackage{unicode-math}
+  \defaultfontfeatures{Scale=.92}
+  \setmainfont{Lucida Bright OT}
+  \setsansfont{Lucida Sans OT}
+  \setmonofont{Lucida Sans Typewriter OT}
+  \setmathfont{Lucida Bright Math OT}
+  \setmathfont[version=bold]{Lucida Bright Math OT Demibold}
+  \linespread{1.05}
+\fi
+
+\frenchspacing
+
+\usepackage{microtype}
+\usepackage{hyperref}

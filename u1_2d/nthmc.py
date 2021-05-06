@@ -1,7 +1,6 @@
 import tensorflow as tf
 import tensorflow.keras as tk
 import tensorflow.keras.layers as tl
-import numpy as np
 import math, os
 import sys
 sys.path.append("../lib")
@@ -109,6 +108,26 @@ class Scalar(tl.Layer):
     def call(self, _):
         return self.xs
 
+class PeriodicConv(tl.Layer):
+    def __init__(self, layers, name='PeriodicConv', **kwargs):
+        """
+        Periodic pad the input to its tail side and call layers on it,
+        assuming 2D x y dimensions are the fastest moving axis.
+        Conv2D layers are assumed to be channels_last.
+        Channels_first causes error: Conv2DCustomBackpropInputOp only supports NHWC.
+        """
+        super(PeriodicConv, self).__init__(autocast=False, name=name, **kwargs)
+        self.layers = layers
+    def call(self, x):
+        n0 = sum([l.kernel_size[0]-1 for l in self.layers])
+        n1 = sum([l.kernel_size[1]-1 for l in self.layers])
+        # U(1) specific
+        y = tf.concat((x, x[...,:n0,:,:]), axis=-3)
+        y = tf.concat((y, y[...,:n1,:]), axis=-2)
+        for l in self.layers:
+            y = l(y)
+        return y
+
 class TransformChain(tl.Layer):
     def __init__(self, transforms, name='TransformChain', **kwargs):
         super(TransformChain, self).__init__(autocast=False, name=name, **kwargs)
@@ -135,7 +154,7 @@ class TransformChain(tl.Layer):
             self.chain[i].showTransform(**kwargs)
 
 class GenericStoutSmear(tl.Layer):
-    def __init__(self, ordpaths, alphalayer, alphamap, first=(0,0), repeat=(2,2), gauge=group.U1Phase, invAbsR2=1E-30, name='GenericStoutSmear', **kwargs):
+    def __init__(self, ordpaths, alphalayer, alphamap, alphamasks=(), first=(0,0), repeat=(2,2), gauge=group.U1Phase, invAbsR2=1E-30, name='GenericStoutSmear', **kwargs):
         """
         ordpaths: OrdPaths(), derivatives are wrt the first link in each path
         first: the link to update as (x, y)
@@ -143,50 +162,78 @@ class GenericStoutSmear(tl.Layer):
         TODO: check for repetitions in each path to determine the coefficient bound for beta().
         Specify the loop with directions {+/-1, +/-2}, forward/backward following the link
         on the first or second dimension.
-        Uses the specified loop and its mirror image about the first link.
+        Uses the specified loop (TODO: and its mirror image about the first link).
         It updates the first link using the derivative of the sum of the pair of loops
-        with respect to the first link, with one coefficient for all links.
+        with respect to the first link, with coefficients determined by alphalayer and alphamap.
+        Each element in alphamasks relative to first corresponds to the ordered path passed to alphalayer.
         """
         super(GenericStoutSmear, self).__init__(autocast=False, name=name, **kwargs)
         self.alphaLayer = alphalayer
         self.alphamap = alphamap
+        self.alphamasks = alphamasks
+        self.op = ordpaths
+        self.difflooplen = sum(alphamap)
         self.first = first
         self.repeat = repeat
         self.gauge = gauge
-        self.op = ordpaths
         self.dir = abs(ordpaths.paths[0].flatten()[0])-1
         self.invAbsR2 = invAbsR2
+        if self.difflooplen+len(self.alphamasks) != len(self.op.paths):
+            raise ValueError('Layer arguments alphamap and alphamasks does not match ordpaths.')
     def build(self, shape):
-        m = np.zeros(self.repeat)
-        m[self.first] = 1.0
-        r = [shape[2+i]//self.repeat[i] for i in range(len(self.repeat))]
-        self.mask = tf.tile(tf.constant(m, dtype=tf.float64), r)
-        self.zerofield = tf.zeros((shape[0],) + shape[2:], tf.float64)
+        m = tf.scatter_nd((self.first,), tf.constant((1.,), dtype=tf.float64), self.repeat)
+        r = [shape[2+i]//rep for i,rep in enumerate(self.repeat)]
+        self.mask = tf.tile(m, r)
+        self.unmask = [
+            1.0 - tf.tile(
+                tf.roll(
+                    tf.scatter_nd(
+                        cm, tf.constant((1.,)*len(cm), dtype=tf.float64), self.repeat
+                        ), self.first, range(len(self.first))
+                    ), r)
+            for cm in self.alphamasks]
+        self.dataShape = shape
+        self.updateIndex = tf.constant([[i,self.dir] for i in range(shape[0])])
         super(GenericStoutSmear, self).build(shape)
     def call(self, x):
         ps = field.OrdProduct(self.op, x, self.gauge).prodList()
-        bs = self.beta(x)  # FIXME for alphalayer, pass in gathered ps instead
+        bs = self.beta(ps)
         d = 0.0
         f = 0.0
-        for i in range(len(ps)):
-            f += self.delta(bs[i],ps[i])
-            d -= bs[i]*self.mask*self.gauge.trace(ps[i])  # diff@diff@trace is -trace in U(1)
+        b = 0
+        for k,a in enumerate(self.alphamap):
+            fa = 0.0
+            da = 0.0
+            for i in range(b, b+a):
+                fa += self.gauge.diffTrace(ps[i])
+                da -= self.gauge.trace(ps[i])  # diff@diff@trace is -trace in U(1) if link appears once
+            b = a
+            f += bs[...,k]*self.mask*fa
+            d += bs[...,k]*self.mask*da
         f = self.expanddir(f)
         return (self.gauge.compatProj(x+f), tf.math.reduce_sum(tf.math.log1p(d), range(1,len(d.shape))))
-    def beta(self,x):
+    def beta(self,ps):
         "Leading dimension, or the length of self.alphamap, matches the ordered paths."
-        # 2*atan(a)/pi makes it in (-1/nloop,1/nloop)
-        return tf.gather(2.0/len(self.alphamap)/math.pi*tf.math.atan(self.alphaLayer(x)), self.alphamap)
-    def delta(self,beta,prod):
-        return beta*self.mask*self.gauge.diffTrace(prod)
+        # 2*atan(a)/pi/nloop makes it in (-1/nloop,1/nloop)
+        if len(ps)>self.difflooplen:
+            y = tf.stack([m*self.gauge.trace(p) for m,p in zip(self.unmask,ps[self.difflooplen:])], axis=-1)
+        else:
+            y = []
+        return 2.0/self.difflooplen/math.pi*tf.math.atan(self.alphaLayer(y))
     def inv(self, y):
         x = y
         for i in range(1024):
             ps = field.OrdProduct(self.op, x, self.gauge).prodList()
-            bs = self.beta(x)  # FIXME for alphalayer, pass in gathered ps instead
+            bs = self.beta(ps)
             f = 0.0
-            for i in range(len(ps)):
-                f += self.delta(bs[i]/self.multiples[i],ps[i])
+            b = 0
+            for k,a in enumerate(self.alphamap):
+                fa = 0.0
+                for i in range(b, b+a):
+                    fa += self.gauge.diffTrace(ps[i])
+                b = a
+                f += bs[...,k]*self.mask*fa
+            f = self.expanddir(f)
             if self.invAbsR2 > tf.math.reduce_mean(tf.math.squared_difference(f, y-x)):
                 x = self.gauge.compatProj(y-f)
                 _, l = self(x)
@@ -194,9 +241,7 @@ class GenericStoutSmear(tl.Layer):
             x = y-f
         raise ValueError(f'Failed to converge in inverting from {y}, current {x} with delta {f}.')
     def expanddir(self, x):
-        ts = [self.zerofield]*(len(self.zerofield.shape)-1)  # TODO: SU(N) would be different
-        ts[self.dir] = x
-        return tf.stack(ts, 1)
+        return tf.scatter_nd(self.updateIndex, x, self.dataShape)
     def showTransform(self, **kwargs):
         tf.print(self.name, 'α:', self.alphaLayer.trainable_weights, 'T:', self.first, ':', self.repeat, **kwargs)
 
@@ -329,16 +374,10 @@ def infer(conf, mcmc, loss, weights, x0, detail=True):
             'in', dt, 'sec,', dt/conf.nstepEpoch, 'sec/step --------', summarize=-1)
     return x
 
-def runInfer(conf, action, loss, weights, x0, detail=True):
-    mcmc = Metropolis(conf, LeapFrog(conf, action))
-    x = infer(conf, mcmc, loss, weights, x0, detail=detail)
-    return x
-
-def showTransform(conf, action, loss, weights, **kwargs):
-    mcmc = Metropolis(conf, LeapFrog(conf, action))
-    x0 = action.initState(conf.nbatch)
+def showTransform(conf, mcmc, loss, weights, **kwargs):
+    x0 = mcmc.generator.action.initState(conf.nbatch)
     initRun(mcmc, loss, x0, weights)
-    action.showTransform(**kwargs)
+    mcmc.generator.action.showTransform(**kwargs)
 
 @tf.function
 def trainStep(mcmc, loss, opt, x0):
@@ -401,8 +440,7 @@ def train(conf, mcmc, loss, opt, x0, weights=None, requireInv=False):
             'in', dt, 'sec,', dt/conf.nstepEpoch, 'sec/step --------', summarize=-1)
     return x
 
-def run(conf, action, loss, opt, x0, weights=None, requireInv=False):
-    mcmc = Metropolis(conf, LeapFrog(conf, action))
+def run(conf, mcmc, loss, opt, x0, weights=None, requireInv=False):
     x = train(conf, mcmc, loss, opt, x0, weights=weights, requireInv=requireInv)
     tf.print('finalWeightsAll:', mcmc.get_weights(), summarize=-1)
     return x
@@ -426,29 +464,54 @@ if __name__ == '__main__':
     setup(conf)
     #action = U1d2(TransformChain([Ident()]))
     op0 = field.OrdPaths(
-        field.topath(((1,2,-1,-2), (1,-2,-1,2),
-            (1,1,2,-1,-1,-2), (1,1,-2,-1,-1,2),
-            (1,2,-1,-1,-2,1), (1,-2,-1,-1,2,1))))
+        field.topath(((1,2,-1,-2), (1,-2,-1,2),  # for derivative
+            (1,1,2,-1,-1,-2), (1,1,-2,-1,-1,2),  # for derivative
+            (1,2,-1,-1,-2,1), (1,-2,-1,-1,2,1),  # for derivative
+            (-1,-2,1,2))))  # for alphalayer
     # requires different coefficient bounds:
     # (1,2,-1,-2,1,-2,-1,2)
     # (1,2,-1,-2,1,2,-1,-2)
     # (1,-2,-1,2,1,-2,-1,2)
     op1 = field.OrdPaths(
-        field.topath(((2,-1,-2,1), (2,1,-2,-1),
-            (2,2,-1,-2,-2,1), (2,2,1,-2,-2,-1),
-            (2,-1,-2,-2,1,2), (2,1,-2,-2,-1,2))))
-    pathmap=(0,0,1,1,1,1)
+        field.topath(((2,-1,-2,1), (2,1,-2,-1),  # for derivative
+            (2,2,-1,-2,-2,1), (2,2,1,-2,-2,-1),  # for derivative
+            (2,-1,-2,-2,1,2), (2,1,-2,-2,-1,2),  # for derivative
+            (-1,-2,1,2))))  # for alphalayer
+    pathmap=(2,4)
+    #action = U1d2(TransformChain([
+    #    GenericStoutSmear(ordpaths=op0, alphalayer=Scalar(2), alphamap=pathmap, first=(0,0), repeat=(2,2)),
+    #    GenericStoutSmear(ordpaths=op0, alphalayer=Scalar(2), alphamap=pathmap, first=(0,1), repeat=(2,2)),
+    #    GenericStoutSmear(ordpaths=op0, alphalayer=Scalar(2), alphamap=pathmap, first=(1,0), repeat=(2,2)),
+    #    GenericStoutSmear(ordpaths=op0, alphalayer=Scalar(2), alphamap=pathmap, first=(1,1), repeat=(2,2)),
+    #    GenericStoutSmear(ordpaths=op1, alphalayer=Scalar(2), alphamap=pathmap, first=(0,0), repeat=(2,2)),
+    #    GenericStoutSmear(ordpaths=op1, alphalayer=Scalar(2), alphamap=pathmap, first=(1,0), repeat=(2,2)),
+    #    GenericStoutSmear(ordpaths=op1, alphalayer=Scalar(2), alphamap=pathmap, first=(0,1), repeat=(2,2)),
+    #    GenericStoutSmear(ordpaths=op1, alphalayer=Scalar(2), alphamap=pathmap, first=(1,1), repeat=(2,2)),
+    #    ]))
+    def conv0():
+        return PeriodicConv((
+            tk.layers.Conv2D(4, (3,2), activation='gelu', kernel_initializer=tk.initializers.Constant(0.0001), bias_initializer=tk.initializers.Constant(0.0001)),
+            tk.layers.Conv2D(2, 1, activation='gelu', kernel_initializer=tk.initializers.Constant(0.0001), bias_initializer=tk.initializers.Constant(0.0001)),
+            ))
+    def conv1():
+        return PeriodicConv((
+            tk.layers.Conv2D(4, (2,3), activation='gelu', kernel_initializer=tk.initializers.Constant(0.0001), bias_initializer=tk.initializers.Constant(0.0001)),
+            tk.layers.Conv2D(2, 1, activation='gelu', kernel_initializer=tk.initializers.Constant(0.0001), bias_initializer=tk.initializers.Constant(0.0001)),
+            ))
+    am0 = ([(1,0),(1,1)],)
+    am1 = ([(0,1),(1,1)],)
     action = U1d2(TransformChain([
-        GenericStoutSmear(ordpaths=op0, alphalayer=Scalar(2), alphamap=pathmap, first=(0,0), repeat=(2,2)),
-        GenericStoutSmear(ordpaths=op0, alphalayer=Scalar(2), alphamap=pathmap, first=(0,1), repeat=(2,2)),
-        GenericStoutSmear(ordpaths=op0, alphalayer=Scalar(2), alphamap=pathmap, first=(1,0), repeat=(2,2)),
-        GenericStoutSmear(ordpaths=op0, alphalayer=Scalar(2), alphamap=pathmap, first=(1,1), repeat=(2,2)),
-        GenericStoutSmear(ordpaths=op1, alphalayer=Scalar(2), alphamap=pathmap, first=(0,0), repeat=(2,2)),
-        GenericStoutSmear(ordpaths=op1, alphalayer=Scalar(2), alphamap=pathmap, first=(1,0), repeat=(2,2)),
-        GenericStoutSmear(ordpaths=op1, alphalayer=Scalar(2), alphamap=pathmap, first=(0,1), repeat=(2,2)),
-        GenericStoutSmear(ordpaths=op1, alphalayer=Scalar(2), alphamap=pathmap, first=(1,1), repeat=(2,2)),
+        GenericStoutSmear(ordpaths=op0, alphalayer=conv0(), alphamasks=am0, alphamap=pathmap, first=(0,0), repeat=(2,2)),
+        GenericStoutSmear(ordpaths=op0, alphalayer=conv0(), alphamasks=am0, alphamap=pathmap, first=(0,1), repeat=(2,2)),
+        GenericStoutSmear(ordpaths=op0, alphalayer=conv0(), alphamasks=am0, alphamap=pathmap, first=(1,0), repeat=(2,2)),
+        GenericStoutSmear(ordpaths=op0, alphalayer=conv0(), alphamasks=am0, alphamap=pathmap, first=(1,1), repeat=(2,2)),
+        GenericStoutSmear(ordpaths=op1, alphalayer=conv1(), alphamasks=am0, alphamap=pathmap, first=(0,0), repeat=(2,2)),
+        GenericStoutSmear(ordpaths=op1, alphalayer=conv1(), alphamasks=am0, alphamap=pathmap, first=(1,0), repeat=(2,2)),
+        GenericStoutSmear(ordpaths=op1, alphalayer=conv1(), alphamasks=am0, alphamap=pathmap, first=(0,1), repeat=(2,2)),
+        GenericStoutSmear(ordpaths=op1, alphalayer=conv1(), alphamasks=am0, alphamap=pathmap, first=(1,1), repeat=(2,2)),
         ]))
-    loss = LossFun(action, cCosDiff=1.0, cTopoDiff=1.0, dHmin=0.5, topoFourierN=9)
+    loss = LossFun(action, cCosDiff=0.01, cTopoDiff=1.0, dHmin=0.5, topoFourierN=1)
     opt = tk.optimizers.Adam(learning_rate=0.001)
     x0 = action.initState(conf.nbatch)
-    run(conf, action, loss, opt, x0)
+    mcmc = Metropolis(conf, LeapFrog(conf, action))
+    run(conf, mcmc, loss, opt, x0)

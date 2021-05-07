@@ -111,7 +111,6 @@ class TestGenericStoutSmear(unittest.TestCase):
                     self.assertLess(tf.reduce_mean(tf.math.squared_difference(ld, sld)), 1E-26)
 
     def test_symmetry_reverseX(self):
-        act = nthmc.U1d2(nthmc.Ident(), size=self.testShape[2:])
         for i,s in enumerate(self.ss):
             with self.subTest(i=i):
                 y, ld = s(self.testField)
@@ -127,7 +126,6 @@ class TestGenericStoutSmear(unittest.TestCase):
                     self.assertLess(tf.reduce_mean(tf.math.squared_difference(ld, sld)), 1E-26)
 
     def test_symmetry_reverseY(self):
-        act = nthmc.U1d2(nthmc.Ident(), size=self.testShape[2:])
         for i,s in enumerate(self.ss):
             with self.subTest(i=i):
                 y, ld = s(self.testField)

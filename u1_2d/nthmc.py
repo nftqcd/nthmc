@@ -505,10 +505,10 @@ if __name__ == '__main__':
         GenericStoutSmear(ordpaths=op0, alphalayer=conv0(), alphamasks=am0, alphamap=pathmap, first=(0,1), repeat=(2,2)),
         GenericStoutSmear(ordpaths=op0, alphalayer=conv0(), alphamasks=am0, alphamap=pathmap, first=(1,0), repeat=(2,2)),
         GenericStoutSmear(ordpaths=op0, alphalayer=conv0(), alphamasks=am0, alphamap=pathmap, first=(1,1), repeat=(2,2)),
-        GenericStoutSmear(ordpaths=op1, alphalayer=conv1(), alphamasks=am0, alphamap=pathmap, first=(0,0), repeat=(2,2)),
-        GenericStoutSmear(ordpaths=op1, alphalayer=conv1(), alphamasks=am0, alphamap=pathmap, first=(1,0), repeat=(2,2)),
-        GenericStoutSmear(ordpaths=op1, alphalayer=conv1(), alphamasks=am0, alphamap=pathmap, first=(0,1), repeat=(2,2)),
-        GenericStoutSmear(ordpaths=op1, alphalayer=conv1(), alphamasks=am0, alphamap=pathmap, first=(1,1), repeat=(2,2)),
+        GenericStoutSmear(ordpaths=op1, alphalayer=conv1(), alphamasks=am1, alphamap=pathmap, first=(0,0), repeat=(2,2)),
+        GenericStoutSmear(ordpaths=op1, alphalayer=conv1(), alphamasks=am1, alphamap=pathmap, first=(1,0), repeat=(2,2)),
+        GenericStoutSmear(ordpaths=op1, alphalayer=conv1(), alphamasks=am1, alphamap=pathmap, first=(0,1), repeat=(2,2)),
+        GenericStoutSmear(ordpaths=op1, alphalayer=conv1(), alphamasks=am1, alphamap=pathmap, first=(1,1), repeat=(2,2)),
         ]))
     loss = LossFun(action, cCosDiff=0.01, cTopoDiff=1.0, dHmin=0.5, topoFourierN=1)
     opt = tk.optimizers.Adam(learning_rate=0.001)

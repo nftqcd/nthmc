@@ -68,6 +68,26 @@ class Coord:
     def nd(self):
         return len(self.x)
 
+def coordAtPathWithDir(path, linkDir, dim=0):
+    """
+    Return a list of coordinates where the path from origin goes through the link in linkDir direction.
+    Both path and linkDir counts from 1.
+    """
+    theDir = abs(linkDir)
+    xs = []
+    x = Coord([0]*dim)
+    if len(path)>0:
+        if path[0]<0:
+            x += Coord([0]*(abs(path[0])-1) + [1])
+    for dir in path:
+        d = [0]*(abs(dir)-1) + [1 if dir>0 else -1]
+        if dir==theDir:
+            xs.append(x)
+        x += Coord(d)
+        if -dir==theDir:
+            xs.append(x)
+    return xs
+
 class OrdPathInt:
     def __init__(self, path):
         "path: ±int"

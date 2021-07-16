@@ -29,6 +29,8 @@ class U1Phase(Group):
         return tf.cos(x)
     def diffTrace(x):
         return -tf.sin(x)
+    def diff2Trace(x):
+        return -tf.cos(x)
     def compatProj(x):
         return tf.math.floormod(x+math.pi, 2*math.pi)-math.pi
     def newMom(shape):

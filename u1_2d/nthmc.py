@@ -341,6 +341,9 @@ def train(conf, mcmc, loss, optim, x0, weights=None, requireInv=False):
         tf.print('-------- start epoch', epoch, '@', t0, '--------', summarize=-1)
         tf.print('beta:', loss.action.beta, summarize=-1)
         for step in range(conf.nstepMixing):
+            tf.print('# inference step with forced acceptance:', step, summarize=-1)
+            x = inferStep(mcmc, loss, x, detail=False, forceAccept=True)
+        for step in range(conf.nstepMixing):
             tf.print('# inference step:', step, summarize=-1)
             x = inferStep(mcmc, loss, x, detail=False)
         dt = tf.timestamp()-t0

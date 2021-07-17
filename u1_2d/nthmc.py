@@ -17,6 +17,7 @@ class Conf:
                              trainDt = True,
                              stepPerTraj = 10,
                              checkReverse = False,
+                             refreshOpt = True,
                              nthr = 4,
                              nthrIop = 1,
                              seed = 9876543211):
@@ -28,6 +29,7 @@ class Conf:
         self.trainDt = trainDt
         self.stepPerTraj = stepPerTraj
         self.checkReverse = checkReverse
+        self.refreshOpt = refreshOpt
         self.nthr = nthr
         self.nthrIop = nthrIop
         self.seed = seed
@@ -321,7 +323,7 @@ def trainStep(mcmc, loss, opt, x0):
     tf.print('topo:', loss.action.topoCharge(x), summarize=-1)
     return x
 
-def train(conf, mcmc, loss, optim, x0, weights=None, requireInv=False):
+def train(conf, mcmc, loss, opt, x0, weights=None, requireInv=False):
     if weights is not None:
         initRun(mcmc, loss, x0, weights)
         if requireInv:
@@ -329,14 +331,12 @@ def train(conf, mcmc, loss, optim, x0, weights=None, requireInv=False):
     elif requireInv:
         raise ValueError('Inverse transform required without weights.')
     x = x0
-    opt = optim
+    optw = None
     for epoch in range(conf.nepoch):
         mcmc.changePerEpoch(epoch, conf)
-        if not isinstance(optim, tk.optimizers.Optimizer):
-            tf.print('# Initialize optimizer.')
-            opt = optim()
-        if not isinstance(opt, tk.optimizers.Optimizer):
-            raise ValueError(f'Requires a keras Optimizer, or a function returning one.  Received: {optim}')
+        if optw is not None:
+            #tf.print('setOptWeights:', optw)
+            opt.set_weights(optw)
         t0 = tf.timestamp()
         tf.print('-------- start epoch', epoch, '@', t0, '--------', summarize=-1)
         tf.print('beta:', loss.action.beta, summarize=-1)
@@ -353,16 +353,18 @@ def train(conf, mcmc, loss, optim, x0, weights=None, requireInv=False):
         for step in range(conf.nstepEpoch):
             tf.print('# training step:', step, summarize=-1)
             x = trainStep(mcmc, loss, opt, x)
+            if conf.refreshOpt and optw is None:
+                optw = opt.get_weights()
+                for i in range(len(optw)):
+                    optw[i] = tf.zeros_like(optw[i])
         dt = tf.timestamp()-t0
         tf.print('-------- end epoch', epoch,
             'in', dt, 'sec,', dt/conf.nstepEpoch, 'sec/step --------', summarize=-1)
-        tf.print('optimizerWeights:', opt.get_weights(), summarize=-1)
-    return x,opt
+    return x
 
 def run(conf, mcmc, loss, opt, x0, weights=None, requireInv=False):
-    x,o = train(conf, mcmc, loss, opt, x0, weights=weights, requireInv=requireInv)
+    x = train(conf, mcmc, loss, opt, x0, weights=weights, requireInv=requireInv)
     tf.print('finalWeightsAll:', mcmc.get_weights(), summarize=-1)
-    tf.print('finalOptimizerWeightsAll:', o.get_weights(), summarize=-1)
     return x
 
 def setup(conf):

@@ -310,7 +310,7 @@ def checkDep(tr, defaultShape = (16,16)):
         print(f'testPoint: {testPoint}')
         fail += 1
     else:
-        print(f'Dependent links forms {rect[0,1,0]} x {rect[1,1,1]} plaquettes.')
+        tf.print('Dependent links forms',rect[0,1,0],'x',rect[1,1,1],'plaquettes.')
     if fail>0:
         raise ValueError(f'Dependency check failed {fail} tests.')
 

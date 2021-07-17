@@ -43,7 +43,7 @@ transform = lambda: ftr.TransformChain([
 ftr.checkDep(transform())
 action = nthmc.U1d2(beta=7.0, beta0=2.0, size=(16,16), transform=transform())
 loss = nthmc.LossFun(action, cCosDiff=0.0, cTopoDiff=1.0, cForce2=1.0, dHmin=0.5, topoFourierN=1)
-opt = lambda: tk.optimizers.Adam(learning_rate=0.001)
+opt = tk.optimizers.Adam(learning_rate=0.001)
 x0 = action.initState(conf.nbatch)
 mcmc = nthmc.Metropolis(conf, nthmc.LeapFrog(conf, action))
 nthmc.run(conf, mcmc, loss, opt, x0)

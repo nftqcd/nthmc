@@ -331,12 +331,12 @@ def train(conf, mcmc, loss, opt, x0, weights=None, requireInv=False):
     elif requireInv:
         raise ValueError('Inverse transform required without weights.')
     x = x0
-    optw = None
     for epoch in range(conf.nepoch):
         mcmc.changePerEpoch(epoch, conf)
-        if optw is not None:
-            #tf.print('setOptWeights:', optw)
-            opt.set_weights(optw)
+        if conf.refreshOpt and len(opt.variables())>0:
+            tf.print('# reset optimizer')
+            for var in opt.variables():
+                var.assign(tf.zeros_like(var))
         t0 = tf.timestamp()
         tf.print('-------- start epoch', epoch, '@', t0, '--------', summarize=-1)
         tf.print('beta:', loss.action.beta, summarize=-1)
@@ -353,10 +353,7 @@ def train(conf, mcmc, loss, opt, x0, weights=None, requireInv=False):
         for step in range(conf.nstepEpoch):
             tf.print('# training step:', step, summarize=-1)
             x = trainStep(mcmc, loss, opt, x)
-            if conf.refreshOpt and optw is None:
-                optw = opt.get_weights()
-                for i in range(len(optw)):
-                    optw[i] = tf.zeros_like(optw[i])
+            # tf.print('opt.variables():',len(opt.variables()),opt.variables())
         dt = tf.timestamp()-t0
         tf.print('-------- end epoch', epoch,
             'in', dt, 'sec,', dt/conf.nstepEpoch, 'sec/step --------', summarize=-1)

@@ -218,16 +218,16 @@ def initRun(mcmc, loss, x0, weights):
     inferStep(mcmc, loss, x0, print=False)
     mcmc.set_weights(weights)
     dt = tf.timestamp()-t0
-    tf.print('# finished autograph run in ',dt,' sec')
+    tf.print('# finished autograph run in',dt,'sec')
 
 @tf.function
-def inferStep(mcmc, loss, x0, print=True, detail=True, forceAccept=False):
+def inferStep(mcmc, loss, x0, print=True, detail=True, forceAccept=False, tuningStepSize=False):
     p0 = refreshP(x0.shape)
     x, p, x1, p1, v0, t0, v1, t1, dH, acc, arand, ls, f2s, fms, bs = mcmc(x0, p0)
     lv = loss(x, p, x0, p0, x1, p1, v0, t0, v1, t1, dH, acc, arand, ls, f2s, fms, bs, print=print)
     if print:
-        plaqWoT = loss.action.plaquetteWoTrans(x)
-        plaq = loss.action.plaquette(x)
+        plaqWoT = mcmc.generate.action.plaquetteWoTrans(x)
+        plaq = mcmc.generate.action.plaquette(x)
         dp2 = tf.math.reduce_mean(tf.math.squared_difference(p1,p0), axis=range(1,len(p0.shape)))
         if detail:
             tf.print('V-old:', v0, summarize=-1)
@@ -244,7 +244,7 @@ def inferStep(mcmc, loss, x0, print=True, detail=True, forceAccept=False):
             tf.print('loss:', lv, summarize=-1)
             tf.print('plaqWoTrans:', plaqWoT, summarize=-1)
             tf.print('plaq:', plaq, summarize=-1)
-            tf.print('topo:', loss.action.topoCharge(x), summarize=-1)
+            tf.print('topo:', mcmc.generate.action.topoCharge(x), summarize=-1)
         else:
             tf.print('dp2:', tf.reduce_mean(dp2), summarize=-1)
             tf.print('force:', tf.reduce_mean(f2s), tf.reduce_min(f2s), tf.reduce_max(f2s), tf.reduce_mean(fms), tf.reduce_min(fms), tf.reduce_max(fms), summarize=-1)
@@ -255,7 +255,10 @@ def inferStep(mcmc, loss, x0, print=True, detail=True, forceAccept=False):
             tf.print('loss:', lv, summarize=-1)
             tf.print('plaqWoTrans:', tf.reduce_mean(plaqWoT), tf.reduce_min(plaqWoT), tf.reduce_max(plaqWoT), summarize=-1)
             tf.print('plaq:', tf.reduce_mean(plaq), tf.reduce_min(plaq), tf.reduce_max(plaq), summarize=-1)
-            tf.print('topo:', loss.action.topoCharge(x), summarize=-1)
+            tf.print('topo:', mcmc.generate.action.topoCharge(x), summarize=-1)
+    if tuningStepSize and tf.reduce_mean(tf.cast(acc,tf.float64))<0.5:
+        mcmc.generate.dt.assign(mcmc.generate.dt/2.0)
+        tf.print('# reduce step size to:',mcmc.generate.dt)
     if forceAccept:
         return x1
     else:
@@ -263,13 +266,13 @@ def inferStep(mcmc, loss, x0, print=True, detail=True, forceAccept=False):
 
 def infer(conf, mcmc, loss, weights, x0, detail=True):
     initRun(mcmc, loss, x0, weights)
-    x, _ = loss.action.transform.inv(x0)
+    x, _ = mcmc.generate.action.transform.inv(x0)
     for epoch in range(conf.nepoch):
         mcmc.changePerEpoch(epoch, conf)
         tf.print('weightsAll:', mcmc.get_weights(), summarize=-1)
         t0 = tf.timestamp()
         tf.print('-------- start epoch', epoch, '@', t0, '--------', summarize=-1)
-        tf.print('beta:', loss.action.beta, summarize=-1)
+        tf.print('beta:', mcmc.generate.action.beta, summarize=-1)
         for step in range(conf.nstepMixing):
             tf.print('# mixing step:', step, summarize=-1)
             x = inferStep(mcmc, loss, x, detail=False, forceAccept=True)

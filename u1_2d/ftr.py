@@ -209,7 +209,7 @@ class GenericStoutSmear(tk.Model):
         return 2.0/self.numLoopsDiff/math.pi*tf.math.atan(y)
     def inv(self, y):
         x = y
-        for i in range(1024):
+        for i in range(8192):
             ps = field.OrdProduct(self.pathsAll, x, self.gauge).prodList()
             bs = self.beta(ps[self.numLoopsDiff:])
             f = 0.0

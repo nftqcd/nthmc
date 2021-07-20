@@ -38,7 +38,7 @@ def train(conf, mcmcFun, lossFun, opt, weights=None):
             x = nthmc.inferStep(mcmcGen, loss, x, detail=False, tuningStepSize=True)
         dt = tf.timestamp()-t0
         tf.print('-------- done mixing epoch', epoch,
-            'in', dt, 'sec,', dt/conf.nstepMixing, 'sec/step --------', summarize=-1)
+            'in', dt, 'sec,', 0.5*dt/conf.nstepMixing, 'sec/step --------', summarize=-1)
         t0 = tf.timestamp()
         mcmcTrain.generate.dt.assign(mcmcGen.generate.dt)
         for step in range(conf.nstepEpoch):
@@ -46,13 +46,34 @@ def train(conf, mcmcFun, lossFun, opt, weights=None):
             x = nthmc.inferStep(mcmcGen, loss, x, detail=False)
             tf.print('# training step:', step, summarize=-1)
             # x is in the mapped space of mcmcGen
+            t = tf.timestamp()
             xtarget,_,_ = mcmcGen.generate.action.transform(x)
+            dtf = tf.timestamp()-t
+            t = tf.timestamp()
             xtrain,_ = mcmcTrain.generate.action.transform.inv(xtarget)
+            dtb = tf.timestamp()-t
+            tf.print('# forward time:',dtf,'sec','backward time:',dtb,'sec')
             nthmc.trainStep(mcmcTrain, loss, opt, xtrain)
             # tf.print('opt.variables():',len(opt.variables()),opt.variables())
         dt = tf.timestamp()-t0
-        tf.print('-------- end epoch', epoch,
+        tf.print('-------- done training epoch', epoch,
             'in', dt, 'sec,', dt/conf.nstepEpoch, 'sec/step --------', summarize=-1)
+        if conf.nstepEpoch>0:
+            t = tf.timestamp()
+            xtarget,_,_ = mcmcGen.generate.action.transform(x)
+            dtf = tf.timestamp()-t
+            t = tf.timestamp()
+            x,_ = mcmcTrain.generate.action.transform.inv(xtarget)
+            dtb = tf.timestamp()-t
+            tf.print('# forward time:',dtf,'sec','backward time:',dtb,'sec')
+        if conf.nstepPostTrain>0:
+            t0 = tf.timestamp()
+            for step in range(conf.nstepPostTrain):
+                tf.print('# post-training inference step:', step, summarize=-1)
+                x = nthmc.inferStep(mcmcTrain, loss, x, detail=False)
+            dt = tf.timestamp()-t0
+            tf.print('-------- done post-training epoch', epoch,
+                'in', dt, 'sec,', dt/conf.nstepPostTrain, 'sec/step --------', summarize=-1)
     return x, mcmcTrain, loss
 
 def run(conf, mcmcFun, lossFun, opt, weights=None):

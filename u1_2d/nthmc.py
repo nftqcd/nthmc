@@ -13,6 +13,7 @@ class Conf:
                              nepoch = 4,
                              nstepEpoch = 256,
                              nstepMixing = 16,
+                             nstepPostTrain = 0,
                              initDt = 0.2,
                              trainDt = True,
                              stepPerTraj = 10,
@@ -25,6 +26,7 @@ class Conf:
         self.nepoch = nepoch
         self.nstepEpoch = nstepEpoch
         self.nstepMixing = nstepMixing
+        self.nstepPostTrain = nstepPostTrain
         self.initDt = initDt
         self.trainDt = trainDt
         self.stepPerTraj = stepPerTraj
@@ -248,7 +250,8 @@ def inferStep(mcmc, loss, x0, print=True, detail=True, forceAccept=False, tuning
         else:
             tf.print('dp2:', tf.reduce_mean(dp2), summarize=-1)
             tf.print('force:', tf.reduce_mean(f2s), tf.reduce_min(f2s), tf.reduce_max(f2s), tf.reduce_mean(fms), tf.reduce_min(fms), tf.reduce_max(fms), summarize=-1)
-            tf.print('coeff:', tf.reduce_mean(bs, axis=(0,-1)), summarize=-1)
+            if len(bs.shape)>1:
+                tf.print('coeff:', tf.reduce_mean(bs, axis=(0,-1)), summarize=-1)
             tf.print('lnJ:', tf.reduce_mean(ls), tf.reduce_min(ls), tf.reduce_max(ls), summarize=-1)
             tf.print('dH:', tf.reduce_mean(dH), summarize=-1)
             tf.print('accept:', tf.reduce_mean(tf.cast(acc,tf.float64)), summarize=-1)
@@ -314,7 +317,8 @@ def trainStep(mcmc, loss, opt, x0):
     #tf.print('T-prp:', t1, summarize=-1)
     tf.print('dp2:', tf.reduce_mean(tf.math.squared_difference(p1,p0)), summarize=-1)
     tf.print('force:', tf.reduce_mean(f2s), tf.reduce_min(f2s), tf.reduce_max(f2s), tf.reduce_mean(fms), tf.reduce_min(fms), tf.reduce_max(fms), summarize=-1)
-    tf.print('coeff:', tf.reduce_mean(bs, axis=(0,-1)), summarize=-1)
+    if len(bs.shape)>1:
+        tf.print('coeff:', tf.reduce_mean(bs, axis=(0,-1)), summarize=-1)
     tf.print('lnJ:', tf.reduce_mean(ls), tf.reduce_min(ls), tf.reduce_max(ls), summarize=-1)
     tf.print('dH:', tf.reduce_mean(dH), summarize=-1)
     #tf.print('arand:', arand, summarize=-1)

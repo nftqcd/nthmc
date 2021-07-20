@@ -645,6 +645,6 @@ weights=list(map(lambda x:tf.constant(x,dtype=tf.float64),
 # infer is going to rewrite beta using mcmc's methods.
 weights.append(tf.constant(action.beta,dtype=tf.float64))
 # reduce the step size (the 0th in weights) for larger beta or more steps/traj
-weights[0] = 0.9*weights[0]
+weights[0] = 0.5*weights[0]
 
 nthmc.infer(conf, mcmc, loss, weights, x0, detail=False)

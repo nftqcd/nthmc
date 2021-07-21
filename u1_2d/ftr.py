@@ -81,6 +81,7 @@ class TransformChain(tl.Layer):
             l += t
             bs += b
         return (y, l, bs)
+    @tf.function
     def inv(self, y):
         x = y
         l = tf.zeros(y.shape[0], dtype=tf.float64)
@@ -207,26 +208,31 @@ class GenericStoutSmear(tk.Model):
             y = self.layerCoefficient(0)
         # tf.print('beta:y ',y, summarize=-1)
         return 2.0/self.numLoopsDiff/math.pi*tf.math.atan(y)
+    def inv_iter(self, x):
+        ps = field.OrdProduct(self.pathsAll, x, self.gauge).prodList()
+        bs = self.beta(ps[self.numLoopsDiff:])
+        f = 0.0
+        b = 0
+        for k,a in enumerate(self.listNumLoopsDiff):
+            fa = 0.0
+            for i in range(b, b+a):
+                fa += self.gauge.diffTrace(ps[i])
+            b = a
+            f += bs[...,k]*self.maskUpdate*fa
+        return self.expanddir(f)
+    @tf.function
     def inv(self, y):
         x = y
-        for i in range(8192):
-            ps = field.OrdProduct(self.pathsAll, x, self.gauge).prodList()
-            bs = self.beta(ps[self.numLoopsDiff:])
-            f = 0.0
-            b = 0
-            for k,a in enumerate(self.listNumLoopsDiff):
-                fa = 0.0
-                for i in range(b, b+a):
-                    fa += self.gauge.diffTrace(ps[i])
-                b = a
-                f += bs[...,k]*self.maskUpdate*fa
-            f = self.expanddir(f)
-            if self.invAbsR2 > tf.math.reduce_mean(tf.math.squared_difference(f, y-x)):
-                x = self.gauge.compatProj(y-f)
-                _, l, _ = self(x)
-                return (x, -l)
+        i = 0
+        f = self.inv_iter(x)
+        while self.invAbsR2 < tf.math.reduce_mean(tf.math.squared_difference(f, y-x)):
+            i += 1
             x = y-f
-        raise ValueError(f'Failed to converge in inverting from {y}, current {x} with delta {f}.')
+            f = self.inv_iter(x)
+        tf.debugging.Assert(i<8192, ['Failed to converge in inverting from', y, 'current', x, 'with delta', f], summarize=-1)
+        x = self.gauge.compatProj(y-f)
+        _, l, _ = self(x)
+        return (x, -l)
     def expanddir(self, x):
         return tf.scatter_nd(self.updateIndex, x, self.dataShape)
     def showTransform(self, show_weights=True, **kwargs):

@@ -5,8 +5,8 @@ def initMCMC(conf, mcmcFun, weights):
     t0 = tf.timestamp()
     mcmcTrain = mcmcFun()
     mcmcGen = mcmcFun()
-    x0 = mcmcTrain.generate.action.initState(conf.nbatch)
-    p0 = mcmcTrain.generate.action.g.newMom(x0.shape)
+    x0 = mcmcTrain.generate.action.random()
+    p0 = mcmcTrain.generate.action.randomMom()
     mcmcTrain(x0, p0)
     mcmcGen(x0, p0)
     if weights is not None:
@@ -18,9 +18,11 @@ def initMCMC(conf, mcmcFun, weights):
 def train(conf, mcmcFun, lossFun, opt, weights=None):
     mcmcTrain, mcmcGen = initMCMC(conf, mcmcFun, weights)
     loss = lossFun(mcmcTrain.generate.action)
-    x = mcmcTrain.generate.action.initState(conf.nbatch)
+    x = mcmcTrain.generate.action.random()
     for epoch in range(conf.nepoch):
+        mcmcGenRNGState = mcmcGen.generate.action.rng.state
         mcmcGen.set_weights(mcmcTrain.get_weights())
+        mcmcGen.generate.action.rng.reset(mcmcGenRNGState)
         mcmcGen.changePerEpoch(epoch, conf)
         mcmcTrain.changePerEpoch(epoch, conf)
         if conf.refreshOpt and len(opt.variables())>0:
@@ -50,9 +52,11 @@ def train(conf, mcmcFun, lossFun, opt, weights=None):
             xtarget,_,_ = mcmcGen.generate.action.transform(x)
             dtf = tf.timestamp()-t
             t = tf.timestamp()
-            xtrain,_ = mcmcTrain.generate.action.transform.inv(xtarget)
+            xtrain,_,invIter = mcmcTrain.generate.action.transform.inv(xtarget)
             dtb = tf.timestamp()-t
-            tf.print('# forward time:',dtf,'sec','backward time:',dtb,'sec')
+            tf.print('# forward time:',dtf,'sec','backward time:',dtb,'sec','max iter:',invIter)
+            if invIter >= mcmcTrain.generate.action.transform.invMaxIter:
+                tf.print('WARNING: max inverse iteration reached',invIter,'with invMaxIter',mcmcTrain.generate.action.transform.invMaxIter, summarize=-1)
             nthmc.trainStep(mcmcTrain, loss, opt, xtrain)
             # tf.print('opt.variables():',len(opt.variables()),opt.variables())
         dt = tf.timestamp()-t0
@@ -63,9 +67,11 @@ def train(conf, mcmcFun, lossFun, opt, weights=None):
             xtarget,_,_ = mcmcGen.generate.action.transform(x)
             dtf = tf.timestamp()-t
             t = tf.timestamp()
-            x,_ = mcmcTrain.generate.action.transform.inv(xtarget)
+            x,_,invIter = mcmcTrain.generate.action.transform.inv(xtarget)
             dtb = tf.timestamp()-t
-            tf.print('# forward time:',dtf,'sec','backward time:',dtb,'sec')
+            tf.print('# forward time:',dtf,'sec','backward time:',dtb,'sec','max iter:',invIter)
+            if invIter >= mcmcTrain.generate.action.transform.invMaxIter:
+                tf.print('WARNING: max inverse iteration reached',invIter,'with invMaxIter',mcmcTrain.generate.action.transform.invMaxIter, summarize=-1)
         if conf.nstepPostTrain>0:
             t0 = tf.timestamp()
             for step in range(conf.nstepPostTrain):
@@ -118,7 +124,8 @@ if __name__ == '__main__':
     ftr.checkDep(transform())
     lossFun = lambda action: nthmc.LossFun(action, cCosDiff=0.01, cTopoDiff=1.0, cForce2=1.0, dHmin=0.5, topoFourierN=1)
     opt = tk.optimizers.Adam(learning_rate=0.001)
-    mcmcFun = lambda: nthmc.Metropolis(conf, nthmc.LeapFrog(conf, nthmc.U1d2(transform())))
+    rng = tf.random.Generator.from_seed(conf.seed)
+    mcmcFun = lambda: nthmc.Metropolis(conf, nthmc.LeapFrog(conf, nthmc.U1d2(transform(), conf.nbatch, rng.split()[0])))
     x, mcmc, loss = run(conf, mcmcFun, lossFun, opt)
     x, _, _ = mcmc.generate.action.transform(x)
     nthmc.infer(conf, mcmc, loss, mcmc.get_weights(), x)

@@ -33,8 +33,10 @@ class U1Phase(Group):
         return -tf.cos(x)
     def compatProj(x):
         return tf.math.floormod(x+math.pi, 2*math.pi)-math.pi
-    def newMom(shape):
-        return tf.random.normal(shape, dtype=tf.float64)
+    def random(shape, rng):
+        return rng.uniform(shape, -math.pi, math.pi, dtype=tf.float64)
+    def randomMom(shape, rng):
+        return rng.normal(shape, dtype=tf.float64)
     def momEnergy(p):
         return 0.5*tf.reduce_sum(tf.reshape(p, [p.shape[0], -1])**2, axis=1)
 

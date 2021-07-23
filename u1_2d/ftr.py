@@ -12,7 +12,7 @@ class Ident(tl.Layer):
     def call(self, x):
         return (x, 0.0, 0.0)
     def inv(self, y):
-        return (y, 0.0)
+        return (y, 0.0, 0)
     def showTransform(self, **kwargs):
         tf.print(self.name, **kwargs)
 
@@ -72,6 +72,11 @@ class TransformChain(tl.Layer):
     def __init__(self, transforms, name='TransformChain', **kwargs):
         super(TransformChain, self).__init__(autocast=False, name=name, **kwargs)
         self.chain = transforms
+        self.invMaxIter = 0
+        for t in transforms:
+            if hasattr(t,'invMaxIter'):
+                if self.invMaxIter < t.invMaxIter:
+                    self.invMaxIter = t.invMaxIter
     def call(self, x):
         y = x
         l = tf.zeros(x.shape[0], dtype=tf.float64)
@@ -85,10 +90,13 @@ class TransformChain(tl.Layer):
     def inv(self, y):
         x = y
         l = tf.zeros(y.shape[0], dtype=tf.float64)
+        imax = 0
         for f in reversed(self.chain):
-            x, t = f.inv(x)
+            x, t, i = f.inv(x)
             l += t
-        return (x, l)
+            if imax < i:
+                imax = i
+        return (x, l, imax)
     def showTransform(self, **kwargs):
         n = len(self.chain)
         tf.print(self.name, '[', n, ']', **kwargs)
@@ -98,7 +106,7 @@ class TransformChain(tl.Layer):
 
 class GenericStoutSmear(tk.Model):
     def __init__(self, linkSubset, updatedLoops, fixedLoopLayers, coefficientLayer,
-            gauge=group.U1Phase, invAbsR2=1E-30, name='GenericStoutSmear', **kwargs):
+            gauge=group.U1Phase, invAbsR2=1E-30, invMaxIter=8192, name='GenericStoutSmear', **kwargs):
         """
         linkSubset: ((x,y),(dx,dy))
             to-be-updated link subset as x+n*dx,y+m*dy, for int n,m
@@ -148,6 +156,7 @@ class GenericStoutSmear(tk.Model):
         self.layerCoefficient = coefficientLayer
         self.gauge = gauge
         self.invAbsR2 = invAbsR2
+        self.invMaxIter = invMaxIter
         # print(f'self.baseMaskFixedLoop: {self.baseMaskFixedLoop}')
     def build(self, shape):
         m = tf.scatter_nd((self.linkFirst,), tf.constant((1.,), dtype=tf.float64), self.linkRepeat)
@@ -225,14 +234,14 @@ class GenericStoutSmear(tk.Model):
         x = y
         i = 0
         f = self.inv_iter(x)
-        while self.invAbsR2 < tf.math.reduce_mean(tf.math.squared_difference(f, y-x)):
+        while self.invMaxIter > i and self.invAbsR2 < tf.math.reduce_mean(tf.math.squared_difference(f, y-x)):
             i += 1
             x = y-f
             f = self.inv_iter(x)
-        tf.debugging.Assert(i<8192, ['Failed to converge in inverting from', y, 'current', x, 'with delta', f], summarize=-1)
+        # tf.Assert(i<self.invMaxIter, ['', y, 'current', x, 'with delta', f], summarize=-1)
         x = self.gauge.compatProj(y-f)
         _, l, _ = self(x)
-        return (x, -l)
+        return (x, -l, i)
     def expanddir(self, x):
         return tf.scatter_nd(self.updateIndex, x, self.dataShape)
     def showTransform(self, show_weights=True, **kwargs):
@@ -261,9 +270,9 @@ def checkDep(tr, defaultShape = (16,16)):
         testShape = defaultShape
     testPoint = [(s//(2*r))*r+f for s,r,f in zip(testShape,tr.linkRepeat,tr.linkFirst)]
     testDim = tr.linkDir-1
-    x = tf.random.uniform((1,2)+testShape, -math.pi, math.pi, dtype=tf.float64)
+    x = group.U1Phase.random((1,2)+testShape, tf.random.get_global_generator())
     tr.build(x.shape)
-    with tf.GradientTape() as g:
+    with tf.GradientTape(watch_accessed_variables=False) as g:
         g.watch(x)
         y, _, _ = tr(x)
         z = y[0,testDim,testPoint[0],testPoint[1]]

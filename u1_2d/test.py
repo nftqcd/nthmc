@@ -34,7 +34,7 @@ class TestGenericStoutSmear(unittest.TestCase):
                     ((2,2,-1,-2,-2,1), (2,2,1,-2,-2,-1), (2,-1,-2,-2,1,2), (2,1,-2,-2,-1,2)))
         self.testShape = (3,2,6,8)
         self.latticeShape = (self.testShape[0],)+self.testShape[2:]
-        self.testField = tf.random.uniform(self.testShape, -math.pi, math.pi, dtype=tf.float64)
+        self.testField = tf.random.get_global_generator().uniform(self.testShape, -math.pi, math.pi, dtype=tf.float64)
         self.testMask = tf.constant([[1,0,1,0,1,0,1,0],[0,0,0,0,0,0,0,0],[1,0,1,0,1,0,1,0],[0,0,0,0,0,0,0,0],[1,0,1,0,1,0,1,0],[0,0,0,0,0,0,0,0]], dtype=tf.float64)
         self.ss = [
             ftr.GenericStoutSmear(((0,0),(2,2)), op0, [], ftr.Scalar(2)),
@@ -87,7 +87,9 @@ class TestGenericStoutSmear(unittest.TestCase):
         for i,s in enumerate(self.ss):
             with self.subTest(i=i):
                 y, l, _ = s(self.testField)
-                z, m = s.inv(y)
+                z, m, invIter = s.inv(y)
+                if invIter >= s.invMaxIter:
+                    tf.print('WARNING: max inverse iteration reached',invIter,'with invMaxIter',s.invMaxIter, summarize=-1)
                 with self.subTest(test='field'):
                     self.assertLess(tf.reduce_mean(tf.math.squared_difference(z, self.testField)), 1E-28)
                 with self.subTest(test='logdet'):
@@ -135,7 +137,7 @@ class TestGenericStoutSmear(unittest.TestCase):
                     self.assertLess(tf.reduce_mean(tf.math.squared_difference(ld, sld)), 1E-26)
 
     def test_symmetry_gauge(self):
-        G = tf.random.uniform(self.latticeShape, -math.pi, math.pi, dtype=tf.float64)
+        G = tf.random.get_global_generator().uniform(self.latticeShape, -math.pi, math.pi, dtype=tf.float64)
         u = group.U1Phase
         tx = tf.stack(
             [u.mul(u.mul(G,self.testField[:,d]), tf.roll(G, -1, axis=1+d), adjoint_r=True) for d in range(2)],
@@ -162,7 +164,7 @@ class TestChain(unittest.TestCase):
                     ((2,2,-1,-2,-2,1), (2,2,1,-2,-2,-1), (2,-1,-2,-2,1,2), (2,1,-2,-2,-1,2)))
         self.testShape = (3,2,6,8)
         self.latticeShape = (self.testShape[0],)+self.testShape[2:]
-        self.testField = tf.random.uniform(self.testShape, -math.pi, math.pi, dtype=tf.float64)
+        self.testField = tf.random.get_global_generator().uniform(self.testShape, -math.pi, math.pi, dtype=tf.float64)
         self.ss = ftr.TransformChain([
             ftr.GenericStoutSmear(((0,0),(2,2)), op0, [], ftr.Scalar(2)),
             ftr.GenericStoutSmear(((0,1),(2,2)), op0, [], ftr.Scalar(2)),
@@ -186,11 +188,13 @@ class TestChain(unittest.TestCase):
         j = t.batch_jacobian(y, x, experimental_use_pfor=False)    # pfor fails for roll op
         for b in range(self.testShape[0]):
             with self.subTest(b=b):
-                self.assertAlmostEqual(ld[b].numpy(), tf.math.log(tf.linalg.det(tf.reshape(j[b], (v,v)))).numpy(), places=14)
+                self.assertAlmostEqual(ld[b].numpy(), tf.math.log(tf.linalg.det(tf.reshape(j[b], (v,v)))).numpy(), places=13)
 
     def test_inv(self):
         y, l, _ = self.ss(self.testField)
-        z, m = self.ss.inv(y)
+        z, m, invIter = self.ss.inv(y)
+        if invIter >= self.ss.invMaxIter:
+            tf.print('WARNING: max inverse iteration reached',invIter,'with invMaxIter',self.ss.invMaxIter, summarize=-1)
         with self.subTest(test='field'):
             self.assertLess(tf.reduce_mean(tf.math.squared_difference(z, self.testField)), 1E-26)
         with self.subTest(test='logdet'):
@@ -236,7 +240,7 @@ class TestChain(unittest.TestCase):
             self.assertLess(tf.reduce_mean(tf.math.squared_difference(ld, sld)), 1E-26)
 
     def test_symmetry_gauge(self):
-        G = tf.random.uniform(self.latticeShape, -math.pi, math.pi, dtype=tf.float64)
+        G = tf.random.get_global_generator().uniform(self.latticeShape, -math.pi, math.pi, dtype=tf.float64)
         u = group.U1Phase
         tx = tf.stack(
             [u.mul(u.mul(G,self.testField[:,d]), tf.roll(G, -1, axis=1+d), adjoint_r=True) for d in range(2)],
@@ -261,7 +265,7 @@ class TestConvChain(TestChain):
                     ((2,2,-1,-2,-2,1), (2,2,1,-2,-2,-1), (2,-1,-2,-2,1,2), (2,1,-2,-2,-1,2)))
         self.testShape = (3,2,8,6)
         self.latticeShape = (self.testShape[0],)+self.testShape[2:]
-        self.testField = tf.random.uniform(self.testShape, -math.pi, math.pi, dtype=tf.float64)
+        self.testField = tf.random.get_global_generator().uniform(self.testShape, -math.pi, math.pi, dtype=tf.float64)
         fixedP = (1,2,-1,-2)
         fixedR0 = (2,2,1,-2,-2,-1)
         fixedR1 = (1,1,2,-1,-1,-2)
@@ -301,7 +305,7 @@ if __name__ == '__main__':
     tf.random.set_seed(9876543211)
     tf.keras.backend.set_floatx('float64')
     tf.config.set_soft_device_placement(True)
-    tf.config.optimizer.set_jit(True)
+    tf.config.optimizer.set_jit(False)
     tf.config.threading.set_inter_op_parallelism_threads(1)    # ALCF suggests number of socket
     tf.config.threading.set_intra_op_parallelism_threads(4)    # ALCF suggests number of physical cores
     os.environ["OMP_NUM_THREADS"] = "4"

@@ -1,5 +1,6 @@
+import tensorflow as tf
 import tensorflow.keras as tk
-import nthmc, ftr
+import nthmc, ftr, hmctrain
 import sys
 sys.path.append('../lib')
 import field
@@ -41,9 +42,8 @@ transform = lambda: ftr.TransformChain([
     ftr.GenericStoutSmear(((1,1),(2,2)), op1, [(fixedP, convP1()), (fixedR1, convR((2,1)))], conv()),
 ])
 ftr.checkDep(transform())
-action = nthmc.U1d2(beta=7.0, beta0=2.0, size=(16,16), transform=transform())
-loss = nthmc.LossFun(action, cCosDiff=0.0, cTopoDiff=1.0, dHmin=0.5, topoFourierN=1)
+loss = lambda action: nthmc.LossFun(action, cCosDiff=0.0, cTopoDiff=1.0, cForce2=0.0, dHmin=0.5, topoFourierN=1)
 opt = tk.optimizers.Adam(learning_rate=0.001)
-x0 = action.initState(conf.nbatch)
-mcmc = nthmc.Metropolis(conf, nthmc.LeapFrog(conf, action))
-nthmc.run(conf, mcmc, loss, opt, x0)
+rng = tf.random.Generator.from_seed(conf.seed)
+mcmc = lambda: nthmc.Metropolis(conf, nthmc.LeapFrog(conf, nthmc.U1d2(beta=7.0, beta0=2.0, size=(16,16), transform=transform(), nbatch=conf.nbatch, rng=rng.split()[0])))
+hmctrain.run(conf, mcmc, loss, opt)

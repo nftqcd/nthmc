@@ -36,15 +36,8 @@ class Conf:
         self.nthrIop = nthrIop
         self.seed = seed
 
-def refreshP(shape):
-    return tf.random.normal(shape, dtype=tf.float64)
-def kineticEnergy(p):
-    return 0.5*tf.reduce_sum(p**2, axis=range(1,len(p.shape)))
-def project(x):
-    return tf.math.floormod(x+math.pi, 2*math.pi)-math.pi
-
 class U1d2(tl.Layer):
-    def __init__(self, transform, beta = 4.0, beta0 = 1.0, size = [8,8], name='U1d2', **kwargs):
+    def __init__(self, transform, nbatch, rng, beta = 4.0, beta0 = 1.0, size = [8,8], name='U1d2', **kwargs):
         super(U1d2, self).__init__(autocast=False, name=name, **kwargs)
         self.g = group.U1Phase
         self.targetBeta = tf.constant(beta, dtype=tf.float64)
@@ -53,19 +46,30 @@ class U1d2(tl.Layer):
         self.size = size
         self.transform = transform
         self.volume = size[0]*size[1]
+        self.shape = (nbatch, 2, *size)
+        self.rng = rng
     def call(self, x):
         return self.action(x)
+    def build(self, shape):
+        if self.shape != shape:
+            raise ValueError(f'shape mismatch: init with {self.shape}, bulid with {shape}')
     def changePerEpoch(self, epoch, conf):
         self.beta.assign((epoch+1.0)/conf.nepoch*(self.targetBeta-self.beta0)+self.beta0)
-    def initState(self, nbatch):
-        return tf.Variable(2.0*math.pi*tf.random.uniform((nbatch, 2, *self.size), dtype=tf.float64)-math.pi)    # shape: batch, dim(x,y), x, y
+    def compatProj(self, x):
+        return self.g.compatProj(x)
+    def random(self):
+        return self.g.random(self.shape, self.rng)
+    def randomMom(self):
+        return self.g.randomMom(self.shape, self.rng)
+    def momEnergy(self, p):
+        return self.g.momEnergy(p)
     def plaqPhase(self, x):
         y, _, _ = self.transform(x)
         return self.plaqPhaseWoTrans(y)
     def plaqPhaseWoTrans(self, x):
         return x[:,0] + tf.roll(x[:,1], shift=-1, axis=1) - tf.roll(x[:,0], shift=-1, axis=2) - x[:,1]
     def topoChargeFromPhase(self, p):
-        return tf.math.floordiv(0.1 + tf.reduce_sum(project(p), axis=range(1,len(p.shape))), 2*math.pi)
+        return tf.math.floordiv(0.1 + tf.reduce_sum(self.compatProj(p), axis=range(1,len(p.shape))), 2*math.pi)
     def topoCharge(self, x):
         return self.topoChargeFromPhase(self.plaqPhase(x))
     def topoChargeFourierFromPhase(self, p, n):
@@ -91,10 +95,8 @@ class U1d2(tl.Layer):
         return a-l, l, bs
     def derivAction(self, x):
         "Returns the derivative and the log Jacobian."
-        with tf.GradientTape() as tape:
-            tape.watch(x)
-            a, l, bs = self.action(x)
-        g = tape.gradient(a, x)
+        a, l, bs = self.action(x)
+        g = tf.gradients(a, x)[0]
         return g, l, bs
     def showTransform(self, **kwargs):
         self.transform.showTransform(**kwargs)
@@ -105,9 +107,10 @@ class Metropolis(tk.Model):
         tf.print(self.name, 'init with conf', conf, summarize=-1)
         self.generate = generator
         self.checkReverse = conf.checkReverse
+    @tf.function
     def call(self, x0, p0):
         v0, l0, b0 = self.generate.action(x0)
-        t0 = kineticEnergy(p0)
+        t0 = self.generate.action.momEnergy(p0)
         x1, p1, ls, f2s, fms, bs = self.generate(x0, p0)
         if self.checkReverse:
             self.revCheck(x0, p0, x1, p1)
@@ -120,10 +123,10 @@ class Metropolis(tk.Model):
         bs.insert(0,b0)
         bs.append(b1)
         bs = tf.stack(bs, -1)
-        t1 = kineticEnergy(p1)
+        t1 = self.generate.action.momEnergy(p1)
         dH = (v1+t1) - (v0+t0)
         exp_mdH = tf.exp(-dH)
-        arand = tf.random.uniform(exp_mdH.shape, dtype=tf.float64)
+        arand = self.generate.action.rng.uniform(exp_mdH.shape, dtype=tf.float64)
         acc = tf.reshape(tf.less(arand, exp_mdH), arand.shape + (1,1,1))
         x = tf.where(acc, x1, x0)
         p = tf.where(acc, p1, p0)
@@ -172,19 +175,19 @@ class LeapFrog(tl.Layer):
             ls.append(l)
             bs.append(b)
         x += 0.5*dt*p
-        x = project(x)
+        x = self.action.compatProj(x)
         return (x, -p, ls, f2s, fms, bs)
     def changePerEpoch(self, epoch, conf):
         self.action.changePerEpoch(epoch, conf)
 
 class LossFun:
-    def __init__(self, action, cCosDiff=1.0, cTopoDiff=1.0, dHmin=1.0, topoFourierN=9, cForce2=0.0):
+    def __init__(self, action, cCosDiff=1.0, cTopoDiff=1.0, cForce2=0.0, dHmin=0.5, topoFourierN=1):
         tf.print('LossFun init with action', action, summarize=-1)
         self.action = action
         self.cCosDiff = cCosDiff
         self.cTopoDiff = cTopoDiff
         self.cForce2 = cForce2
-        self.dHmin = 0.0 if dHmin<0 else dHmin
+        self.dHmin = dHmin if dHmin>0 else 0.0
         self.topoFourierN = topoFourierN
     def __call__(self, x, p, x0, p0, x1, p1, v0, t0, v1, t1, dH, acc, arand, ls, f2s, fms, bs, print=True):
         pp0 = self.action.plaqPhase(x0)
@@ -203,7 +206,8 @@ class LossFun:
             lf2 = 0
         else:
             lf2 = tf.math.reduce_mean(f2s, axis=range(1,len(f2s.shape)))
-        lap = tf.exp(-tf.maximum(dH,self.dHmin))
+        lap = tf.exp(-tf.math.maximum(tf.math.abs(dH),self.dHmin))
+        lap = lap/(lap*lap+1)
         if print:
             if self.cCosDiff != 0:
                 tf.print('cosDiff:', tf.reduce_mean(ldc), summarize=-1)
@@ -211,8 +215,8 @@ class LossFun:
                 tf.print('topoDiff:', tf.reduce_mean(ldt), summarize=-1)
             if self.cForce2 != 0:
                 tf.print('force2:', tf.reduce_mean(lf2), summarize=-1)
-            tf.print('accProb:', tf.reduce_mean(lap), summarize=-1)
-        return -tf.math.reduce_mean((self.cCosDiff*ldc+self.cTopoDiff*ldt-self.cForce2/self.action.volume*lf2)*lap)
+            tf.print('accProbFactor:', tf.reduce_mean(lap), summarize=-1)
+        return -tf.math.reduce_mean((self.cCosDiff*ldc+self.cTopoDiff*ldt)*lap-self.cForce2/self.action.volume/lap*lf2)
 
 def initRun(mcmc, loss, x0, weights):
     tf.print('# run once and set weights')
@@ -224,7 +228,7 @@ def initRun(mcmc, loss, x0, weights):
 
 @tf.function
 def inferStep(mcmc, loss, x0, print=True, detail=True, forceAccept=False, tuningStepSize=False):
-    p0 = refreshP(x0.shape)
+    p0 = mcmc.generate.action.randomMom()
     x, p, x1, p1, v0, t0, v1, t1, dH, acc, arand, ls, f2s, fms, bs = mcmc(x0, p0)
     lv = loss(x, p, x0, p0, x1, p1, v0, t0, v1, t1, dH, acc, arand, ls, f2s, fms, bs, print=print)
     if print:
@@ -241,6 +245,7 @@ def inferStep(mcmc, loss, x0, print=True, detail=True, forceAccept=False, tuning
             tf.print('coeff:', bs, summarize=-1)
             tf.print('lnJ:', ls, summarize=-1)
             tf.print('dH:', dH, summarize=-1)
+            tf.print('exp_mdH:', tf.exp(-dH), summarize=-1)
             tf.print('arand:', arand, summarize=-1)
             tf.print('accept:', acc, summarize=-1)
             tf.print('loss:', lv, summarize=-1)
@@ -248,12 +253,17 @@ def inferStep(mcmc, loss, x0, print=True, detail=True, forceAccept=False, tuning
             tf.print('plaq:', plaq, summarize=-1)
             tf.print('topo:', mcmc.generate.action.topoCharge(x), summarize=-1)
         else:
+            tf.print('V-old:', tf.reduce_mean(v0), summarize=-1)
+            tf.print('T-old:', tf.reduce_mean(t0), summarize=-1)
+            tf.print('V-prp:', tf.reduce_mean(v1), summarize=-1)
+            tf.print('T-prp:', tf.reduce_mean(t1), summarize=-1)
             tf.print('dp2:', tf.reduce_mean(dp2), summarize=-1)
             tf.print('force:', tf.reduce_mean(f2s), tf.reduce_min(f2s), tf.reduce_max(f2s), tf.reduce_mean(fms), tf.reduce_min(fms), tf.reduce_max(fms), summarize=-1)
             if len(bs.shape)>1:
                 tf.print('coeff:', tf.reduce_mean(bs, axis=(0,-1)), summarize=-1)
             tf.print('lnJ:', tf.reduce_mean(ls), tf.reduce_min(ls), tf.reduce_max(ls), summarize=-1)
             tf.print('dH:', tf.reduce_mean(dH), summarize=-1)
+            tf.print('exp_mdH:', tf.reduce_mean(tf.exp(-dH)), summarize=-1)
             tf.print('accept:', tf.reduce_mean(tf.cast(acc,tf.float64)), summarize=-1)
             tf.print('loss:', lv, summarize=-1)
             tf.print('plaqWoTrans:', tf.reduce_mean(plaqWoT), tf.reduce_min(plaqWoT), tf.reduce_max(plaqWoT), summarize=-1)
@@ -269,7 +279,9 @@ def inferStep(mcmc, loss, x0, print=True, detail=True, forceAccept=False, tuning
 
 def infer(conf, mcmc, loss, weights, x0, detail=True):
     initRun(mcmc, loss, x0, weights)
-    x, _ = mcmc.generate.action.transform.inv(x0)
+    x, _, invIter = mcmc.generate.action.transform.inv(x0)
+    if invIter >= mcmc.generate.action.transform.invMaxIter:
+        tf.print('WARNING: max inverse iteration reached',invIter,'with invMaxIter',mcmc.generate.action.transform.invMaxIter, summarize=-1)
     for epoch in range(conf.nepoch):
         mcmc.changePerEpoch(epoch, conf)
         tf.print('weightsAll:', mcmc.get_weights(), summarize=-1)
@@ -298,43 +310,41 @@ def showTransform(conf, mcmc, loss, weights, **kwargs):
 
 @tf.function
 def trainStep(mcmc, loss, opt, x0):
-    p0 = refreshP(x0.shape)
+    p0 = mcmc.generate.action.randomMom()
     with tf.GradientTape() as tape:
         x, p, x1, p1, v0, t0, v1, t1, dH, acc, arand, ls, f2s, fms, bs = mcmc(x0, p0)
         lv = loss(x, p, x0, p0, x1, p1, v0, t0, v1, t1, dH, acc, arand, ls, f2s, fms, bs)
-    grads = tape.gradient(lv, mcmc.trainable_weights)
-    opt.apply_gradients(zip(grads, mcmc.trainable_weights))
-    # tf.print('grads:', grads, summarize=-1)
-    # if tf.math.reduce_any([tf.math.reduce_any(tf.math.is_nan(g)) for g in grads]):
-    #     tf.print('*** got grads nan ***')
-    # else:
-    #     opt.apply_gradients(zip(grads, mcmc.trainable_weights))
-    plaqWoT = loss.action.plaquetteWoTrans(x)
-    plaq = loss.action.plaquette(x)
-    #tf.print('V-old:', v0, summarize=-1)
-    #tf.print('T-old:', t0, summarize=-1)
-    #tf.print('V-prp:', v1, summarize=-1)
-    #tf.print('T-prp:', t1, summarize=-1)
+    plaqWoT = mcmc.generate.action.plaquetteWoTrans(x)
+    plaq = mcmc.generate.action.plaquette(x)
+    tf.print('V-old:', tf.reduce_mean(v0), summarize=-1)
+    tf.print('T-old:', tf.reduce_mean(t0), summarize=-1)
+    tf.print('V-prp:', tf.reduce_mean(v1), summarize=-1)
+    tf.print('T-prp:', tf.reduce_mean(t1), summarize=-1)
     tf.print('dp2:', tf.reduce_mean(tf.math.squared_difference(p1,p0)), summarize=-1)
     tf.print('force:', tf.reduce_mean(f2s), tf.reduce_min(f2s), tf.reduce_max(f2s), tf.reduce_mean(fms), tf.reduce_min(fms), tf.reduce_max(fms), summarize=-1)
     if len(bs.shape)>1:
         tf.print('coeff:', tf.reduce_mean(bs, axis=(0,-1)), summarize=-1)
     tf.print('lnJ:', tf.reduce_mean(ls), tf.reduce_min(ls), tf.reduce_max(ls), summarize=-1)
     tf.print('dH:', tf.reduce_mean(dH), summarize=-1)
+    tf.print('exp_mdH:', tf.reduce_mean(tf.exp(-dH)), summarize=-1)
     #tf.print('arand:', arand, summarize=-1)
     tf.print('accept:', tf.reduce_mean(tf.cast(acc,tf.float64)), summarize=-1)
-    tf.print('weights:', mcmc.trainable_weights, summarize=-1)
     tf.print('loss:', lv, summarize=-1)
     tf.print('plaqWoTrans:', tf.reduce_mean(plaqWoT), tf.reduce_min(plaqWoT), tf.reduce_max(plaqWoT), summarize=-1)
     tf.print('plaq:', tf.reduce_mean(plaq), tf.reduce_min(plaq), tf.reduce_max(plaq), summarize=-1)
-    tf.print('topo:', loss.action.topoCharge(x), summarize=-1)
+    tf.print('topo:', mcmc.generate.action.topoCharge(x), summarize=-1)
+    grads = tape.gradient(lv, mcmc.trainable_weights)
+    opt.apply_gradients(zip(grads, mcmc.trainable_weights))
+    tf.print('weights:', mcmc.trainable_weights, summarize=-1)
     return x
 
 def train(conf, mcmc, loss, opt, x0, weights=None, requireInv=False):
     if weights is not None:
         initRun(mcmc, loss, x0, weights)
         if requireInv:
-            x0, _ = loss.action.transform.inv(x0)
+            x0, _, invIter = mcmc.generate.action.transform.inv(x0)
+            if invIter >= mcmc.generate.action.transform.invMaxIter:
+                tf.print('WARNING: max inverse iteration reached',invIter,'with invMaxIter',mcmc.generate.action.transform.invMaxIter, summarize=-1)
     elif requireInv:
         raise ValueError('Inverse transform required without weights.')
     x = x0
@@ -346,7 +356,7 @@ def train(conf, mcmc, loss, opt, x0, weights=None, requireInv=False):
                 var.assign(tf.zeros_like(var))
         t0 = tf.timestamp()
         tf.print('-------- start epoch', epoch, '@', t0, '--------', summarize=-1)
-        tf.print('beta:', loss.action.beta, summarize=-1)
+        tf.print('beta:', mcmc.generate.action.beta, summarize=-1)
         for step in range(conf.nstepMixing):
             tf.print('# inference step with forced acceptance:', step, summarize=-1)
             x = inferStep(mcmc, loss, x, detail=False, forceAccept=True)
@@ -422,10 +432,10 @@ if __name__ == '__main__':
         ftr.GenericStoutSmear(((1,1),(2,2)), op1, [(fixedP, convP1()), (fixedR1, convR((2,1)))], conv()),
     ])
     ftr.checkDep(transform())
-    action = U1d2(transform())
+    action = U1d2(transform(), conf.nbatch, tf.random.Generator.from_seed(conf.seed))
     loss = LossFun(action, cCosDiff=0.01, cTopoDiff=1.0, cForce2=1.0, dHmin=0.5, topoFourierN=1)
     opt = tk.optimizers.Adam(learning_rate=0.001)
-    x0 = action.initState(conf.nbatch)
+    x0 = action.random()
     mcmc = Metropolis(conf, LeapFrog(conf, action))
     x, _, _ = action.transform(run(conf, mcmc, loss, opt, x0))
     infer(conf, mcmc, loss, mcmc.get_weights(), x)

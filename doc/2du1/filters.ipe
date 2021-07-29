@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <!DOCTYPE ipe SYSTEM "ipe.dtd">
 <ipe version="70206" creator="Ipe 7.2.11">
-<info created="D:20210618135649" modified="D:20210621111254"/>
+<info created="D:20210618135649" modified="D:20210728175810"/>
 <ipestyle name="basic">
 <symbol name="arrow/arc(spx)">
 <path stroke="sym-stroke" fill="sym-stroke" pen="sym-pen">
@@ -1005,7 +1005,7 @@ h
 348 704
 344 688 c
 </path>
-<text matrix="1 0 0 1 -16 -28" transformations="translations" pos="328 728" stroke="blue" type="label" width="17.91" height="11.766" depth="2.58" valign="baseline" size="LARGE" style="math">\mathcal{F}_c</text>
+<text matrix="1 0 0 1 -16 -28" transformations="translations" pos="328 728" stroke="blue" type="label" width="18.653" height="11.766" depth="2.58" valign="baseline" size="LARGE" style="math">\mathcal{K}_c</text>
 <path stroke="black" fill="turquoise" pen="heavier">
 352 744 m
 352 652 l
@@ -1064,7 +1064,7 @@ h
 484 688
 520 708 c
 </path>
-<text matrix="1 0 0 1 -1 -8" transformations="translations" pos="360 688" stroke="black" type="label" width="13.606" height="7.415" depth="2.58" valign="baseline" size="LARGE" style="math">c_1</text>
-<text matrix="1 0 0 1 19 -8" transformations="translations" pos="360 688" stroke="black" type="label" width="13.606" height="7.415" depth="2.58" valign="baseline" size="LARGE" style="math">c_0</text>
+<text matrix="1 0 0 1 -1 -8" transformations="translations" pos="360 688" stroke="black" type="label" width="13.158" height="7.415" depth="2.58" valign="baseline" size="LARGE" style="math">\epsilon_1</text>
+<text matrix="1 0 0 1 19 -8" transformations="translations" pos="360 688" stroke="black" type="label" width="13.158" height="7.415" depth="2.58" valign="baseline" size="LARGE" style="math">\epsilon_0</text>
 </page>
 </ipe>

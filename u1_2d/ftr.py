@@ -9,6 +9,7 @@ import field, group
 class Ident(tl.Layer):
     def __init__(self, name='Ident', **kwargs):
         super(Ident, self).__init__(autocast=False, name=name, **kwargs)
+        self.invMaxIter = 1
     def call(self, x):
         return (x, 0.0, 0.0)
     def inv(self, y):

@@ -1,0 +1,7 @@
+gps=`{echo *_b*.gp}
+pdfs=${gps:%.gp=%.pdf}
+
+all:V:	$pdfs
+
+%.pdf:	%.gp
+	gpctx $prereq

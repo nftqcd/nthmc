@@ -1,0 +1,101 @@
+#!/usr/bin/env rc
+. 9.rc
+flag e +
+
+fn info{
+	>[1=2] echo '# INFO:' $*
+}
+
+logfile=$1
+info file: $logfile
+
+outputfile=`{echo $logfile|sed 's,\.[^.]*,,'}
+
+betas=`{grep '^beta' $logfile|sed 's,^.*: ,,'}
+info $#betas beta values: $"betas
+
+npretrain=`{awk '/^beta: '$betas(1)'$/{p=1} p==1&&/^plaq:/{n++} p==1&&/done mixing epoch/{p=0;print n;exit}' $logfile}
+info $npretrain pre-training steps
+
+gpsetup='set sample 8192'
+
+gpplaq=`''{cat<<'.end'}
+set ylabel 'plaquette'
+plot \
+	"<9 awk '/^beta:/{b=0;p=0} /^beta: ".beta."$/{b=1;p=1} p==1&&/^plaq:/{print} b==1&&/done mixing epoch/{p=0}' ".file u ($0-npre):2 w l t 'pre-train target',\
+	"<9 awk '/^beta:/{b=0;p=0} /^beta: ".beta."$/{b=1;p=1} p==1&&/^plaqWoTrans:/{print} b==1&&/done mixing epoch/{p=0}' ".file u ($0-npre):2 w l t 'pre-train mapped',\
+	"<9 awk '/^beta:/{b=0;p=0} /^beta: ".beta."$/{b=1} b==1&&/^# training inference step/{p=1} p==1&&/^plaq:/{print;p=0}' ".file u 0:2 w l t 'target inference',\
+	"<9 awk '/^beta:/{b=0;p=0} /^beta: ".beta."$/{b=1} b==1&&/^# training inference step/{p=1} p==1&&/^plaqWoTrans:/{print;p=0}' ".file u 0:2 w l t 'mapped inference',\
+	"<9 awk '/^beta:/{b=0;p=0} /^beta: ".beta."$/{b=1} b==1&&/^# training step/{p=1} p==1&&/^plaq:/{print;p=0}' ".file u 0:2 w l t 'target training',\
+	"<9 awk '/^beta:/{b=0;p=0} /^beta: ".beta."$/{b=1} b==1&&/^# training step/{p=1} p==1&&/^plaqWoTrans:/{print;p=0}' ".file u 0:2 w l t 'mapped training',\
+	besi1(beta+0)/besi0(beta+0) w l t 'infinite volume'
+.end
+
+gpforce=`''{cat<<'.end'}
+set ylabel 'norm2 force'
+plot\
+	"<9 awk '/^beta:/{b=0;p=0} /^beta: ".beta."$/{b=1;p=1} p==1&&/^force:/{print} b==1&&/done mixing epoch/{p=0}' ".file u ($0-npre):2 w l t 'pre-train',\
+	"<9 awk '/^beta:/{b=0;p=0} /^beta: ".beta."$/{b=1} b==1&&/^# training inference step/{p=1} p==1&&/^force:/{print;p=0}' ".file u 0:2 w l t 'inference',\
+	"<9 awk '/^beta:/{b=0;p=0} /^beta: ".beta."$/{b=1} b==1&&/^# training step/{p=1} p==1&&/^force:/{print;p=0}' ".file u 0:2 w l t 'training'
+.end
+
+gploss=`''{cat<<'.end'}
+set ylabel 'loss'
+plot\
+	"<9 awk '/^beta:/{b=0;p=0} /^beta: ".beta."$/{b=1;p=1} p==1&&/^loss:/{print} b==1&&/done mixing epoch/{p=0}' ".file u ($0-npre):2 w l t 'pre-train',\
+	"<9 awk '/^beta:/{b=0;p=0} /^beta: ".beta."$/{b=1} b==1&&/^# training inference step/{p=1} p==1&&/^loss:/{print;p=0}' ".file u 0:2 w l t 'inference',\
+	"<9 awk '/^beta:/{b=0;p=0} /^beta: ".beta."$/{b=1} b==1&&/^# training step/{p=1} p==1&&/^loss:/{print;p=0}' ".file u 0:2 w l t 'training'
+.end
+
+gplnJ=`''{cat<<'.end'}
+set ylabel 'ln J'
+plot\
+	"<9 awk '/^beta:/{b=0;p=0} /^beta: ".beta."$/{b=1;p=1} p==1&&/^lnJ:/{print} b==1&&/done mixing epoch/{p=0}' ".file u ($0-npre):2 w l t 'pre-train',\
+	"<9 awk '/^beta:/{b=0;p=0} /^beta: ".beta."$/{b=1} b==1&&/^# training inference step/{p=1} p==1&&/^lnJ:/{print;p=0}' ".file u 0:2 w l t 'inference',\
+	"<9 awk '/^beta:/{b=0;p=0} /^beta: ".beta."$/{b=1} b==1&&/^# training step/{p=1} p==1&&/^lnJ:/{print;p=0}' ".file u 0:2 w l t 'training'
+.end
+
+gpdH=`''{cat<<'.end'}
+set ylabel '$\delta H$'
+plot\
+	"<9 awk '/^beta:/{b=0;p=0} /^beta: ".beta."$/{b=1;p=1} p==1&&/^dH:/{print} b==1&&/done mixing epoch/{p=0}' ".file u ($0-npre):2 w l t 'pre-train',\
+	"<9 awk '/^beta:/{b=0;p=0} /^beta: ".beta."$/{b=1} b==1&&/^# training inference step/{p=1} p==1&&/^dH:/{print;p=0}' ".file u 0:2 w l t 'inference',\
+	"<9 awk '/^beta:/{b=0;p=0} /^beta: ".beta."$/{b=1} b==1&&/^# training step/{p=1} p==1&&/^dH:/{print;p=0}' ".file u 0:2 w l t 'training'
+.end
+
+gpstepsize=`''{cat<<'.end'}
+set ylabel 'step size'
+plot\
+	"<9 awk '/^beta:/{b=0;p=0} /^beta: ".beta."$/{b=1} b==1&&/^# training step/{p=1} p==1&&/^weights:/{print;p=0}' ".file."|9 tr -s [], ' '" u 0:2 w l t 'training'
+.end
+
+fn plot{
+	b=$1
+	q=$2
+	info plot $q for beta $b
+	echo $gpsetup
+	echo beta=''''$b''''
+	echo file=''''$logfile''''
+	echo npre=$npretrain
+	# Set top and bottom margins to 0 so that there is no space between plots.
+	# Fix left and right margins to make sure that the alignment is perfect.
+	# Turn off xtics for all plots except the bottom one.
+	# In order to leave room for axis and tic labels underneath, we ask for
+	# a n+1-plot layout but only use the top n slots.
+	echo set title '''$\beta = ''.beta.''$'''
+	echo set lmargin 9
+	echo set rmargin 3
+	echo set xlabel '''training steps'''
+	echo $(gp$q)
+}
+
+fn plotbeta{
+	b=$1
+	for(q in plaq force lnJ loss dH stepsize){
+		plot $b $q > $outputfile^_b$b^_$q.gp
+	}
+}
+
+for(b in $betas){
+	plotbeta $b
+}

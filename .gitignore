@@ -7,3 +7,4 @@ __pycache__/
 *.fls
 *.out
 *.run.xml
+*-eps-converted-to.pdf

@@ -289,17 +289,20 @@ def infer(conf, mcmc, loss, weights, x0, detail=True):
         tf.print('-------- start epoch', epoch, '@', t0, '--------', summarize=-1)
         tf.print('beta:', mcmc.generate.action.beta, summarize=-1)
         for step in range(conf.nstepMixing):
-            tf.print('# mixing step:', step, summarize=-1)
+            tf.print('# mixing step with forced acceptance:', step, summarize=-1)
             x = inferStep(mcmc, loss, x, detail=False, forceAccept=True)
+        for step in range(conf.nstepMixing):
+            tf.print('# mixing step:', step, summarize=-1)
+            x = inferStep(mcmc, loss, x, detail=False, tuningStepSize=True)
         dt = tf.timestamp()-t0
         tf.print('-------- done mixing epoch', epoch,
-            'in', dt, 'sec,', dt/conf.nstepMixing, 'sec/step --------', summarize=-1)
+            'in', dt, 'sec,', 0.5*dt/conf.nstepMixing, 'sec/step --------', summarize=-1)
         t0 = tf.timestamp()
         for step in range(conf.nstepEpoch):
-            tf.print('# traj:', step, summarize=-1)
+            tf.print('# inference step:', step, summarize=-1)
             x = inferStep(mcmc, loss, x, detail=detail)
         dt = tf.timestamp()-t0
-        tf.print('-------- end epoch', epoch,
+        tf.print('-------- done inference epoch', epoch,
             'in', dt, 'sec,', dt/conf.nstepEpoch, 'sec/step --------', summarize=-1)
     return x
 

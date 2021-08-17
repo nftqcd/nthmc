@@ -143,8 +143,10 @@ def initMCMC(conf, action, mcmcFun, weights):
 
 def train(conf, actionFun, mcmcFun, lossFun, opt, weights=None):
     mcmcGen = initMCMC(conf, actionFun(), mcmcFun, weights)
-    loss = lossFun(actionFun())
     x = mcmcGen.generate.action.random()
+    loss = lossFun(actionFun())
+    loss.action.transform(x)
+    loss.action.transform.set_weights(mcmcGen.generate.action.transform.get_weights())
     for epoch in range(conf.nepoch):
         mcmcGen.changePerEpoch(epoch, conf)
         loss.action.changePerEpoch(epoch, conf)
@@ -174,7 +176,7 @@ def train(conf, actionFun, mcmcFun, lossFun, opt, weights=None):
             xtarget,_,_ = mcmcGen.generate.action.transform(x)
             dtf = tf.timestamp()-t
             t = tf.timestamp()
-            xtrain,_,invIter = mcmcGen.generate.action.transform.inv(xtarget)
+            xtrain,_,invIter = loss.action.transform.inv(xtarget)
             dtb = tf.timestamp()-t
             tf.print('# forward time:',dtf,'sec','backward time:',dtb,'sec','max iter:',invIter)
             if invIter >= mcmcGen.generate.action.transform.invMaxIter:

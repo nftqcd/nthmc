@@ -5,7 +5,7 @@ import sys
 sys.path.append('../lib')
 import field
 
-conf = nthmc.Conf(nbatch=64, nepoch=8, nstepEpoch=1024, nstepMixing=128, nstepPostTrain=1024, initDt=0.2, stepPerTraj=10, nthr=16, nthrIop=1)
+conf = nthmc.Conf(nbatch=64, nepoch=8, nstepEpoch=2048, nstepMixing=128, nstepPostTrain=1024, initDt=0.2, stepPerTraj=10, nthr=32, nthrIop=2)
 nthmc.setup(conf)
 op0 = (((1,2,-1,-2), (1,-2,-1,2)),
        ((1,1,2,-1,-1,-2), (1,1,-2,-1,-1,2), (1,2,-1,-1,-2,1), (1,-2,-1,-1,2,1)))
@@ -649,11 +649,11 @@ weights.append(tf.constant(beta,dtype=tf.float64))
 def train(conf, actionFun, mcmcFun, lossFun, opt, dbetaMap=0.5, weights=None):
     mcmcGen = forcetrain.initMCMC(conf, actionFun(), mcmcFun, weights)
     x = mcmcGen.generate.action.random()
-    betaMap = tf.constant(mcmcGen.generate.action.beta)
-    loss = lossFun(actionFun(), betaMap)
+    loss = lossFun(actionFun(), mcmcGen.generate.action.beta)
+    loss.action.transform(x)
+    loss.action.transform.set_weights(mcmcGen.generate.action.transform.get_weights())
     for epoch in range(conf.nepoch):
-        betaMap = betaMap - dbetaMap
-        loss.betaMap = betaMap
+        loss.setBetaMap(loss.plainAction.beta - dbetaMap)
         if conf.refreshOpt and len(opt.variables())>0:
             tf.print('# reset optimizer')
             for var in opt.variables():
@@ -661,7 +661,7 @@ def train(conf, actionFun, mcmcFun, lossFun, opt, dbetaMap=0.5, weights=None):
         t0 = tf.timestamp()
         tf.print('-------- start epoch', epoch, '@', t0, '--------', summarize=-1)
         tf.print('beta:', loss.action.beta, summarize=-1)
-        tf.print('betaMap:', loss.betaMap, summarize=-1)
+        tf.print('betaMap:', loss.plainAction.beta, summarize=-1)
         for step in range(conf.nstepMixing):
             tf.print('# pre-training inference step with forced acceptance:', step, summarize=-1)
             x = forcetrain.inferStep(mcmcGen, loss, x, detail=False, forceAccept=True)
@@ -681,7 +681,7 @@ def train(conf, actionFun, mcmcFun, lossFun, opt, dbetaMap=0.5, weights=None):
             xtarget,_,_ = mcmcGen.generate.action.transform(x)
             dtf = tf.timestamp()-t
             t = tf.timestamp()
-            xtrain,_,invIter = mcmcGen.generate.action.transform.inv(xtarget)
+            xtrain,_,invIter = loss.action.transform.inv(xtarget)
             dtb = tf.timestamp()-t
             tf.print('# forward time:',dtf,'sec','backward time:',dtb,'sec','max iter:',invIter)
             if invIter >= mcmcGen.generate.action.transform.invMaxIter:

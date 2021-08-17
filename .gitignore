@@ -8,3 +8,4 @@ __pycache__/
 *.out
 *.run.xml
 *-eps-converted-to.pdf
+._*

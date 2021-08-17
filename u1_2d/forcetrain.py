@@ -6,14 +6,13 @@ class LossFun:
     def __init__(self, action, betaMap=0.0, cNorm2=1.0, cNormInf=1.0):
         tf.print('LossFun init with action', action, summarize=-1)
         self.action = action
-        if betaMap>0:
-            self.plainAction = action.__class__(transform=ftr.Ident(), nbatch=action.shape[0], rng=action.rng.split()[0], beta=betaMap, beta0=betaMap, size=action.size, name=action.name+':loss')
-        self.betaMap = betaMap if betaMap>0 else 0.0
+        self.plainAction = None
+        self.setBetaMap(betaMap)
         self.cNorm2 = cNorm2
         self.cNormInf = cNormInf
     def __call__(self, x, print=True):
         f,_,_ = self.action.derivAction(x)
-        if self.betaMap != 0:
+        if self.plainAction is not None:
             f0,_,_ = self.plainAction.derivAction(x)
             f -= f0
         f = tf.reshape(f, [f.shape[0],-1])
@@ -31,6 +30,22 @@ class LossFun:
             if self.cNormInf != 0:
                 tf.print('dfnormInf:', ldfI, summarize=-1)
         return self.cNorm2*ldf2+self.cNormInf*ldfI
+    def setBetaMap(self, betaMap):
+        if betaMap>0:
+            if self.plainAction is not None:
+                self.plainAction.beta.assign(betaMap)
+                self.plainAction.beta0 = betaMap
+            else:
+                self.plainAction = self.action.__class__(
+                    transform=ftr.Ident(),
+                    nbatch=self.action.shape[0],
+                    rng=self.action.rng.split()[0],
+                    beta=betaMap,
+                    beta0=betaMap,
+                    size=self.action.size,
+                    name=self.action.name+':loss')
+        else:
+            self.plainAction = None
 
 @tf.function
 def inferStep(mcmc, loss, x0, print=True, detail=True, forceAccept=False, tuningStepSize=False):
@@ -126,7 +141,9 @@ def trainStep(loss, opt, x):
         lv = loss(x)
     grads = tape.gradient(lv, loss.action.transform.trainable_weights)
     opt.apply_gradients(zip(grads, loss.action.transform.trainable_weights))
+    plaqWoT = loss.action.plaquetteWoTrans(x)
     tf.print('loss:', lv, summarize=-1)
+    tf.print('plaqWoTrans:', tf.reduce_mean(plaqWoT), tf.reduce_min(plaqWoT), tf.reduce_max(plaqWoT), summarize=-1)
     tf.print('weights:', loss.action.transform.trainable_weights, summarize=-1)
 
 def initMCMC(conf, action, mcmcFun, weights):

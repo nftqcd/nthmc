@@ -3,45 +3,45 @@
 beta: 3
 nconf: 1024
 blocksize: 32
-plaq:    0.80969 +/- 0.000210212 
-plaqMin: 0.767568 +/- 0.000465687
-plaqMax: 0.847113 +/- 0.000345094
-plaqMapped:    0.782442 +/- 0.000231459
-plaqMappedMin: 0.737311 +/- 0.000495517
-plaqMappedMax: 0.823414 +/- 0.000382734
+plaq:    0.809542 +/- 0.000158637
+plaqMin: 0.767772 +/- 0.000533486
+plaqMax: 0.846836 +/- 0.000231698
+plaqMapped:    0.786756 +/- 0.000178557
+plaqMappedMin: 0.740229 +/- 0.000609197
+plaqMappedMax: 0.828543 +/- 0.000266748
 beta: 4
 nconf: 1024
 blocksize: 32
-plaq:    0.863715 +/- 0.000132103
-plaqMin: 0.833373 +/- 0.000310721
-plaqMax: 0.890761 +/- 0.000199537
-plaqMapped:    0.792566 +/- 0.000181478
-plaqMappedMin: 0.753909 +/- 0.000417373
-plaqMappedMax: 0.829056 +/- 0.000296079
+plaq:    0.86364 +/- 0.000127237 
+plaqMin: 0.833493 +/- 0.000440814
+plaqMax: 0.890633 +/- 0.00027637 
+plaqMapped:    0.800364 +/- 0.000186956
+plaqMappedMin: 0.757003 +/- 0.000699899
+plaqMappedMax: 0.839574 +/- 0.000426587
 beta: 5
 nconf: 1024
 blocksize: 32
-plaq:    0.893405 +/- 0.00010095 
-plaqMin: 0.869925 +/- 0.000228062
-plaqMax: 0.914349 +/- 0.000201101
-plaqMapped:    0.788759 +/- 0.000189421
-plaqMappedMin: 0.749835 +/- 0.000434578
-plaqMappedMax: 0.825789 +/- 0.000393068
+plaq:    0.893293 +/- 9.55846e-5 
+plaqMin: 0.869647 +/- 0.00023531 
+plaqMax: 0.914204 +/- 0.000185224
+plaqMapped:    0.793521 +/- 0.000202958
+plaqMappedMin: 0.75007 +/- 0.000460876 
+plaqMappedMax: 0.832737 +/- 0.00036811 
 beta: 6
 nconf: 1024
 blocksize: 32
-plaq:    0.912353 +/- 7.56262e-5 
-plaqMin: 0.892689 +/- 0.000229656
-plaqMax: 0.929421 +/- 0.00011293 
-plaqMapped:    0.775777 +/- 0.000150867
-plaqMappedMin: 0.734082 +/- 0.000476562
-plaqMappedMax: 0.814451 +/- 0.000306375
+plaq:    0.912302 +/- 6.90233e-5 
+plaqMin: 0.893168 +/- 0.000212532
+plaqMax: 0.929317 +/- 0.000130473
+plaqMapped:    0.784022 +/- 0.000157164
+plaqMappedMin: 0.74075 +/- 0.000488508 
+plaqMappedMax: 0.824092 +/- 0.000358398
 beta: 7
 nconf: 1024
 blocksize: 32
-plaq:    0.925608 +/- 6.55252e-5 
-plaqMin: 0.909304 +/- 0.000197649
-plaqMax: 0.940076 +/- 8.76055e-5 
-plaqMapped:    0.774089 +/- 0.00016678 
-plaqMappedMin: 0.730826 +/- 0.000410147
-plaqMappedMax: 0.814454 +/- 0.00026132 
+plaq:    0.925482 +/- 6.73844e-5 
+plaqMin: 0.909063 +/- 0.000193488
+plaqMax: 0.940133 +/- 0.000103302
+plaqMapped:    0.779859 +/- 0.000184386
+plaqMappedMin: 0.73541 +/- 0.000489197 
+plaqMappedMax: 0.820793 +/- 0.000350197

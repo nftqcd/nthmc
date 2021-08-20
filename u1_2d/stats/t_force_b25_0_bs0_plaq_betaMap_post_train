@@ -1,0 +1,74 @@
+
+# File: ../t_force_b25_0_bs0.log
+betaMap: 4.5
+nconf: 1024
+blocksize: 32
+plaq:    0.893482 +/- 0.000108762
+plaqMin: 0.869617 +/- 0.000233423
+plaqMax: 0.914539 +/- 0.000174858
+plaqMapped:    0.883069 +/- 0.000118487
+plaqMappedMin: 0.856957 +/- 0.000260754
+plaqMappedMax: 0.906165 +/- 0.00018902 
+betaMap: 4
+nconf: 1024
+blocksize: 32
+plaq:    0.893318 +/- 0.000137935
+plaqMin: 0.869311 +/- 0.000329989
+plaqMax: 0.914645 +/- 0.00019223 
+plaqMapped:    0.869558 +/- 0.000169032
+plaqMappedMin: 0.840464 +/- 0.000411378
+plaqMappedMax: 0.895568 +/- 0.000233071
+betaMap: 3.5
+nconf: 1024
+blocksize: 32
+plaq:    0.89355 +/- 0.000116912 
+plaqMin: 0.870148 +/- 0.000306095
+plaqMax: 0.91438 +/- 0.000185051 
+plaqMapped:    0.852462 +/- 0.000163719
+plaqMappedMin: 0.820218 +/- 0.000421981
+plaqMappedMax: 0.881265 +/- 0.000265139
+betaMap: 3
+nconf: 1024
+blocksize: 32
+plaq:    0.893313 +/- 0.000119952
+plaqMin: 0.869501 +/- 0.000373015
+plaqMax: 0.914274 +/- 0.000203061
+plaqMapped:    0.82722 +/- 0.000203478 
+plaqMappedMin: 0.789167 +/- 0.000629755
+plaqMappedMax: 0.86094 +/- 0.000336866 
+betaMap: 2.5
+nconf: 1024
+blocksize: 32
+plaq:    0.893308 +/- 8.49094e-5 
+plaqMin: 0.870027 +/- 0.000217577
+plaqMax: 0.913902 +/- 0.000210825
+plaqMapped:    0.797512 +/- 0.000165074
+plaqMappedMin: 0.753742 +/- 0.000428226
+plaqMappedMax: 0.836779 +/- 0.000418944
+betaMap: 2
+nconf: 1024
+blocksize: 32
+plaq:    0.89355 +/- 9.10323e-5  
+plaqMin: 0.870262 +/- 0.000205612
+plaqMax: 0.91423 +/- 0.000144827 
+plaqMapped:    0.743151 +/- 0.00021889 
+plaqMappedMin: 0.69036 +/- 0.000521483 
+plaqMappedMax: 0.791549 +/- 0.000391085
+betaMap: 1.5
+nconf: 1024
+blocksize: 32
+plaq:    0.893189 +/- 8.2943e-5  
+plaqMin: 0.86967 +/- 0.000251768 
+plaqMax: 0.914221 +/- 0.000132679
+plaqMapped:    0.692842 +/- 0.000216686
+plaqMappedMin: 0.632885 +/- 0.000568531
+plaqMappedMax: 0.748803 +/- 0.000405452
+betaMap: 1
+nconf: 1024
+blocksize: 32
+plaq:    0.89317 +/- 0.000133825 
+plaqMin: 0.871301 +/- 0.000624232
+plaqMax: 0.914312 +/- 0.000440761
+plaqMapped:    0.153886 +/- 0.000343185
+plaqMappedMin: 0.100963 +/- 0.00119079 
+plaqMappedMax: 0.206785 +/- 0.00105157 

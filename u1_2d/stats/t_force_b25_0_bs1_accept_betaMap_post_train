@@ -1,0 +1,38 @@
+
+# File: ../t_force_b25_0_bs1.log
+betaMap: 4.5
+nconf: 1024
+blocksize: 32
+accept: 0.788254 +/- 0.00256109
+betaMap: 4
+nconf: 1024
+blocksize: 32
+accept: 0.813248 +/- 0.00182171
+betaMap: 3.5
+nconf: 1024
+blocksize: 32
+accept: 0.849518 +/- 0.00161773
+betaMap: 3
+nconf: 1024
+blocksize: 32
+accept: 0.88887 +/- 0.00138764
+betaMap: 2.5
+nconf: 1024
+blocksize: 32
+accept: 0.919312 +/- 0.0012684
+betaMap: 2
+nconf: 1024
+blocksize: 32
+accept: 0.913406 +/- 0.00119576
+betaMap: 1.5
+nconf: 1024
+blocksize: 32
+accept: 0.881668 +/- 0.00120716
+betaMap: 1
+nconf: 1024
+blocksize: 32
+accept: 0.0805817 +/- 0.00177554
+betaMap: 0.5
+nconf: 1024
+blocksize: 32
+accept: 0.840363 +/- 0.00164491

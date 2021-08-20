@@ -1,0 +1,74 @@
+
+# File: ../t_force_b25_0_bs0.log
+betaMap: 4.5
+nconf: 1024
+blocksize: 32
+forceNorm2:      64.5947 +/- 0.0155828 
+forceNorm2Min:   56.4838 +/- 0.0384483 
+forceNorm2Max:   72.9445 +/- 0.0620696 
+forceNormInf:    8.10116 +/- 0.00170142
+forceNormInfMin: 6.58362 +/- 0.00616937
+forceNormInfMax: 9.36077 +/- 0.00357335
+betaMap: 4
+nconf: 1024
+blocksize: 32
+forceNorm2:      60.5659 +/- 0.0193143 
+forceNorm2Min:   52.9869 +/- 0.0356892 
+forceNorm2Max:   68.2915 +/- 0.0577587 
+forceNormInf:    7.5548 +/- 0.00221735 
+forceNormInfMin: 6.16734 +/- 0.00589437
+forceNormInfMax: 8.97208 +/- 0.00794612
+betaMap: 3.5
+nconf: 1024
+blocksize: 32
+forceNorm2:      56.293 +/- 0.0149594  
+forceNorm2Min:   49.4705 +/- 0.0335809 
+forceNorm2Max:   63.3916 +/- 0.0498302 
+forceNormInf:    7.00695 +/- 0.00232964
+forceNormInfMin: 5.71838 +/- 0.004785  
+forceNormInfMax: 8.95208 +/- 0.016557  
+betaMap: 3
+nconf: 1024
+blocksize: 32
+forceNorm2:      51.5488 +/- 0.0151191 
+forceNorm2Min:   45.3275 +/- 0.0324145 
+forceNorm2Max:   58.0621 +/- 0.0455316 
+forceNormInf:    6.52582 +/- 0.00252259
+forceNormInfMin: 5.22042 +/- 0.00414259
+forceNormInfMax: 9.67736 +/- 0.0243235 
+betaMap: 2.5
+nconf: 1024
+blocksize: 32
+forceNorm2:      47.2592 +/- 0.0116114
+forceNorm2Min:   41.7641 +/- 0.0216796
+forceNorm2Max:   53.5352 +/- 0.0478853
+forceNormInf:    6.25223 +/- 0.0032494
+forceNormInfMin: 4.78887 +/- 0.0040983
+forceNormInfMax: 11.2839 +/- 0.0391446
+betaMap: 2
+nconf: 1024
+blocksize: 32
+forceNorm2:      41.7757 +/- 0.0131294
+forceNorm2Min:   36.264 +/- 0.0215383 
+forceNorm2Max:   49.8551 +/- 0.059718 
+forceNormInf:    6.3161 +/- 0.0034305 
+forceNormInfMin: 4.3058 +/- 0.00363089
+forceNormInfMax: 13.8742 +/- 0.065823 
+betaMap: 1.5
+nconf: 1024
+blocksize: 32
+forceNorm2:      39.3889 +/- 0.0128271 
+forceNorm2Min:   33.152 +/- 0.0249371  
+forceNorm2Max:   50.4572 +/- 0.0782787 
+forceNormInf:    6.69318 +/- 0.00477685
+forceNormInfMin: 4.14792 +/- 0.00445842
+forceNormInfMax: 16.3587 +/- 0.0554258 
+betaMap: 1
+nconf: 1024
+blocksize: 32
+forceNorm2:      81.2309 +/- 0.0383147
+forceNorm2Min:   55.7908 +/- 0.058307 
+forceNorm2Max:   155.531 +/- 0.625445 
+forceNormInf:    19.832 +/- 0.0154262 
+forceNormInfMin: 8.5747 +/- 0.0164814 
+forceNormInfMax: 63.1474 +/- 0.332348 

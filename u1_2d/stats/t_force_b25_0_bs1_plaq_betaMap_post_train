@@ -1,0 +1,83 @@
+
+# File: ../t_force_b25_0_bs1.log
+betaMap: 4.5
+nconf: 1024
+blocksize: 32
+plaq:    0.893362 +/- 9.96094e-5
+plaqMin: 0.869304 +/- 0.00025315
+plaqMax: 0.914309 +/- 0.00019921
+plaqMapped:    0.882744 +/- 0.000109359
+plaqMappedMin: 0.856293 +/- 0.000279531
+plaqMappedMax: 0.905805 +/- 0.000217417
+betaMap: 4
+nconf: 1024
+blocksize: 32
+plaq:    0.893346 +/- 0.000138249
+plaqMin: 0.869518 +/- 0.000317925
+plaqMax: 0.91446 +/- 0.00013608  
+plaqMapped:    0.868447 +/- 0.000170944
+plaqMappedMin: 0.839391 +/- 0.000379934
+plaqMappedMax: 0.894377 +/- 0.00016929 
+betaMap: 3.5
+nconf: 1024
+blocksize: 32
+plaq:    0.893569 +/- 0.000108304
+plaqMin: 0.86965 +/- 0.000337432 
+plaqMax: 0.914418 +/- 0.000203271
+plaqMapped:    0.851637 +/- 0.000151852
+plaqMappedMin: 0.818507 +/- 0.000489502
+plaqMappedMax: 0.880574 +/- 0.000289257
+betaMap: 3
+nconf: 1024
+blocksize: 32
+plaq:    0.893409 +/- 0.000121266
+plaqMin: 0.869681 +/- 0.000360363
+plaqMax: 0.914242 +/- 0.00018623 
+plaqMapped:    0.827208 +/- 0.000199036
+plaqMappedMin: 0.789891 +/- 0.000567778
+plaqMappedMax: 0.860619 +/- 0.000315746
+betaMap: 2.5
+nconf: 1024
+blocksize: 32
+plaq:    0.89335 +/- 8.29862e-5  
+plaqMin: 0.869796 +/- 0.000324647
+plaqMax: 0.914025 +/- 0.000179487
+plaqMapped:    0.789531 +/- 0.000168512
+plaqMappedMin: 0.745454 +/- 0.000578521
+plaqMappedMax: 0.82903 +/- 0.000385869 
+betaMap: 2
+nconf: 1024
+blocksize: 32
+plaq:    0.893336 +/- 0.000116416
+plaqMin: 0.869728 +/- 0.000226163
+plaqMax: 0.914166 +/- 0.000168409
+plaqMapped:    0.740332 +/- 0.000275498
+plaqMappedMin: 0.687771 +/- 0.000514773
+plaqMappedMax: 0.788198 +/- 0.000412487
+betaMap: 1.5
+nconf: 1024
+blocksize: 32
+plaq:    0.893316 +/- 6.3648e-5  
+plaqMin: 0.869559 +/- 0.000213636
+plaqMax: 0.914175 +/- 0.00011177 
+plaqMapped:    0.681905 +/- 0.000177611
+plaqMappedMin: 0.620258 +/- 0.000508968
+plaqMappedMax: 0.738988 +/- 0.000278188
+betaMap: 1
+nconf: 1024
+blocksize: 32
+plaq:    0.894142 +/- 0.000113655
+plaqMin: 0.871616 +/- 0.000626786
+plaqMax: 0.913869 +/- 0.000285026
+plaqMapped:    0.149706 +/- 0.000333931
+plaqMappedMin: 0.099417 +/- 0.000970981
+plaqMappedMax: 0.19773 +/- 0.00102911  
+betaMap: 0.5
+nconf: 1024
+blocksize: 32
+plaq:    0.893573 +/- 7.23396e-5 
+plaqMin: 0.870183 +/- 0.000208835
+plaqMax: 0.914455 +/- 0.000112002
+plaqMapped:    0.156893 +/- 0.0002782  
+plaqMappedMin: 0.104912 +/- 0.000409385
+plaqMappedMax: 0.208702 +/- 0.000591861

@@ -1,0 +1,47 @@
+
+# File: ../t_force_b25_3.log
+beta: 3
+nconf: 1024
+blocksize: 32
+forceNorm2:      45.7611 +/- 0.0153389  
+forceNorm2Min:   40.1352 +/- 0.0323862  
+forceNorm2Max:   51.5025 +/- 0.0378738  
+forceNormInf:    5.51956 +/- 0.000901089
+forceNormInfMin: 4.63075 +/- 0.00415629 
+forceNormInfMax: 6.02644 +/- 0.00147083 
+beta: 4
+nconf: 1024
+blocksize: 32
+forceNorm2:      46.6858 +/- 0.0115359 
+forceNorm2Min:   39.8589 +/- 0.0341905 
+forceNorm2Max:   54.0618 +/- 0.0599417 
+forceNormInf:    6.56835 +/- 0.00205493
+forceNormInfMin: 4.93575 +/- 0.00447775
+forceNormInfMax: 8.35968 +/- 0.00534902
+beta: 5
+nconf: 1024
+blocksize: 32
+forceNorm2:      46.8731 +/- 0.0132309 
+forceNorm2Min:   39.7476 +/- 0.0356723 
+forceNorm2Max:   54.9854 +/- 0.0618643 
+forceNormInf:    7.22312 +/- 0.00344398
+forceNormInfMin: 5.09112 +/- 0.00601148
+forceNormInfMax: 10.7391 +/- 0.0140406 
+beta: 6
+nconf: 1024
+blocksize: 32
+forceNorm2:      46.7456 +/- 0.0199268 
+forceNorm2Min:   40.078 +/- 0.0274617  
+forceNorm2Max:   54.9551 +/- 0.0739222 
+forceNormInf:    7.64024 +/- 0.00478314
+forceNormInfMin: 5.14751 +/- 0.00602255
+forceNormInfMax: 12.9127 +/- 0.0413519 
+beta: 7
+nconf: 1024
+blocksize: 32
+forceNorm2:      46.8359 +/- 0.0166935 
+forceNorm2Min:   40.1725 +/- 0.0261046 
+forceNorm2Max:   55.9237 +/- 0.0742276 
+forceNormInf:    7.97546 +/- 0.00544456
+forceNormInfMin: 5.19391 +/- 0.00565003
+forceNormInfMax: 14.5948 +/- 0.049945  

@@ -1,0 +1,51 @@
+results=\
+	t_force_b25_0_bs0_accept_betaMap_post_train\
+	t_force_b25_0_bs1_accept_betaMap_post_train\
+	t_force_b25_0_bs0_dq2_betaMap_post_train\
+	t_force_b25_0_bs1_dq2_betaMap_post_train\
+	t_force_b25_0_bs0_force_betaMap_post_train\
+	t_force_b25_0_bs1_force_betaMap_post_train\
+	t_force_b25_0_bs0_plaq_betaMap_post_train\
+	t_force_b25_0_bs1_plaq_betaMap_post_train\
+	t_force_b25_0_accept_post_train\
+	t_force_b25_1_accept_post_train\
+	t_force_b25_2_accept_post_train\
+	t_force_b25_3_accept_post_train\
+	t_force_b25_0_dq2_post_train\
+	t_force_b25_1_dq2_post_train\
+	t_force_b25_2_dq2_post_train\
+	t_force_b25_3_dq2_post_train\
+	t_force_b25_0_force_post_train\
+	t_force_b25_1_force_post_train\
+	t_force_b25_2_force_post_train\
+	t_force_b25_3_force_post_train\
+	t_force_b25_0_plaq_post_train\
+	t_force_b25_1_plaq_post_train\
+	t_force_b25_2_plaq_post_train\
+	t_force_b25_3_plaq_post_train\
+
+all:V:	$results
+
+%_accept_betaMap_post_train:	../%.log accept_betaMap_post_train.ijs
+	./accept_betaMap_post_train.ijs ../$stem.log > $target
+
+%_dq2_betaMap_post_train:	../%.log dq2_betaMap_post_train_large_batch.ijs
+	./dq2_betaMap_post_train_large_batch.ijs ../$stem.log > $target
+
+%_force_betaMap_post_train:	../%.log force_betaMap_post_train.ijs
+	./force_betaMap_post_train.ijs ../$stem.log > $target
+
+%_plaq_betaMap_post_train:	../%.log plaq_betaMap_post_train.ijs
+	./plaq_betaMap_post_train.ijs ../$stem.log > $target
+
+%_accept_post_train:	../%.log accept_post_train.ijs
+	./accept_post_train.ijs ../$stem.log > $target
+
+%_dq2_post_train:	../%.log dq2_post_train_large_batch.ijs
+	./dq2_post_train_large_batch.ijs ../$stem.log > $target
+
+%_force_post_train:	../%.log force_post_train.ijs
+	./force_post_train.ijs ../$stem.log > $target
+
+%_plaq_post_train:	../%.log plaq_post_train.ijs
+	./plaq_post_train.ijs ../$stem.log > $target

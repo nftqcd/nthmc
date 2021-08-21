@@ -2,7 +2,7 @@
 load'../../util/a.ijs'
 
 dq2=: 4 :'(+/%#)@:((-x)"_ }. x&|.*:@:-])&> y'"0 _
-ds=:i.16
+ds=:i.64
 
 betaForFile=: 4 :0
 	betastr=.display x

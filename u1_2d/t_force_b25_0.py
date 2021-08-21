@@ -5,7 +5,7 @@ import sys
 sys.path.append('../lib')
 import field
 
-conf = nthmc.Conf(nbatch=64, nepoch=5, nstepEpoch=1024, nstepMixing=128, nstepPostTrain=1024, initDt=0.2, stepPerTraj=10)
+conf = nthmc.Conf(nbatch=64, nepoch=5, nstepEpoch=1024, nstepMixing=128, nstepPostTrain=1024, initDt=0.2, stepPerTraj=10, nthr=32, nthrIop=2)
 nthmc.setup(conf)
 op0 = (((1,2,-1,-2), (1,-2,-1,2)),
        ((1,1,2,-1,-1,-2), (1,1,-2,-1,-1,2), (1,2,-1,-1,-2,1), (1,-2,-1,-1,2,1)))

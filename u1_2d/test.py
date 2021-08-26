@@ -113,8 +113,13 @@ class TestGenericStoutSmear(unittest.TestCase):
                 sx = tf.reverse(self.testField, [2])
                 sx = tf.stack([tf.roll(-sx[:,0], -1, 1), sx[:,1]], 1)
                 if s.linkDir != 1:  # first link is on other directions
-                    s.maskUpdate = tf.roll(s.maskUpdate, -1, 0)
-                sy, sld, _ = s(sx)
+                    x0 = s.linkFirst[0]-1
+                    if x0<0:
+                        x0 += s.linkRepeat[0]
+                    sn = ftr.GenericStoutSmear(((x0,s.linkFirst[1]),s.linkRepeat), s.updatedLoops, s.fixedLoopLayers, s.layerCoefficient)
+                else:
+                    sn = s
+                sy, sld, _ = sn(sx)
                 sy = tf.reverse(tf.stack([tf.roll(-sy[:,0], 1, 1), sy[:,1]], 1), [2])
                 with self.subTest(test='field'):
                     self.assertLess(tf.reduce_mean(tf.math.squared_difference(y, sy)), 1E-26)
@@ -128,8 +133,13 @@ class TestGenericStoutSmear(unittest.TestCase):
                 sx = tf.reverse(self.testField, [3])
                 sx = tf.stack([sx[:,0], tf.roll(-sx[:,1], -1, 2)], 1)
                 if s.linkDir != 2:  # first link is on other directions
-                    s.maskUpdate = tf.roll(s.maskUpdate, -1, 1)
-                sy, sld, _ = s(sx)
+                    x1 = s.linkFirst[1]-1
+                    if x1<0:
+                        x1 += s.linkRepeat[1]
+                    sn = ftr.GenericStoutSmear(((s.linkFirst[0],x1),s.linkRepeat), s.updatedLoops, s.fixedLoopLayers, s.layerCoefficient)
+                else:
+                    sn = s
+                sy, sld, _ = sn(sx)
                 sy = tf.reverse(tf.stack([sy[:,0], tf.roll(-sy[:,1], 1, 2)], 1), [3])
                 with self.subTest(test='field'):
                     self.assertLess(tf.reduce_mean(tf.math.squared_difference(y, sy)), 1E-26)
@@ -213,11 +223,16 @@ class TestChain(unittest.TestCase):
         y, ld, _ = self.ss(self.testField)
         sx = tf.reverse(self.testField, [2])
         sx = tf.stack([tf.roll(-sx[:,0], -1, 1), sx[:,1]], 1)
+        ss = []
         for s in self.ss.chain:
             if s.linkDir != 1:  # first link is on other directions
-                s.maskUpdate = tf.roll(s.maskUpdate, -1, 0)
-                s.unmaskFixedLoop = [tf.roll(m, 1, 0) for m in s.unmaskFixedLoop]
-        sy, sld, _ = self.ss(sx)
+                x0 = s.linkFirst[0]-1
+                if x0<0:
+                    x0 += s.linkRepeat[0]
+                ss.append(ftr.GenericStoutSmear(((x0,s.linkFirst[1]),s.linkRepeat), s.updatedLoops, s.fixedLoopLayers, s.layerCoefficient))
+            else:
+                ss.append(s)
+        sy, sld, _ = ftr.TransformChain(ss)(sx)
         sy = tf.reverse(tf.stack([tf.roll(-sy[:,0], 1, 1), sy[:,1]], 1), [2])
         with self.subTest(test='field'):
             self.assertLess(tf.reduce_mean(tf.math.squared_difference(y, sy)), 1E-26)
@@ -228,11 +243,16 @@ class TestChain(unittest.TestCase):
         y, ld, _ = self.ss(self.testField)
         sx = tf.reverse(self.testField, [3])
         sx = tf.stack([sx[:,0], tf.roll(-sx[:,1], -1, 2)], 1)
+        ss = []
         for s in self.ss.chain:
             if s.linkDir != 2:  # first link is on other directions
-                s.maskUpdate = tf.roll(s.maskUpdate, -1, 1)
-                s.unmaskFixedLoop = [tf.roll(m, 1, 1) for m in s.unmaskFixedLoop]
-        sy, sld, _ = self.ss(sx)
+                x1 = s.linkFirst[1]-1
+                if x1<0:
+                    x1 += s.linkRepeat[1]
+                ss.append(ftr.GenericStoutSmear(((s.linkFirst[0],x1),s.linkRepeat), s.updatedLoops, s.fixedLoopLayers, s.layerCoefficient))
+            else:
+                ss.append(s)
+        sy, sld, _ = ftr.TransformChain(ss)(sx)
         sy = tf.reverse(tf.stack([sy[:,0], tf.roll(-sy[:,1], 1, 2)], 1), [3])
         with self.subTest(test='field'):
             self.assertLess(tf.reduce_mean(tf.math.squared_difference(y, sy)), 1E-26)

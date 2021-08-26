@@ -78,6 +78,7 @@ class TransformChain(tl.Layer):
             if hasattr(t,'invMaxIter'):
                 if self.invMaxIter < t.invMaxIter:
                     self.invMaxIter = t.invMaxIter
+    @tf.function
     def call(self, x):
         y = x
         l = tf.zeros(x.shape[0], dtype=tf.float64)
@@ -137,12 +138,14 @@ class GenericStoutSmear(tk.Model):
         super(GenericStoutSmear, self).__init__(autocast=False, name=name, **kwargs)
         # TODO: check arguments
         self.linkFirst, self.linkRepeat = linkSubset
+        self.updatedLoops = updatedLoops
         self.loopsDiff = sum(updatedLoops,())
         self.linkDir = self.loopsDiff[0][0]
         if self.linkDir<1:
             raise ValueError(f'expecting positive direction in the first link, but got: {updatedLoops}')
         if not all([self.linkDir == x[0] for x in self.loopsDiff]):
             raise ValueError(f'expecting same direction in the first links, but got: {updatedLoops}')
+        self.fixedLoopLayers = fixedLoopLayers
         self.loopsFixed = tuple([x[0] for x in fixedLoopLayers])
         self.layersFixedLoop = tuple([x[1] for x in fixedLoopLayers])
         self.pathsAll = field.OrdPaths(field.topath(self.loopsDiff + self.loopsFixed))

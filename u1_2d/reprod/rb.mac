@@ -1,0 +1,11 @@
+#!/bin/sh
+for b in 3 4 5 6;do
+	python3 t_fthmc_0_b$b.py > t_fthmc_0_b${b}_mac_N.log 2>&1
+done
+
+TF_DETERMINISTIC_OPS=1
+export TF_DETERMINISTIC_OPS
+
+for b in 3 4 5 6;do
+	python3 t_fthmc_0_b$b.py > t_fthmc_0_b${b}_mac_D.log 2>&1
+done

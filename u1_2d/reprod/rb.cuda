@@ -1,0 +1,40 @@
+#!/bin/sh
+n0(){
+(
+	export CUDA_VISIBLE_DEVICES=0
+	numactl -C 0-39 -N 0 -m 0 "$@"
+)
+}
+n1(){
+(
+	export CUDA_VISIBLE_DEVICES=1
+	numactl -C 40-79 -N 0 -m 0 "$@"
+)
+}
+n2(){
+(
+	export CUDA_VISIBLE_DEVICES=2
+	numactl -C 80-119 -N 8 -m 8 "$@"
+)
+}
+n3(){
+(
+	export CUDA_VISIBLE_DEVICES=3
+	numactl -C 120-159 -N 8 -m 8 "$@"
+)
+}
+
+for g in 0 1 2 3;do
+	((b=g+3))
+	n$g python3.8 t_fthmc_0_b$b.py > t_fthmc_0_b${b}_cuda_N.log 2>&1 &
+done
+wait
+
+TF_DETERMINISTIC_OPS=1
+export TF_DETERMINISTIC_OPS
+
+for g in 0 1 2 3;do
+	((b=g+3))
+	n$g python3.8 t_fthmc_0_b$b.py > t_fthmc_0_b${b}_cuda_D.log 2>&1 &
+done
+wait

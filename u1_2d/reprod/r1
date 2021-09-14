@@ -1,0 +1,20 @@
+#!/bin/bash
+(
+	export CUDA_VISIBLE_DEVICES=0
+	numactl -C 0-39 -N 0 -m 0 python3.8 t_fthmc_0.py > t_fthmc_0_N_0.log 2>&1
+) &
+(
+	export TF_DETERMINISTIC_OPS=1
+	export CUDA_VISIBLE_DEVICES=1
+	numactl -C 40-79 -N 0 -m 0 python3.8 t_fthmc_0.py > t_fthmc_0_D_0.log 2>&1
+) &
+(
+	export CUDA_VISIBLE_DEVICES=2
+	numactl -C 80-119 -N 8 -m 8 python3.8 t_fthmc_1.py > t_fthmc_1_N_0.log 2>&1
+) &
+(
+	export TF_DETERMINISTIC_OPS=1
+	export CUDA_VISIBLE_DEVICES=3
+	numactl -C 120-159 -N 8 -m 8 python3.8 t_fthmc_1.py > t_fthmc_1_D_0.log 2>&1
+) &
+wait

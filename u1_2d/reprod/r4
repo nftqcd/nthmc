@@ -1,0 +1,7 @@
+#!/bin/sh
+PATH="$HOME/py-ML/bin:$PATH"
+export PATH
+(                        python3 t_fthmc_0.py > t_fthmc_0cpu2_N.log 2>&1 )
+( TF_DETERMINISTIC_OPS=1 python3 t_fthmc_0.py > t_fthmc_0cpu2_D.log 2>&1 )
+(                        python3 t_fthmc_1.py > t_fthmc_1cpu2_N.log 2>&1 )
+( TF_DETERMINISTIC_OPS=1 python3 t_fthmc_1.py > t_fthmc_1cpu2_D.log 2>&1 )

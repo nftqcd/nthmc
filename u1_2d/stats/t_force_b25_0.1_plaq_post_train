@@ -1,0 +1,47 @@
+
+# File: ../t_force_b25_0.1.log
+beta: 3
+nconf: 1024
+blocksize: 32
+plaq:    0.809926 +/- 0.000193523
+plaqMin: 0.76789 +/- 0.000484291 
+plaqMax: 0.847671 +/- 0.000372543
+plaqMapped:    0.789219 +/- 0.00021354 
+plaqMappedMin: 0.745335 +/- 0.000517115
+plaqMappedMax: 0.829097 +/- 0.00039437 
+beta: 4
+nconf: 1024
+blocksize: 32
+plaq:    0.863684 +/- 0.000159732
+plaqMin: 0.833036 +/- 0.000417087
+plaqMax: 0.890295 +/- 0.000206032
+plaqMapped:    0.774446 +/- 0.00024712 
+plaqMappedMin: 0.73101 +/- 0.000623755 
+plaqMappedMax: 0.813263 +/- 0.000340233
+beta: 5
+nconf: 1024
+blocksize: 32
+plaq:    0.893501 +/- 0.000118643
+plaqMin: 0.869871 +/- 0.000252352
+plaqMax: 0.914101 +/- 0.000197696
+plaqMapped:    0.725975 +/- 0.000207902
+plaqMappedMin: 0.679034 +/- 0.000321219
+plaqMappedMax: 0.769922 +/- 0.000376165
+beta: 6
+nconf: 1024
+blocksize: 32
+plaq:    0.912043 +/- 5.3788e-5  
+plaqMin: 0.89447 +/- 1.23629e-15 
+plaqMax: 0.930243 +/- 0.000483883
+plaqMapped:    0.145149 +/- 0.000220262
+plaqMappedMin: 0.0954176 +/- 5.87827e-5
+plaqMappedMax: 0.186239 +/- 0.000851541
+beta: 7
+nconf: 1024
+blocksize: 32
+plaq:    0.925404 +/- 4.77195e-5 
+plaqMin: 0.909214 +/- 0.000232144
+plaqMax: 0.939997 +/- 9.33149e-5 
+plaqMapped:    0.149639 +/- 0.00025856 
+plaqMappedMin: 0.102763 +/- 0.000579158
+plaqMappedMax: 0.20065 +/- 0.00116491  

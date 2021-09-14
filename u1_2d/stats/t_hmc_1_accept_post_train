@@ -1,0 +1,42 @@
+
+# File: ../t_hmc_1.log
+beta: 2.5
+nconf: 1024
+blocksize: 32
+accept: 0.834228 +/- 0.000311613
+beta: 3
+nconf: 1024
+blocksize: 32
+accept: 0.757425 +/- 0.000432682
+beta: 3.5
+nconf: 1024
+blocksize: 32
+accept: 0.71863 +/- 0.000441652
+beta: 4
+nconf: 1024
+blocksize: 32
+accept: 0.69335 +/- 0.000468852
+beta: 4.5
+nconf: 1024
+blocksize: 32
+accept: 0.677782 +/- 0.000406618
+beta: 5
+nconf: 1024
+blocksize: 32
+accept: 0.671157 +/- 0.000388726
+beta: 5.5
+nconf: 1024
+blocksize: 32
+accept: 0.669505 +/- 0.000472419
+beta: 6
+nconf: 1024
+blocksize: 32
+accept: 0.672693 +/- 0.000402832
+beta: 6.5
+nconf: 1024
+blocksize: 32
+accept: 0.683135 +/- 0.000519353
+beta: 7
+nconf: 1024
+blocksize: 32
+accept: 0.69963 +/- 0.0003769

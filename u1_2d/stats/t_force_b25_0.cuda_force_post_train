@@ -1,0 +1,44 @@
+
+# File: ../t_force_b25_0.cuda.log
+beta: 3
+nconf: 1024
+blocksize: 32
+forceNorm2:      46.0088 +/- 0.013491  
+forceNorm2Min:   40.1401 +/- 0.0314054 
+forceNorm2Max:   51.9552 +/- 0.046969  
+forceNormInf:    5.8659 +/- 0.00129211 
+forceNormInfMin: 4.75814 +/- 0.0042613 
+forceNormInfMax: 7.06022 +/- 0.00909447
+beta: 4
+nconf: 1024
+blocksize: 32
+forceNorm2:      45.1115 +/- 0.0153481 
+forceNorm2Min:   37.5379 +/- 0.0289626 
+forceNorm2Max:   53.3601 +/- 0.0600019 
+forceNormInf:    7.18658 +/- 0.00310347
+forceNormInfMin: 4.96899 +/- 0.00533062
+forceNormInfMax: 10.8942 +/- 0.0215396 
+beta: 5
+nconf: 1024
+blocksize: 32
+forceNorm2:      43.2 +/- 0.0180668    
+forceNorm2Min:   34.8351 +/- 0.0440297 
+forceNorm2Max:   53.2004 +/- 0.0940574 
+forceNormInf:    7.62711 +/- 0.00521904
+forceNormInfMin: 4.84991 +/- 0.00737979
+forceNormInfMax: 13.4931 +/- 0.0433249 
+beta: 6
+nconf: 1024
+blocksize: 32
+forceNorm2:      101.634 +/- 0.0471723
+forceNorm2Min:   68.9634 +/- 0.0785255
+forceNorm2Max:   162.153 +/- 0.298576 
+forceNormInf:    25.1508 +/- 0.0169406
+forceNormInfMin: 10.3541 +/- 0.0197634
+forceNormInfMax: 58.3514 +/- 0.102951 
+beta: 7
+nconf: 0
+blocksize: 32
+|length error: betaForFile
+|   echo(>'forceNorm2: ';'forceNorm2Min: ';'forceNorm2Max: ';'forceNormInf: ';'forceNormInfMin: ';'forceNormInfMax: ')    ,.errdisplay|:bs jackknifeEst ensembleMean,<force
+|[-25] /usr/home/jin/K/P/0064/nthmc/u1_2d/stats/./force_post_train.ijs

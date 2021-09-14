@@ -1,0 +1,18 @@
+
+# File: ../t_force_b25_0s2.log
+beta: 3
+nconf: 1024
+blocksize: 32
+accept: 0.851379 +/- 0.00211543
+beta: 4
+nconf: 1024
+blocksize: 32
+accept: 0.924469 +/- 0.00175484
+beta: 5
+nconf: 1024
+blocksize: 32
+accept: 0.66333 +/- 0.00361933
+beta: 6
+nconf: 1024
+blocksize: 32
+accept: 0.898132 +/- 0.00182405

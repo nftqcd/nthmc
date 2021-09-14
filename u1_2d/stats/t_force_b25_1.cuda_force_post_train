@@ -1,0 +1,47 @@
+
+# File: ../t_force_b25_1.cuda.log
+beta: 3
+nconf: 1024
+blocksize: 32
+forceNorm2:      46.8619 +/- 0.0138244  
+forceNorm2Min:   41.2364 +/- 0.02539    
+forceNorm2Max:   52.5431 +/- 0.0451882  
+forceNormInf:    5.61645 +/- 0.000921679
+forceNormInfMin: 4.7415 +/- 0.00403402  
+forceNormInfMax: 6.17114 +/- 0.00262153 
+beta: 4
+nconf: 1024
+blocksize: 32
+forceNorm2:      44.4108 +/- 0.0209303 
+forceNorm2Min:   36.8328 +/- 0.0480141 
+forceNorm2Max:   52.6892 +/- 0.0767515 
+forceNormInf:    6.69574 +/- 0.00362755
+forceNormInfMin: 4.81276 +/- 0.00632115
+forceNormInfMax: 8.76958 +/- 0.00882086
+beta: 5
+nconf: 1024
+blocksize: 32
+forceNorm2:      40.6967 +/- 0.0244846 
+forceNorm2Min:   30.7933 +/- 0.0375624 
+forceNorm2Max:   52.1122 +/- 0.130497  
+forceNormInf:    7.71581 +/- 0.00616211
+forceNormInfMin: 4.75134 +/- 0.00974932
+forceNormInfMax: 12.4123 +/- 0.0204646 
+beta: 6
+nconf: 1024
+blocksize: 32
+forceNorm2:      67.0987 +/- 0.0256364
+forceNorm2Min:   47.1862 +/- 0.0461797
+forceNorm2Max:   100.074 +/- 0.208838 
+forceNormInf:    16.1773 +/- 0.0106829
+forceNormInfMin: 7.19819 +/- 0.0192127
+forceNormInfMax: 37.0099 +/- 0.108781 
+beta: 7
+nconf: 1024
+blocksize: 32
+forceNorm2:      78.2806 +/- 0.0234776 
+forceNorm2Min:   56.3546 +/- 0.0652878 
+forceNorm2Max:   111.781 +/- 0.21588   
+forceNormInf:    18.2251 +/- 0.00872555
+forceNormInfMin: 8.46934 +/- 0.0199392 
+forceNormInfMax: 40.4584 +/- 0.120238  

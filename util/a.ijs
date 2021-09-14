@@ -1,8 +1,18 @@
-display=: ('_';'-')stringreplace"1 ":
+echoErr=: 0 0$1!:2&5
+display=: 3 :0
+('_';'-')stringreplace"1 ": y
+:
+('_';'-')stringreplace"1 ":!.x y
+)
+errdisplay=: 3 :0
+(display@{. , ' +/- ', display@{:)"1 y
+:
+(x&display@{. , ' +/- ', x&display@{:)"1 y
+)
+
 besselj=: 1 : '(i.0) H. (1+m)@(_0.25&*)@*: * ^&m@-: % (!m)"_'
 besseli=: 1 : '(i.0) H. (1+m)@(0.25&*)@*: * ^&m@-: % (!m)"_'
 plaq2dU1 =: 1 besseli % 0 besseli
-errdisplay=:(display@{. , ' +/- ', display@{:)"1
 
 NB. Computes mean and standard error of the mean from data
 NB. of independent samples in the first dimension.
@@ -53,6 +63,7 @@ tauwMin =: 1e_4
 NB. The factor S in Eq. 50, >:&1 *. <:&2
 SWolff =: 1.5
 
+intautocorrelationPROGRESS =: 0
 NB. output: boxed items of the following
 NB.   a table of 2 3=$
 NB.     {. is the window determined by 0 > w
@@ -65,16 +76,25 @@ NB.   an array of values of the autocorrelation function, up to 2*w
 NB. monad adverb, m: observable index (column number in y), y: Input (subtracted to be zero mean).
 NB. FIXME: suport functions of observables
 intautocorrelation =: 1 :0
-y =. (,@:<@:,.)^:(-.@:L.)y
-d =. m&{"1 &. > y
-tmax =. 2#<./ #&> y
-N =. +/#&> y
+select. L.y
+case. 0 do.
+	d =. ('Got 0=#$y'13!:8(1"_))`(,@:<@:,.`('Got m~:0'13!:8(1"_))@.(m~:0"_))`([: ,@:< m&{"1)`('Got 3<:#$y'13!:8(1"_))@.(3<.#@$) y
+case. 1 do.
+	d =. m&{"1&.>`(]`('Got m~:0'13!:8(1"_))@.(m~:0"_))@.([:+./1=#@$&>) y
+case.do.
+	('Got ',(":L.y),'=L.y')13!:8[1
+end.
+tmax =. 2#<./ #&> d
+N =. +/#&> d
 twWolff =. tw =. 0
 tauintw =. 0.5
 acs =. 0 autocorrelation d
+dprog =. echoErr@:('lag: ',display@:,,LF"_)^:(1=intautocorrelationPROGRESS)
+0 dprog acs
 tlag =. 1
 while. tlag +./@:< tmax do.
 	acs =. acs, c =. tlag autocorrelation d
+	tlag dprog c
 	if. (0 > c) *. (0 = tw) do.
 		tmax =. 0}&tmax +:tlag
 		tw =. tlag
@@ -90,4 +110,11 @@ tauint =. (tw,twWolff) (0.5 -~ +/@:{.  % {.@:])"0 _ acs
 tauinterr =. (* [: %: N %~ 4*0.5+tw"_) {.tauint
 tauinterr =. tauinterr, (* [: %: N %~ 4*0.5+twWolff-]) {:tauint
 ((tw,twWolff),.tauint,.tauinterr);acs
+)
+
+NB. echo the formatted result from intautocorrelation.
+echoIntautocorrelation=: 3 :0
+	'intac acs'=.y
+	echo ('cutoff: ',:'cutoffWolff: '),.(display@:{.,' intautocorr: ',errdisplay@:}.)"1 intac
+	echo"1 'autocorr:',display"1 (i.@#,.])acs
 )

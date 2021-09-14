@@ -1,0 +1,47 @@
+
+# File: ../t_hmc_2.log
+beta: 3
+nconf: 1024
+blocksize: 32
+forceNorm2:      50.5423 +/- 0.0021482 
+forceNorm2Min:   42.3678 +/- 0.0151749 
+forceNorm2Max:   58.9507 +/- 0.0196356 
+forceNormInf:    5.75217 +/- 8.52495e-5
+forceNormInfMin: 4.71926 +/- 0.00248534
+forceNormInfMax: 5.99999 +/- 2.56076e-7
+beta: 4
+nconf: 1024
+blocksize: 32
+forceNorm2:      60.7312 +/- 0.0032601 
+forceNorm2Min:   50.3478 +/- 0.0204347 
+forceNorm2Max:   71.6848 +/- 0.0719792 
+forceNormInf:    7.3335 +/- 0.000213303
+forceNormInfMin: 5.71456 +/- 0.00319776
+forceNormInfMax: 7.99994 +/- 2.06597e-6
+beta: 5
+nconf: 1024
+blocksize: 32
+forceNorm2:      69.0938 +/- 0.00292726 
+forceNorm2Min:   56.8973 +/- 0.0281345  
+forceNorm2Max:   81.8192 +/- 0.0511911  
+forceNormInf:    8.67113 +/- 0.000268899
+forceNormInfMin: 6.5362 +/- 0.00293238  
+forceNormInfMax: 9.99959 +/- 1.23705e-5 
+beta: 6
+nconf: 1024
+blocksize: 32
+forceNorm2:      75.4616 +/- 0.00337164
+forceNorm2Min:   62.0763 +/- 0.0237916 
+forceNorm2Max:   89.4486 +/- 0.0484594 
+forceNormInf:    9.7515 +/- 0.000382631
+forceNormInfMin: 7.18114 +/- 0.00451168
+forceNormInfMax: 11.9963 +/- 7.76828e-5
+beta: 7
+nconf: 1024
+blocksize: 32
+forceNorm2:      82.0204 +/- 0.00431977 
+forceNorm2Min:   67.2179 +/- 0.0397287  
+forceNorm2Max:   97.5373 +/- 0.044195   
+forceNormInf:    10.7702 +/- 0.00052654 
+forceNormInfMin: 7.82431 +/- 0.00590073 
+forceNormInfMax: 13.9727 +/- 0.000880527

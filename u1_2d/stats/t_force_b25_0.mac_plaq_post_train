@@ -1,0 +1,44 @@
+
+# File: ../t_force_b25_0.mac.log
+beta: 3
+nconf: 1024
+blocksize: 32
+plaq:    0.809802 +/- 0.000170914
+plaqMin: 0.767144 +/- 0.000593132
+plaqMax: 0.847048 +/- 0.000373135
+plaqMapped:    0.789354 +/- 0.000188082
+plaqMappedMin: 0.744616 +/- 0.000666961
+plaqMappedMax: 0.828681 +/- 0.000426671
+beta: 4
+nconf: 1024
+blocksize: 32
+plaq:    0.863252 +/- 0.000159031
+plaqMin: 0.832294 +/- 0.000440059
+plaqMax: 0.890589 +/- 0.000278718
+plaqMapped:    0.776008 +/- 0.000222508
+plaqMappedMin: 0.732849 +/- 0.00062442 
+plaqMappedMax: 0.815661 +/- 0.00038232 
+beta: 5
+nconf: 1024
+blocksize: 32
+plaq:    0.893444 +/- 0.000112078
+plaqMin: 0.869749 +/- 0.000358504
+plaqMax: 0.91441 +/- 0.000169971 
+plaqMapped:    0.740782 +/- 0.000196754
+plaqMappedMin: 0.696231 +/- 0.000715502
+plaqMappedMax: 0.782325 +/- 0.000314457
+beta: 6
+nconf: 1024
+blocksize: 32
+plaq:    0.914056 +/- 9.13686e-5 
+plaqMin: 0.899452 +/- 0.000337935
+plaqMax: 0.928982 +/- 0.000468928
+plaqMapped:    0.160906 +/- 0.000367175
+plaqMappedMin: 0.11545 +/- 0.000657463 
+plaqMappedMax: 0.219023 +/- 0.00155215 
+beta: 7
+nconf: 0
+blocksize: 32
+|length error: betaForFile
+|   echo(>'plaq: ';'plaqMin: ';'plaqMax: ')    ,.errdisplay|:bsPlaq jackknifeEst ensembleMean,<plaq
+|[-28] /usr/home/jin/K/P/0064/nthmc/u1_2d/stats/./plaq_post_train.ijs

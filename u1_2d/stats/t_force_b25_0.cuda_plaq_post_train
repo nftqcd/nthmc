@@ -1,0 +1,44 @@
+
+# File: ../t_force_b25_0.cuda.log
+beta: 3
+nconf: 1024
+blocksize: 32
+plaq:    0.809859 +/- 0.000198367
+plaqMin: 0.76782 +/- 0.000557567 
+plaqMax: 0.847473 +/- 0.000344505
+plaqMapped:    0.786669 +/- 0.000216805
+plaqMappedMin: 0.742623 +/- 0.000620044
+plaqMappedMax: 0.82671 +/- 0.000372507 
+beta: 4
+nconf: 1024
+blocksize: 32
+plaq:    0.863396 +/- 0.000170453
+plaqMin: 0.832685 +/- 0.00042874 
+plaqMax: 0.890434 +/- 0.000320442
+plaqMapped:    0.772557 +/- 0.00026635 
+plaqMappedMin: 0.729982 +/- 0.000580559
+plaqMappedMax: 0.811646 +/- 0.000504297
+beta: 5
+nconf: 1024
+blocksize: 32
+plaq:    0.893271 +/- 0.000119122
+plaqMin: 0.869732 +/- 0.000353489
+plaqMax: 0.914257 +/- 0.000180051
+plaqMapped:    0.743879 +/- 0.000205001
+plaqMappedMin: 0.700362 +/- 0.000519108
+plaqMappedMax: 0.785016 +/- 0.000344137
+beta: 6
+nconf: 1024
+blocksize: 32
+plaq:    0.912635 +/- 0.000123992
+plaqMin: 0.88917 +/- 4.32702e-15 
+plaqMax: 0.930067 +/- 0.000220446
+plaqMapped:    0.156953 +/- 0.000235545
+plaqMappedMin: 0.114064 +/- 0.000846837
+plaqMappedMax: 0.206327 +/- 0.00160797 
+beta: 7
+nconf: 0
+blocksize: 32
+|length error: betaForFile
+|   echo(>'plaq: ';'plaqMin: ';'plaqMax: ')    ,.errdisplay|:bsPlaq jackknifeEst ensembleMean,<plaq
+|[-28] /usr/home/jin/K/P/0064/nthmc/u1_2d/stats/./plaq_post_train.ijs

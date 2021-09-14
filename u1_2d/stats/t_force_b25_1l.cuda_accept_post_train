@@ -1,0 +1,22 @@
+
+# File: ../t_force_b25_1l.cuda.log
+beta: 3
+nconf: 1024
+blocksize: 32
+accept: 0.930359 +/- 0.00116731
+beta: 4
+nconf: 1024
+blocksize: 32
+accept: 0.942245 +/- 0.000727891
+beta: 5
+nconf: 1024
+blocksize: 32
+accept: 0.931107 +/- 0.00104144
+beta: 6
+nconf: 1024
+blocksize: 32
+accept: 0.209854 +/- 0.00208925
+beta: 7
+nconf: 1024
+blocksize: 32
+accept: 0.799728 +/- 0.0020518

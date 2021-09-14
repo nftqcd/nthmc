@@ -1,0 +1,47 @@
+
+# File: ../t_force_b25_1.cuda.log
+beta: 3
+nconf: 1024
+blocksize: 32
+plaq:    0.80981 +/- 0.000197551 
+plaqMin: 0.767822 +/- 0.000625424
+plaqMax: 0.847134 +/- 0.000358728
+plaqMapped:    0.793158 +/- 0.000209734
+plaqMappedMin: 0.74941 +/- 0.000659499 
+plaqMappedMax: 0.832506 +/- 0.000375602
+beta: 4
+nconf: 1024
+blocksize: 32
+plaq:    0.863714 +/- 0.000175092
+plaqMin: 0.832381 +/- 0.000411143
+plaqMax: 0.890593 +/- 0.00035158 
+plaqMapped:    0.781295 +/- 0.000270194
+plaqMappedMin: 0.740552 +/- 0.00068025 
+plaqMappedMax: 0.817716 +/- 0.000578751
+beta: 5
+nconf: 1024
+blocksize: 32
+plaq:    0.893317 +/- 0.000135625
+plaqMin: 0.869423 +/- 0.000399564
+plaqMax: 0.914026 +/- 0.000150887
+plaqMapped:    0.719932 +/- 0.00026259
+plaqMappedMin: 0.677165 +/- 0.00074539
+plaqMappedMax: 0.760315 +/- 0.00040191
+beta: 6
+nconf: 1024
+blocksize: 32
+plaq:    0.912226 +/- 9.21087e-5 
+plaqMin: 0.8922 +/- 0.000543954  
+plaqMax: 0.929425 +/- 0.000127087
+plaqMapped:    0.308235 +/- 0.000230046
+plaqMappedMin: 0.260217 +/- 0.000679672
+plaqMappedMax: 0.35754 +/- 0.00074562  
+beta: 7
+nconf: 1024
+blocksize: 32
+plaq:    0.925562 +/- 4.22503e-5
+plaqMin: 0.909046 +/- 0.00013842
+plaqMax: 0.940108 +/- 9.61979e-5
+plaqMapped:    0.253488 +/- 0.000269212
+plaqMappedMin: 0.202984 +/- 0.000501339
+plaqMappedMax: 0.305458 +/- 0.000511297

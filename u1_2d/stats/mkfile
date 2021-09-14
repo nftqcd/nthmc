@@ -1,28 +1,39 @@
+logs_betaMap=\
+	t_force_b25_0_bs0.log\
+	t_force_b25_0_bs1.log\
+
+logs=\
+	t_hmc_0.log\
+	t_hmc_1.log\
+	t_hmc_2.log\
+	t_hmc_3.log\
+	t_force_b25_0.log\
+	t_force_b25_1.log\
+	t_force_b25_2.log\
+	t_force_b25_3.log\
+	t_force_b25_0.1.log\
+	t_force_b25_0.mac.log\
+	t_force_b25_0.cuda.log\
+	t_force_b25_0s.cuda.log\
+	t_force_b25_0s0.log\
+	t_force_b25_0s1.log\
+	t_force_b25_0s2.log\
+	t_force_b25_0s3.log\
+	t_force_b25_0s4.log\
+	t_force_b25_0s5.log\
+	t_force_b25_1.cuda.log\
+	t_force_b25_1l.cuda.log\
+	t_force_b25_1.1.log\
+
 results=\
-	t_force_b25_0_bs0_accept_betaMap_post_train\
-	t_force_b25_0_bs1_accept_betaMap_post_train\
-	t_force_b25_0_bs0_dq2_betaMap_post_train\
-	t_force_b25_0_bs1_dq2_betaMap_post_train\
-	t_force_b25_0_bs0_force_betaMap_post_train\
-	t_force_b25_0_bs1_force_betaMap_post_train\
-	t_force_b25_0_bs0_plaq_betaMap_post_train\
-	t_force_b25_0_bs1_plaq_betaMap_post_train\
-	t_force_b25_0_accept_post_train\
-	t_force_b25_1_accept_post_train\
-	t_force_b25_2_accept_post_train\
-	t_force_b25_3_accept_post_train\
-	t_force_b25_0_dq2_post_train\
-	t_force_b25_1_dq2_post_train\
-	t_force_b25_2_dq2_post_train\
-	t_force_b25_3_dq2_post_train\
-	t_force_b25_0_force_post_train\
-	t_force_b25_1_force_post_train\
-	t_force_b25_2_force_post_train\
-	t_force_b25_3_force_post_train\
-	t_force_b25_0_plaq_post_train\
-	t_force_b25_1_plaq_post_train\
-	t_force_b25_2_plaq_post_train\
-	t_force_b25_3_plaq_post_train\
+	${logs_betaMap:%.log=%_accept_betaMap_post_train}\
+	${logs_betaMap:%.log=%_dq2_betaMap_post_train}\
+	${logs_betaMap:%.log=%_force_betaMap_post_train}\
+	${logs_betaMap:%.log=%_plaq_betaMap_post_train}\
+	${logs:%.log=%_accept_post_train}\
+	${logs:%.log=%_dq2_post_train}\
+	${logs:%.log=%_force_post_train}\
+	${logs:%.log=%_plaq_post_train}\
 
 all:V:	$results
 

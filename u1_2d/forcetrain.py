@@ -206,8 +206,8 @@ def train(conf, actionFun, mcmcFun, lossFun, opt, weights=None):
         if conf.nstepEpoch>0:
             t = tf.timestamp()
             xtarget,_,_ = mcmcGen.generate.action.transform(x)
-            mcmcGen.generate.action.transform.set_weights(loss.action.transform.get_weights())
             dtf = tf.timestamp()-t
+            mcmcGen.generate.action.transform.set_weights(loss.action.transform.get_weights())
             t = tf.timestamp()
             x,_,invIter = mcmcGen.generate.action.transform.inv(xtarget)
             dtb = tf.timestamp()-t

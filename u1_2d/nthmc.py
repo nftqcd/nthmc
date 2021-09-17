@@ -95,8 +95,10 @@ class U1d2(tl.Layer):
         return a-l, l, bs
     def derivAction(self, x):
         "Returns the derivative and the log Jacobian."
-        a, l, bs = self.action(x)
-        g = tf.gradients(a, x)[0]
+        with tf.GradientTape(watch_accessed_variables=False) as tape:
+            tape.watch(x)
+            a, l, bs = self.action(x)
+        g = tape.gradient(a, x)
         return g, l, bs
     def showTransform(self, **kwargs):
         self.transform.showTransform(**kwargs)

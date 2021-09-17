@@ -1,0 +1,4 @@
+#!/usr/bin/env rc
+@{cd f; python3 ../forcetrain.py > $1.log >[2=1] </dev/null} &
+@{cd t; python3 ../forcetrain.py > $1.log >[2=1] </dev/null} &
+wait

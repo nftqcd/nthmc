@@ -1,0 +1,6 @@
+#!/usr/bin/env rc
+fn g0{CUDA_VISIBLE_DEVICES=0 numactl -C 0-39 -N 0 -m 0 $*}
+fn g2{CUDA_VISIBLE_DEVICES=2 numactl -C 80-119 -N 8 -m 8 $*}
+@{cd f; g0 python3.8 ../forcetrain.py > $1.log >[2=1] </dev/null} &
+@{cd t; g2 python3.8 ../forcetrain.py > $1.log >[2=1] </dev/null} &
+wait

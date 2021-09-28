@@ -1,0 +1,47 @@
+
+# File: ../t_hmc_4.log
+beta: 3
+nconf: 1024
+blocksize: 32
+plaq:    0.809982 +/- 1.98304e-5 
+plaqMin: 0.796965 +/- 0.000151799
+plaqMax: 0.822558 +/- 4.23711e-5 
+plaqMapped:    0.809982 +/- 1.98304e-5 
+plaqMappedMin: 0.796965 +/- 0.000151799
+plaqMappedMax: 0.822558 +/- 4.23711e-5 
+beta: 4
+nconf: 1024
+blocksize: 32
+plaq:    0.863508 +/- 1.15466e-5
+plaqMin: 0.85406 +/- 5.69424e-5 
+plaqMax: 0.872739 +/- 4.86703e-5
+plaqMapped:    0.863508 +/- 1.15466e-5
+plaqMappedMin: 0.85406 +/- 5.69424e-5 
+plaqMappedMax: 0.872739 +/- 4.86703e-5
+beta: 5
+nconf: 1024
+blocksize: 32
+plaq:    0.893405 +/- 8.55701e-6
+plaqMin: 0.886031 +/- 4.16487e-5
+plaqMax: 0.900453 +/- 2.74256e-5
+plaqMapped:    0.893405 +/- 8.55701e-6
+plaqMappedMin: 0.886031 +/- 4.16487e-5
+plaqMappedMax: 0.900453 +/- 2.74256e-5
+beta: 6
+nconf: 1024
+blocksize: 32
+plaq:    0.912357 +/- 1.07927e-5
+plaqMin: 0.906349 +/- 4.43279e-5
+plaqMax: 0.918269 +/- 3.62294e-5
+plaqMapped:    0.912357 +/- 1.07927e-5
+plaqMappedMin: 0.906349 +/- 4.43279e-5
+plaqMappedMax: 0.918269 +/- 3.62294e-5
+beta: 7
+nconf: 1024
+blocksize: 32
+plaq:    0.92553 +/- 6.57068e-6 
+plaqMin: 0.920461 +/- 2.73986e-5
+plaqMax: 0.930453 +/- 2.34622e-5
+plaqMapped:    0.92553 +/- 6.57068e-6 
+plaqMappedMin: 0.920461 +/- 2.73986e-5
+plaqMappedMax: 0.930453 +/- 2.34622e-5

@@ -1,0 +1,38 @@
+
+# File: ../t_force_b25_0s6ac.log
+beta: 3
+nconf: 1024
+blocksize: 32
+forceNorm2:      387.872 +/- 0.098912   
+forceNorm2Min:   386.451 +/- 0.093305   
+forceNorm2Max:   389.291 +/- 0.128013   
+forceNormInf:    5.74442 +/- 0.00138768 
+forceNormInfMin: 5.70233 +/- 0.000774896
+forceNormInfMax: 5.78701 +/- 0.00255039 
+beta: 4
+nconf: 1024
+blocksize: 32
+forceNorm2:      427.343 +/- 0.124603  
+forceNorm2Min:   425.649 +/- 0.138244  
+forceNorm2Max:   429.027 +/- 0.137963  
+forceNormInf:    7.06616 +/- 0.00482063
+forceNormInfMin: 6.93719 +/- 0.00405448
+forceNormInfMax: 7.20113 +/- 0.00740862
+beta: 5
+nconf: 1024
+blocksize: 32
+forceNorm2:      447.107 +/- 0.142966  
+forceNorm2Min:   445.296 +/- 0.151688  
+forceNorm2Max:   448.914 +/- 0.149624  
+forceNormInf:    8.25126 +/- 0.0128641 
+forceNormInfMin: 7.95635 +/- 0.00776816
+forceNormInfMax: 8.57952 +/- 0.0245338 
+beta: 6
+nconf: 1024
+blocksize: 32
+forceNorm2:      426.078 +/- 0.162919 
+forceNorm2Min:   424.384 +/- 0.178935 
+forceNorm2Max:   427.761 +/- 0.166012 
+forceNormInf:    9.11122 +/- 0.0332874
+forceNormInfMin: 8.46004 +/- 0.0117523
+forceNormInfMax: 9.87929 +/- 0.0705596

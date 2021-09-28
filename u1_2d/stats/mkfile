@@ -2,11 +2,16 @@ logs_betaMap=\
 	t_force_b25_0_bs0.log\
 	t_force_b25_0_bs1.log\
 
-logs=\
+logs_hmc=\
 	t_hmc_0.log\
 	t_hmc_1.log\
 	t_hmc_2.log\
 	t_hmc_3.log\
+	t_hmc_4.log\
+	t_hmc_5.log\
+
+logs=\
+	$logs_hmc\
 	t_force_b25_0.log\
 	t_force_b25_1.log\
 	t_force_b25_2.log\
@@ -24,8 +29,21 @@ logs=\
 	t_force_b25_1.cuda.log\
 	t_force_b25_1l.cuda.log\
 	t_force_b25_1.1.log\
+	t_force_b25_0s0a.log\
+	t_force_b25_0s2a.log\
+	t_force_b25_0s4a.log\
+	t_force_b25_0s6a.log\
+	t_force_b25_0s0ac.log\
+	t_force_b25_0s2ac.log\
+	t_force_b25_0s4ac.log\
+	t_force_b25_0s6ac.log\
+	t_force_b25_0s0a_t2.log\
+	t_force_b25_0s2a_t2.log\
+	t_force_b25_0s4a_t2.log\
+	t_force_b25_0s6a_t2.log\
 
 results=\
+	${logs_hmc:%.log=%_stepsize_train}\
 	${logs_betaMap:%.log=%_accept_betaMap_post_train}\
 	${logs_betaMap:%.log=%_dq2_betaMap_post_train}\
 	${logs_betaMap:%.log=%_force_betaMap_post_train}\
@@ -60,3 +78,6 @@ all:V:	$results
 
 %_plaq_post_train:	../%.log plaq_post_train.ijs
 	./plaq_post_train.ijs ../$stem.log > $target
+
+%_stepsize_train:	../%.log stepsize_train.sh
+	./stepsize_train.sh ../$stem.log > $target

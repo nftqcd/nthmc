@@ -1,7 +1,14 @@
-gps=`{echo *_b*.gp}
+MKSHELL=$PLAN9/bin/rc
+
+SIZE_dfnorm2_l16_train=11in,6in
+SIZE_dfnormInf_l16_train=11in,6in
+
+gps=`{echo *.gp}
 pdfs=${gps:%.gp=%.pdf}
 
 all:V:	$pdfs
 
 %.pdf:	%.gp
-	gpctx $prereq
+	size=SIZE_$stem
+	if(~ $#$size 0) gpctx $prereq
+	if not gpctx -s $$size $prereq

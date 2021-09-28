@@ -1,0 +1,22 @@
+
+# File: ../t_hmc_5.log
+beta: 3
+nconf: 1024
+blocksize: 32
+accept: 0.759071 +/- 0.00137972
+beta: 4
+nconf: 1024
+blocksize: 32
+accept: 0.820976 +/- 0.00142754
+beta: 5
+nconf: 1024
+blocksize: 32
+accept: 0.846642 +/- 0.00076281
+beta: 6
+nconf: 1024
+blocksize: 32
+accept: 0.875481 +/- 0.000905463
+beta: 7
+nconf: 1024
+blocksize: 32
+accept: 0.84684 +/- 0.00114667

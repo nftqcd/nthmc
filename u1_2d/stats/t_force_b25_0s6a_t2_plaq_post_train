@@ -1,0 +1,38 @@
+
+# File: ../t_force_b25_0s6a_t2.log
+beta: 3
+nconf: 1024
+blocksize: 32
+plaq:    0.810328 +/- 0.000162897
+plaqMin: 0.809201 +/- 0.000169348
+plaqMax: 0.811455 +/- 0.00018224 
+plaqMapped:    0.801616 +/- 0.000171666
+plaqMappedMin: 0.800429 +/- 0.000179782
+plaqMappedMax: 0.802804 +/- 0.000190934
+beta: 4
+nconf: 1024
+blocksize: 32
+plaq:    0.863573 +/- 0.000141226
+plaqMin: 0.862693 +/- 0.000142426
+plaqMax: 0.864453 +/- 0.000155699
+plaqMapped:    0.83287 +/- 0.000172123 
+plaqMappedMin: 0.831766 +/- 0.000171889
+plaqMappedMax: 0.833974 +/- 0.000192064
+beta: 5
+nconf: 1024
+blocksize: 32
+plaq:    0.893397 +/- 8.18743e-5 
+plaqMin: 0.892721 +/- 0.000107511
+plaqMax: 0.894073 +/- 7.74225e-5 
+plaqMapped:    0.841825 +/- 0.000122402
+plaqMappedMin: 0.840792 +/- 0.000157753
+plaqMappedMax: 0.842858 +/- 0.000114741
+beta: 6
+nconf: 1024
+blocksize: 32
+plaq:    0.912306 +/- 8.85845e-5 
+plaqMin: 0.911725 +/- 0.000104788
+plaqMax: 0.912887 +/- 8.85093e-5 
+plaqMapped:    0.840464 +/- 0.000186935
+plaqMappedMin: 0.839252 +/- 0.000225937
+plaqMappedMax: 0.841676 +/- 0.000187935

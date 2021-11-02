@@ -11,9 +11,9 @@ class Ident(tl.Layer):
         super(Ident, self).__init__(autocast=False, name=name, **kwargs)
         self.invMaxIter = 1
     def call(self, x):
-        return (x, 0.0, 0.0)
+        return (x, tf.constant(0.0, dtype=tf.float64), tf.constant(0.0, dtype=tf.float64))
     def inv(self, y):
-        return (y, 0.0, 0)
+        return (y, tf.constant(0.0, dtype=tf.float64), 0)
     def showTransform(self, **kwargs):
         tf.print(self.name, **kwargs)
 

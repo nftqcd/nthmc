@@ -85,7 +85,7 @@ def inferStep(mcmc, loss, x0, print=True, detail=True, forceAccept=False, tuning
             tf.print('dp2:', tf.reduce_mean(dp2), summarize=-1)
             tf.print('force:', tf.reduce_mean(f2s), tf.reduce_min(f2s), tf.reduce_max(f2s), tf.reduce_mean(fms), tf.reduce_min(fms), tf.reduce_max(fms), summarize=-1)
             if len(bs.shape)>1:
-                tf.print('coeff:', tf.reduce_mean(bs, axis=(0,-1)), summarize=-1)
+                tf.print('coeff:', tf.reduce_mean(bs, axis=(0,1)), summarize=-1)
             tf.print('lnJ:', tf.reduce_mean(ls), tf.reduce_min(ls), tf.reduce_max(ls), summarize=-1)
             tf.print('dH:', tf.reduce_mean(dH), summarize=-1)
             tf.print('exp_mdH:', tf.reduce_mean(tf.exp(-dH)), summarize=-1)

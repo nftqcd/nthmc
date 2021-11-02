@@ -117,14 +117,10 @@ class Metropolis(tk.Model):
         if self.checkReverse:
             self.revCheck(x0, p0, x1, p1)
         v1, l1, b1 = self.generate.action(x1)
-        ls.insert(0,l0)
-        ls.append(l1)
-        ls = tf.stack(ls, -1)
-        f2s = tf.stack(f2s, -1)
-        fms = tf.stack(fms, -1)
-        bs.insert(0,b0)
-        bs.append(b1)
-        bs = tf.stack(bs, -1)
+        ls = tf.concat([tf.expand_dims(l0, 0), ls.stack(), tf.expand_dims(l1, 0)], 0)
+        f2s = f2s.stack()
+        fms = fms.stack()
+        bs = tf.concat([tf.expand_dims(b0, 0), bs.stack(), tf.expand_dims(b1, 0)], 0)
         t1 = self.generate.action.momEnergy(p1)
         dH = (v1+t1) - (v0+t0)
         exp_mdH = tf.exp(-dH)
@@ -154,7 +150,7 @@ class LeapFrog(tl.Layer):
     def __init__(self, conf, action, name='LeapFrog', **kwargs):
         super(LeapFrog, self).__init__(autocast=False, name=name, **kwargs)
         self.dt = self.add_weight(initializer=tk.initializers.Constant(conf.initDt), dtype=tf.float64, trainable=conf.trainDt)
-        self.stepPerTraj = conf.stepPerTraj
+        self.stepPerTraj = self.add_weight(initializer=tk.initializers.Constant(conf.stepPerTraj), dtype=tf.int32, trainable=False)
         self.action = action
         tf.print(self.name, 'init with dt', self.dt, 'step/traj', self.stepPerTraj, summarize=-1)
     def call(self, x0, p0):
@@ -163,19 +159,25 @@ class LeapFrog(tl.Layer):
         d, l, b = self.action.derivAction(x)
         p = p0 - dt*d
         df = tf.reshape(d, [d.shape[0],-1])
-        f2s = [tf.norm(df, ord=2, axis=-1)]
-        fms = [tf.norm(df, ord=inf, axis=-1)]
-        ls = [l]
-        bs = [b]
-        for i in range(self.stepPerTraj-1):
+        f2s = tf.TensorArray(tf.float64, size=self.stepPerTraj)
+        fms = tf.TensorArray(tf.float64, size=self.stepPerTraj)
+        ls = tf.TensorArray(tf.float64, size=self.stepPerTraj)
+        bs = tf.TensorArray(tf.float64, size=self.stepPerTraj)
+        f2s = f2s.write(0, tf.norm(df, ord=2, axis=-1))
+        fms = fms.write(0, tf.norm(df, ord=inf, axis=-1))
+        ls = ls.write(0, l)
+        bs = bs.write(0, b)
+        i = 1
+        while i<self.stepPerTraj:
             x += dt*p
             d, l, b = self.action.derivAction(x)
             p -= dt*d
             df = tf.reshape(d, [d.shape[0],-1])
-            f2s.append(tf.norm(df, ord=2, axis=-1))
-            fms.append(tf.norm(df, ord=inf, axis=-1))
-            ls.append(l)
-            bs.append(b)
+            f2s = f2s.write(i, tf.norm(df, ord=2, axis=-1))
+            fms = fms.write(i, tf.norm(df, ord=inf, axis=-1))
+            ls = ls.write(i, l)
+            bs = bs.write(i, b)
+            i += 1
         x += 0.5*dt*p
         x = self.action.compatProj(x)
         return (x, -p, ls, f2s, fms, bs)
@@ -262,7 +264,7 @@ def inferStep(mcmc, loss, x0, print=True, detail=True, forceAccept=False, tuning
             tf.print('dp2:', tf.reduce_mean(dp2), summarize=-1)
             tf.print('force:', tf.reduce_mean(f2s), tf.reduce_min(f2s), tf.reduce_max(f2s), tf.reduce_mean(fms), tf.reduce_min(fms), tf.reduce_max(fms), summarize=-1)
             if len(bs.shape)>1:
-                tf.print('coeff:', tf.reduce_mean(bs, axis=(0,-1)), summarize=-1)
+                tf.print('coeff:', tf.reduce_mean(bs, axis=(0,1)), summarize=-1)
             tf.print('lnJ:', tf.reduce_mean(ls), tf.reduce_min(ls), tf.reduce_max(ls), summarize=-1)
             tf.print('dH:', tf.reduce_mean(dH), summarize=-1)
             tf.print('exp_mdH:', tf.reduce_mean(tf.exp(-dH)), summarize=-1)
@@ -328,7 +330,7 @@ def trainStep(mcmc, loss, opt, x0):
     tf.print('dp2:', tf.reduce_mean(tf.math.squared_difference(p1,p0)), summarize=-1)
     tf.print('force:', tf.reduce_mean(f2s), tf.reduce_min(f2s), tf.reduce_max(f2s), tf.reduce_mean(fms), tf.reduce_min(fms), tf.reduce_max(fms), summarize=-1)
     if len(bs.shape)>1:
-        tf.print('coeff:', tf.reduce_mean(bs, axis=(0,-1)), summarize=-1)
+        tf.print('coeff:', tf.reduce_mean(bs, axis=(0,1)), summarize=-1)
     tf.print('lnJ:', tf.reduce_mean(ls), tf.reduce_min(ls), tf.reduce_max(ls), summarize=-1)
     tf.print('dH:', tf.reduce_mean(dH), summarize=-1)
     tf.print('exp_mdH:', tf.reduce_mean(tf.exp(-dH)), summarize=-1)

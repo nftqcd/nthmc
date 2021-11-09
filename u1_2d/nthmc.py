@@ -132,12 +132,15 @@ class Metropolis(tk.Model):
         return (x, p, x1, p1, v0, t0, v1, t1, dH, acc, arand, ls, f2s, fms, bs)
     def revCheck(self, x0, p0, x1, p1):
         tol = 1e-10
-        xr, pr, _ = self.generate(x1, p1)
+        xr, pr, _, _, _, _ = self.generate(x1, p1)
         dxr = 1.0-tf.cos(xr-x0)
-        dpr = 1.0-tf.cos(pr-p0)
-        if tf.math.reduce_euclidean_norm(dxr) > tol or tf.math.reduce_euclidean_norm(dpr) > tol:
+        dpr = pr-p0
+        n_dxr = tf.math.reduce_euclidean_norm(dxr)/tf.math.reduce_euclidean_norm(x0)
+        n_dpr = tf.math.reduce_euclidean_norm(dpr)/tf.math.reduce_euclidean_norm(p0)
+        tf.print('revCheck: delta_x',n_dxr,'delta_p',n_dpr, summarize=-1)
+        if n_dxr > tol or n_dpr > tol:
             for i in range(0,dxr.shape[0]):
-                if tf.math.reduce_euclidean_norm(dxr[i,...]) > tol or tf.math.reduce_euclidean_norm(dpr[i,...]) > tol:
+                if tf.math.reduce_euclidean_norm(dxr[i,...])/tf.math.reduce_euclidean_norm(x0[i,...]) > tol or tf.math.reduce_euclidean_norm(dpr[i,...])/tf.math.reduce_euclidean_norm(p0[i,...]) > tol:
                     tf.print('Failed rev check:', i, summarize=-1)
                     tf.print(dxr[i,...], dpr[i,...], summarize=-1)
                     tf.print(x0[i,...], p0[i,...], summarize=-1)

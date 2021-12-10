@@ -1,3 +1,4 @@
+import nthmc
 import tensorflow as tf
 import tensorflow.keras as tk
 import tensorflow.keras.layers as tl
@@ -8,12 +9,12 @@ class Omelyan2MN(tl.Layer):
         # Omelyan et. al. (2003), equation (31)
         super(Omelyan2MN, self).__init__(autocast=False, name=name, **kwargs)
         self.dt = self.add_weight(initializer=tk.initializers.Constant(conf.initDt), dtype=tf.float64, trainable=conf.trainDt)
-        self.stepPerTraj = self.add_weight(initializer=tk.initializers.Constant(conf.stepPerTraj), dtype=tf.int32, trainable=False)
+        self.stepPerTraj = self.add_weight(initializer=tk.initializers.Constant(conf.stepPerTraj), dtype=tf.int64, trainable=False)    # TF error with int32, https://github.com/tensorflow/tensorflow/issues/53192
         self.c_lambda = self.add_weight(initializer=tk.initializers.Constant(c_lambda), dtype=tf.float64, trainable=False)
         self.action = action
         tf.print(self.name, 'init with dt', self.dt, 'step/traj', self.stepPerTraj, summarize=-1)
     def call(self, x0, p0):
-        n = 2*self.stepPerTraj
+        n = tf.cast(2*self.stepPerTraj, tf.int32)
         dt = self.dt
         m_dt_2 = -0.5*dt
         dt_lambda = self.c_lambda*dt
@@ -44,8 +45,7 @@ class Omelyan2MN(tl.Layer):
         ls = ls.write(1, l)
         bs = bs.write(1, b)
 
-        i = 2
-        while i<n:
+        for i in tf.range(2, n, 2):
 
             x += dt_lambda2*p
 
@@ -67,99 +67,77 @@ class Omelyan2MN(tl.Layer):
             fms = fms.write(i, tf.norm(df, ord=inf, axis=-1))
             ls = ls.write(i, l)
             bs = bs.write(i, b)
-            i += 1
 
         x += dt_lambda*p
         x = self.action.compatProj(x)
-        return (x, -p, ls, f2s, fms, bs)
+        return (x, -p, ls.stack(), f2s.stack(), fms.stack(), bs.stack())
     def changePerEpoch(self, epoch, conf):
         self.action.changePerEpoch(epoch, conf)
 
+@tf.function(jit_compile=True)
+def tuneStep_func(mcmc, x0, p0, accrand, detail, forceAccept):
+    x, p, x1, p1, v0, t0, v1, t1, dH, acc, arand, ls, f2s, fms, bs = mcmc(x0, p0, accrand)
+    inferRes = nthmc.packMCMCRes(mcmc, x, p, x0, p0, x1, p1, v0, t0, v1, t1, dH, acc, arand, ls, f2s, fms, bs, detail)
+    return (tf.cond(forceAccept, lambda:x1, lambda:x),inferRes,dH)
+
 @tf.function
-def tuneStep(mcmc, x0, stepTuner=None, print=True, detail=False, forceAccept=False):
-    p0 = mcmc.generate.action.randomMom()
-    x, p, x1, p1, v0, t0, v1, t1, dH, acc, arand, ls, f2s, fms, bs = mcmc(x0, p0)
-    if print:
-        plaqWoT = mcmc.generate.action.plaquetteWoTrans(x)
-        plaq = mcmc.generate.action.plaquette(x)
-        dp2 = tf.math.reduce_mean(tf.math.squared_difference(p1,p0), axis=range(1,len(p0.shape)))
-        if detail:
-            tf.print('V-old:', v0, summarize=-1)
-            tf.print('T-old:', t0, summarize=-1)
-            tf.print('V-prp:', v1, summarize=-1)
-            tf.print('T-prp:', t1, summarize=-1)
-            tf.print('dp2:', dp2, summarize=-1)
-            tf.print('force:', f2s, fms, summarize=-1)
-            tf.print('coeff:', bs, summarize=-1)
-            tf.print('lnJ:', ls, summarize=-1)
-            tf.print('dH:', dH, summarize=-1)
-            tf.print('exp_mdH:', tf.exp(-dH), summarize=-1)
-            tf.print('arand:', arand, summarize=-1)
-            tf.print('accept:', acc, summarize=-1)
-            tf.print('plaqWoTrans:', plaqWoT, summarize=-1)
-            tf.print('plaq:', plaq, summarize=-1)
-            tf.print('topo:', mcmc.generate.action.topoCharge(x), summarize=-1)
-        else:
-            tf.print('V-old:', tf.reduce_mean(v0), summarize=-1)
-            tf.print('T-old:', tf.reduce_mean(t0), summarize=-1)
-            tf.print('V-prp:', tf.reduce_mean(v1), summarize=-1)
-            tf.print('T-prp:', tf.reduce_mean(t1), summarize=-1)
-            tf.print('dp2:', tf.reduce_mean(dp2), summarize=-1)
-            tf.print('force:', tf.reduce_mean(f2s), tf.reduce_min(f2s), tf.reduce_max(f2s), tf.reduce_mean(fms), tf.reduce_min(fms), tf.reduce_max(fms), summarize=-1)
-            if len(bs.shape)>1:
-                tf.print('coeff:', tf.reduce_mean(bs, axis=(0,1)), summarize=-1)
-            tf.print('lnJ:', tf.reduce_mean(ls), tf.reduce_min(ls), tf.reduce_max(ls), summarize=-1)
-            tf.print('dH:', tf.reduce_mean(dH), summarize=-1)
-            tf.print('exp_mdH:', tf.reduce_mean(tf.exp(-dH)), summarize=-1)
-            tf.print('accept:', tf.reduce_mean(tf.cast(acc,tf.float64)), summarize=-1)
-            tf.print('plaqWoTrans:', tf.reduce_mean(plaqWoT), tf.reduce_min(plaqWoT), tf.reduce_max(plaqWoT), summarize=-1)
-            tf.print('plaq:', tf.reduce_mean(plaq), tf.reduce_min(plaq), tf.reduce_max(plaq), summarize=-1)
-            tf.print('topo:', mcmc.generate.action.topoCharge(x), summarize=-1)
+def printTuneStepResults(v0,t0,v1,t1,dp2,f2s,fms,bs,ls,dH,expmdH,arand,acc,plaqWoT,plaq,topo,mcmc,stepTuner,stepTunerDH):
+    nthmc.printMCMCRes(v0,t0,v1,t1,dp2,f2s,fms,bs,ls,dH,expmdH,arand,acc,plaqWoT,plaq,topo)
     if stepTuner is not None:
-        stepTuner(mcmc, dH, print=print)
-    if forceAccept:
-        return x1
-    else:
-        return x
+        if stepTuner(mcmc, stepTunerDH):
+            tf.print('# TuneStep set',mcmc.generate.name,'dt',mcmc.generate.dt,'step/traj',mcmc.generate.stepPerTraj, summarize=-1)
+        else:
+            tf.print('# TuneStep skipped')
 
-class HalfSteps:
-    def __init__(self, minAccRate, trajLength):
-        self.minAccRate = tf.constant(minAccRate, dtype=tf.float64)
-        self.trajLength = tf.constant(trajLength, dtype=tf.float64)
-    def __call__(self, mcmc, dH, print=True):
-        exp_mdH = tf.exp(-dH)
-        a = tf.reduce_mean(tf.where(exp_mdH>1., tf.constant(1., dtype=tf.float64), exp_mdH))
-        if a < self.minAccRate:
-            mcmc.generate.stepPerTraj.assign(mcmc.generate.stepPerTraj*2)
-            mcmc.generate.dt.assign(self.trajLength/tf.cast(mcmc.generate.stepPerTraj, tf.float64))
-            tf.print('# HalfSteps: acceptance rate:',a,'smaller than minAccRate:',self.minAccRate,'reducing step size', summarize=-1)
-            tf.print('Set',mcmc.generate.name,'dt',mcmc.generate.dt,'step/traj',mcmc.generate.stepPerTraj, summarize=-1)
+def tuneStep(mcmc, x0, stepTuner=None, detail=False, forceAccept=False):
+    # stepTuner uses boolean_mask that has where op, which is not supported in jit_compile yet
+    # https://github.com/tensorflow/tensorflow/issues/52905
+    # run it in printTuneStepResults
+    t0 = tf.timestamp()
+    p0 = mcmc.generate.action.randomMom()
+    accrand = mcmc.generate.action.rng.uniform([x0.shape[0]], dtype=tf.float64)
+    t1 = tf.timestamp()
+    x,inferRes,dH = tuneStep_func(mcmc, x0, p0, accrand, detail, tf.constant(forceAccept))
+    t2 = tf.timestamp()
+    printTuneStepResults(*inferRes, mcmc, stepTuner, dH)
+    te = tf.timestamp()
+    tf.print('# tuneStep time:',te-t0,'sec (',t1-t0,'+',t2-t1,'+',te-t2,')',summarize=-1)
+    return x
 
-class RegressTuner:
+class RegressStepTuner:
     def __init__(self, targetAccRate, trajLength, memoryLength=3, minCount=32):
         if targetAccRate<=0 or targetAccRate>=1:
             raise ValueError(f'RegressTuner:targetAccRate must be in (0,1), got {targetAccRate}')
         self.targetAccRate = tf.constant(targetAccRate, dtype=tf.float64)
         self.trajLength = tf.constant(trajLength, dtype=tf.float64)
-        self.memoryLength = tf.constant(memoryLength, dtype=tf.int32)
-        self.minCount = tf.constant(minCount, dtype=tf.int32)
+        self.memoryLength = tf.constant(memoryLength, dtype=tf.int64)
+        self.minCount = tf.constant(minCount, dtype=tf.int64)
         self.savedAccRate = tf.Variable(tf.zeros(memoryLength, dtype=tf.float64), trainable=False)
         self.savedAccRateErr = tf.Variable(tf.zeros(memoryLength, dtype=tf.float64), trainable=False)
-        self.savedStepPerTraj = tf.Variable(tf.zeros(memoryLength, dtype=tf.int32), trainable=False)
-        self.savedCount = tf.Variable(tf.zeros(memoryLength, dtype=tf.int32), trainable=False)
+        self.savedStepPerTraj = tf.Variable(tf.zeros(memoryLength, dtype=tf.int64), trainable=False)
+        self.savedCount = tf.Variable(tf.zeros(memoryLength, dtype=tf.int64), trainable=False)
         self.tempAccRate = tf.Variable(0, dtype=tf.float64, trainable=False)
         self.tempAccRateErr = tf.Variable(0, dtype=tf.float64, trainable=False)
-        self.tempStepPerTraj = tf.Variable(0, dtype=tf.int32, trainable=False)
-        self.tempCount = tf.Variable(0, dtype=tf.int32, trainable=False)
+        self.tempStepPerTraj = tf.Variable(0, dtype=tf.int64, trainable=False)
+        self.tempCount = tf.Variable(0, dtype=tf.int64, trainable=False)
         self.tol = 1e-4
-    def __call__(self, mcmc, dH, print=True):
+    def reset(self):
+        self.savedAccRate.assign(tf.zeros(self.memoryLength, dtype=tf.float64))
+        self.savedAccRateErr.assign(tf.zeros(self.memoryLength, dtype=tf.float64))
+        self.savedStepPerTraj.assign(tf.zeros(self.memoryLength, dtype=tf.int64))
+        self.savedCount.assign(tf.zeros(self.memoryLength, dtype=tf.int64))
+        self.tempAccRate.assign(0)
+        self.tempAccRateErr.assign(0)
+        self.tempStepPerTraj.assign(0)
+        self.tempCount.assign(0)
+    def __call__(self, mcmc, dH):
         n = dH.shape[0]
         exp_mdH = tf.exp(-dH)
         aa = tf.where(exp_mdH>1., tf.constant(1., dtype=tf.float64), exp_mdH)
         a = tf.reduce_mean(aa)
         aa -= a
         ae = tf.constant(0., dtype=tf.float64) if n==1 else tf.math.sqrt(tf.reduce_sum(aa*aa)/tf.cast(n*(n-1), tf.float64))
-        m = self.savedStepPerTraj == mcmc.generate.stepPerTraj
+        m = tf.equal(self.savedStepPerTraj, mcmc.generate.stepPerTraj)
         def combineWith(sn,s,se):
             se2 = se*se
             new_n = sn+n
@@ -210,16 +188,17 @@ class RegressTuner:
             self.tempAccRateErr.assign(ae)
             self.tempStepPerTraj.assign(mcmc.generate.stepPerTraj)
             self.tempCount.assign(n)
-        tf.print('# RegressTuner: acceptance rate:',a,'+/-',ae, summarize=-1)
-        tf.print('# RegressTuner: tempAccRate',self.tempAccRate,'tempAccRateErr',self.tempAccRateErr,'tempStepPerTraj',self.tempStepPerTraj,'tempCount',self.tempCount, summarize=-1)
-        tf.print('# RegressTuner: savedAccRate',self.savedAccRate,'savedAccRateErr',self.savedAccRateErr,'savedStepPerTraj',self.savedStepPerTraj,'savedCount',self.savedCount, summarize=-1)
+        # tf.print('# RegressTuner: acceptance rate:',a,'+/-',ae, summarize=-1)
+        # tf.print('# RegressTuner: tempAccRate',self.tempAccRate,'tempAccRateErr',self.tempAccRateErr,'tempStepPerTraj',self.tempStepPerTraj,'tempCount',self.tempCount, summarize=-1)
+        # tf.print('# RegressTuner: savedAccRate',self.savedAccRate,'savedAccRateErr',self.savedAccRateErr,'savedStepPerTraj',self.savedStepPerTraj,'savedCount',self.savedCount, summarize=-1)
         hasMinCount = self.minCount <= self.savedCount
         if tf.math.reduce_any(hasMinCount):
             ar = tf.boolean_mask(self.savedAccRate, hasMinCount)
             are_shift = self.tol*(self.tol+tf.math.top_k(tf.boolean_mask(self.savedAccRateErr, hasMinCount)).values[0])
             are = tf.where(self.savedAccRateErr>are_shift, self.savedAccRateErr, self.savedAccRateErr+are_shift)
             si2 = 1./tf.boolean_mask(are, hasMinCount)**2
-            x = self.trajLength/tf.cast(tf.boolean_mask(self.savedStepPerTraj, hasMinCount), tf.float64)
+            spt = tf.boolean_mask(self.savedStepPerTraj, hasMinCount)
+            x = self.trajLength/tf.cast(spt, tf.float64)
             # linear fit
             sum_si2 = tf.reduce_sum(si2)
             x_si2 = x*si2
@@ -229,17 +208,17 @@ class RegressTuner:
             A2 = tf.reduce_sum(A*A)
             B = 1. - (sum_si2/x_si2_1)*x
             B2 = tf.reduce_sum(B*B)
-            tf.print('x_si2_1',x_si2_1,'si2',tf.reduce_sum(si2),'x_si2_x',x_si2_x,'det',x_si2_1*x_si2_1-tf.reduce_sum(si2)*x_si2_x)
-            tf.print('A',A,'norm2',A2,'B',B,'norm2',B2)
+            # tf.print('x_si2_1',x_si2_1,'si2',tf.reduce_sum(si2),'x_si2_x',x_si2_x,'det',x_si2_1*x_si2_1-tf.reduce_sum(si2)*x_si2_x)
+            # tf.print('A',A,'norm2',A2,'B',B,'norm2',B2)
             if A2 < self.tol or B2 < self.tol:
                 # single datum or singular matrix
                 cA = tf.reduce_sum(si2*ar)/tf.reduce_sum(si2)
                 # rough approximation: dH = -ln(a) = c*x^2 => X = x sqrt(ln(t)/ln(a))
                 if cA==0:
-                    X = 0.5*tf.sort(x)[0]
+                    X = 0.618*tf.sort(x)[0]
                 else:
                     X = tf.sort(x)[0] * tf.math.sqrt(tf.math.log(self.targetAccRate)/tf.math.log(cA))
-                tf.print('# RegressTuner: singular, X',X, summarize=-1)
+                # tf.print('# RegressTuner: singular, X',X, summarize=-1)
             else:
                 A_si2 = A*si2
                 A_si2_1 = tf.reduce_sum(A_si2)
@@ -250,20 +229,21 @@ class RegressTuner:
                 cA = A_si2_y/A_si2_1
                 cB = B_si2_y/B_si2_x
                 X = (self.targetAccRate-cA)/cB
-                dXdy = (B_si2_x/(A_si2_1*B_si2_y**2)) * (A_si2_yY*B - B_si2_y*A)    # without the sigma^-2
-                dX = tf.math.sqrt(tf.reduce_sum(dXdy*si2*dXdy))
-                tf.print('# RegressTuner: fit, cA',cA,'cB',cB,'X',X,'+/-',dX, summarize=-1)
-            # For stability
+                # dXdy = (B_si2_x/(A_si2_1*B_si2_y**2)) * (A_si2_yY*B - B_si2_y*A)    # without the sigma^-2
+                # dX = tf.math.sqrt(tf.reduce_sum(dXdy*si2*dXdy))
+                # tf.print('# RegressTuner: fit, cA',cA,'cB',cB,'X',X,'+/-',dX, summarize=-1)
+            # For stability, restrict the size
             sortedx = tf.sort(x)
-            if X < 0.5*sortedx[0]:
-                X = 0.5*sortedx[0]
-            elif X > 2.*sortedx[-1]:
-                X = 2.*sortedx[-1]
-            new_steps = tf.cast(tf.round(self.trajLength/X), tf.int32)
-            if new_steps < 1:
-                new_steps = 1
-            mcmc.generate.stepPerTraj.assign(new_steps)
-            mcmc.generate.dt.assign(self.trajLength/tf.cast(new_steps, tf.float64))
-            tf.print('# RegressTuner: Set',mcmc.generate.name,'dt',mcmc.generate.dt,'step/traj',mcmc.generate.stepPerTraj, summarize=-1)
+            if X < 0.809*sortedx[0]:
+                X = 0.809*sortedx[0]
+            elif X > 1.618*sortedx[-1]:
+                X = 1.618*sortedx[-1]
+            new_spt = tf.cast(tf.round(self.trajLength/X), tf.int64)
+            if new_spt < 1:
+                new_spt = tf.constant(1, dtype=tf.int64)
+            mcmc.generate.stepPerTraj.assign(new_spt)
+            mcmc.generate.dt.assign(self.trajLength/tf.cast(new_spt, tf.float64))
+            changed = True
         else:
-            tf.print('# RegressTuner: skip without minCount')
+            changed = False
+        return changed

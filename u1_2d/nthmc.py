@@ -2,38 +2,50 @@ import tensorflow as tf
 import tensorflow.keras as tk
 import tensorflow.keras.layers as tl
 from numpy import inf
-import math, os
+import datetime, math, os
 import sys
 sys.path.append("../lib")
 import group
 
 class Conf:
     def __init__(self,
-                             nbatch = 16,
-                             nepoch = 4,
-                             nstepEpoch = 256,
-                             nstepMixing = 16,
-                             nstepPostTrain = 0,
-                             initDt = 0.2,
-                             trainDt = True,
-                             stepPerTraj = 10,
-                             checkReverse = False,
-                             refreshOpt = True,
-                             nthr = 4,
-                             nthrIop = 1,
-                             seed = 9876543211):
+            nbatch = 16,
+            nepoch = 4,
+            nstepEpoch = 256,
+            nstepMixing = 16,
+            nstepPostTrain = 0,
+            nconfStepTune = 512,
+            initDt = None,
+            trainDt = True,
+            stepPerTraj = 10,
+            trajLength = None,
+            accRate = 0.8,
+            checkReverse = False,
+            refreshOpt = True,
+            nthr = 4,
+            nthrIop = 1,
+            softPlace = True,
+            xlaCluster = False,
+            seed = 9876543211):
+        if initDt is None and trajLength is None:
+            raise ValueError('missing argument: initDt or trajLength')
         self.nbatch = nbatch
         self.nepoch = nepoch
         self.nstepEpoch = nstepEpoch
         self.nstepMixing = nstepMixing
         self.nstepPostTrain = nstepPostTrain
-        self.initDt = initDt
+        self.nconfStepTune = nconfStepTune
+        self.initDt = trajLength/stepPerTraj if initDt is None else initDt
         self.trainDt = trainDt
         self.stepPerTraj = stepPerTraj
+        self.trajLength = initDt*stepPerTraj if trajLength is None else trajLength
+        self.accRate = accRate
         self.checkReverse = checkReverse
         self.refreshOpt = refreshOpt
         self.nthr = nthr
         self.nthrIop = nthrIop
+        self.softPlace = softPlace
+        self.xlaCluster = xlaCluster
         self.seed = seed
 
 class U1d2(tl.Layer):
@@ -41,7 +53,7 @@ class U1d2(tl.Layer):
         super(U1d2, self).__init__(autocast=False, name=name, **kwargs)
         self.g = group.U1Phase
         self.targetBeta = tf.constant(beta, dtype=tf.float64)
-        self.beta = tf.Variable(beta, dtype=tf.float64, trainable=False)
+        self.beta = tf.Variable(beta, dtype=tf.float64, trainable=False, name=name+'.beta')
         self.beta0 = beta0
         self.size = size
         self.transform = transform
@@ -109,27 +121,23 @@ class Metropolis(tk.Model):
         tf.print(self.name, 'init with conf', conf, summarize=-1)
         self.generate = generator
         self.checkReverse = conf.checkReverse
-    @tf.function
-    def call(self, x0, p0):
+    def call(self, x0, p0, accrand):
         v0, l0, b0 = self.generate.action(x0)
         t0 = self.generate.action.momEnergy(p0)
         x1, p1, ls, f2s, fms, bs = self.generate(x0, p0)
         if self.checkReverse:
             self.revCheck(x0, p0, x1, p1)
         v1, l1, b1 = self.generate.action(x1)
-        ls = tf.concat([tf.expand_dims(l0, 0), ls.stack(), tf.expand_dims(l1, 0)], 0)
-        f2s = f2s.stack()
-        fms = fms.stack()
-        bs = tf.concat([tf.expand_dims(b0, 0), bs.stack(), tf.expand_dims(b1, 0)], 0)
+        ls = tf.concat([tf.expand_dims(l0, 0), ls, tf.expand_dims(l1, 0)], 0)
+        bs = tf.concat([tf.expand_dims(b0, 0), bs, tf.expand_dims(b1, 0)], 0)
         t1 = self.generate.action.momEnergy(p1)
         dH = (v1+t1) - (v0+t0)
         exp_mdH = tf.exp(-dH)
-        arand = self.generate.action.rng.uniform(exp_mdH.shape, dtype=tf.float64)
-        acc = tf.reshape(tf.less(arand, exp_mdH), arand.shape + (1,1,1))
+        acc = tf.reshape(tf.less(accrand, exp_mdH), accrand.shape + (1,1,1))
         x = tf.where(acc, x1, x0)
         p = tf.where(acc, p1, p0)
         acc = tf.reshape(acc, [-1])
-        return (x, p, x1, p1, v0, t0, v1, t1, dH, acc, arand, ls, f2s, fms, bs)
+        return (x, p, x1, p1, v0, t0, v1, t1, dH, acc, accrand, ls, f2s, fms, bs)
     def revCheck(self, x0, p0, x1, p1):
         tol = 1e-10
         xr, pr, _, _, _, _ = self.generate(x1, p1)
@@ -153,25 +161,25 @@ class LeapFrog(tl.Layer):
     def __init__(self, conf, action, name='LeapFrog', **kwargs):
         super(LeapFrog, self).__init__(autocast=False, name=name, **kwargs)
         self.dt = self.add_weight(initializer=tk.initializers.Constant(conf.initDt), dtype=tf.float64, trainable=conf.trainDt)
-        self.stepPerTraj = self.add_weight(initializer=tk.initializers.Constant(conf.stepPerTraj), dtype=tf.int32, trainable=False)
+        self.stepPerTraj = self.add_weight(initializer=tk.initializers.Constant(conf.stepPerTraj), dtype=tf.int64, trainable=False)    # TF error with int32, https://github.com/tensorflow/tensorflow/issues/53192
         self.action = action
         tf.print(self.name, 'init with dt', self.dt, 'step/traj', self.stepPerTraj, summarize=-1)
     def call(self, x0, p0):
+        n = tf.cast(self.stepPerTraj, tf.int32)
         dt = self.dt
         x = x0 + 0.5*dt*p0
         d, l, b = self.action.derivAction(x)
         p = p0 - dt*d
         df = tf.reshape(d, [d.shape[0],-1])
-        f2s = tf.TensorArray(tf.float64, size=self.stepPerTraj)
-        fms = tf.TensorArray(tf.float64, size=self.stepPerTraj)
-        ls = tf.TensorArray(tf.float64, size=self.stepPerTraj)
-        bs = tf.TensorArray(tf.float64, size=self.stepPerTraj)
+        f2s = tf.TensorArray(tf.float64, size=n)
+        fms = tf.TensorArray(tf.float64, size=n)
+        ls = tf.TensorArray(tf.float64, size=n)
+        bs = tf.TensorArray(tf.float64, size=n)
         f2s = f2s.write(0, tf.norm(df, ord=2, axis=-1))
         fms = fms.write(0, tf.norm(df, ord=inf, axis=-1))
         ls = ls.write(0, l)
         bs = bs.write(0, b)
-        i = 1
-        while i<self.stepPerTraj:
+        for i in tf.range(1,n):
             x += dt*p
             d, l, b = self.action.derivAction(x)
             p -= dt*d
@@ -180,12 +188,42 @@ class LeapFrog(tl.Layer):
             fms = fms.write(i, tf.norm(df, ord=inf, axis=-1))
             ls = ls.write(i, l)
             bs = bs.write(i, b)
-            i += 1
         x += 0.5*dt*p
         x = self.action.compatProj(x)
-        return (x, -p, ls, f2s, fms, bs)
+        return (x, -p, ls.stack(), f2s.stack(), fms.stack(), bs.stack())
     def changePerEpoch(self, epoch, conf):
         self.action.changePerEpoch(epoch, conf)
+
+def mean_min_max(x,**kwargs):
+    return tf.reduce_mean(x,**kwargs),tf.reduce_min(x,**kwargs),tf.reduce_max(x,**kwargs)
+
+def packMCMCRes(mcmc, x, p, x0, p0, x1, p1, v0, t0, v1, t1, dH, acc, arand, ls, f2s, fms, bs, detail=False):
+    plaqWoT = mcmc.generate.action.plaquetteWoTrans(x)
+    plaq = mcmc.generate.action.plaquette(x)
+    dp2 = tf.math.reduce_mean(tf.math.squared_difference(p1,p0), axis=range(1,len(p0.shape)))
+    if detail:
+        inferRes = (v0,),(t0,),(v1,),(t1,),(dp2,),(f2s,),(fms,),((bs,) if len(bs.shape)>1 else None),(ls,),(dH,),(tf.exp(-dH),),(arand,),acc,(plaqWoT,),(plaq,),mcmc.generate.action.topoCharge(x)
+    else:
+        inferRes = mean_min_max(v0),mean_min_max(t0),mean_min_max(v1),mean_min_max(t1),mean_min_max(dp2),mean_min_max(f2s),mean_min_max(fms),(mean_min_max(bs,axis=(0,1)) if len(bs.shape)>1 else None),mean_min_max(ls),mean_min_max(dH),mean_min_max(tf.exp(-dH)),mean_min_max(arand),tf.reduce_mean(tf.cast(acc,tf.float64)),mean_min_max(plaqWoT),mean_min_max(plaq),mcmc.generate.action.topoCharge(x)
+    return inferRes
+
+def printMCMCRes(v0,t0,v1,t1,dp2,f2s,fms,bs,ls,dH,expmdH,arand,acc,plaqWoT,plaq,topo):
+    tf.print('V-old:', *v0, summarize=-1)
+    tf.print('T-old:', *t0, summarize=-1)
+    tf.print('V-prp:', *v1, summarize=-1)
+    tf.print('T-prp:', *t1, summarize=-1)
+    tf.print('dp2:', *dp2, summarize=-1)
+    tf.print('force:', *f2s, *fms, summarize=-1)
+    if bs is not None:
+        tf.print('coeff:', *bs, summarize=-1)
+    tf.print('lnJ:', *ls, summarize=-1)
+    tf.print('dH:', *dH, summarize=-1)
+    tf.print('exp_mdH:', *expmdH, summarize=-1)
+    tf.print('arand:', *arand, summarize=-1)
+    tf.print('accept:', acc, summarize=-1)
+    tf.print('plaqWoTrans:', *plaqWoT, summarize=-1)
+    tf.print('plaq:', *plaq, summarize=-1)
+    tf.print('topo:', topo, summarize=-1)
 
 class LossFun:
     def __init__(self, action, cCosDiff=1.0, cTopoDiff=1.0, cForce2=0.0, dHmin=0.5, topoFourierN=1):
@@ -236,7 +274,8 @@ def initRun(mcmc, loss, x0, weights):
 @tf.function
 def inferStep(mcmc, loss, x0, print=True, detail=True, forceAccept=False, tuningStepSize=False):
     p0 = mcmc.generate.action.randomMom()
-    x, p, x1, p1, v0, t0, v1, t1, dH, acc, arand, ls, f2s, fms, bs = mcmc(x0, p0)
+    accrand = mcmc.generate.action.rng.uniform([x0.shape[0]], dtype=tf.float64)
+    x, p, x1, p1, v0, t0, v1, t1, dH, acc, arand, ls, f2s, fms, bs = mcmc(x0, p0, accrand)
     lv = loss(x, p, x0, p0, x1, p1, v0, t0, v1, t1, dH, acc, arand, ls, f2s, fms, bs, print=print)
     if print:
         plaqWoT = mcmc.generate.action.plaquetteWoTrans(x)
@@ -321,8 +360,9 @@ def showTransform(conf, mcmc, loss, weights, **kwargs):
 @tf.function
 def trainStep(mcmc, loss, opt, x0):
     p0 = mcmc.generate.action.randomMom()
+    accrand = mcmc.generate.action.rng.uniform([x0.shape[0]], dtype=tf.float64)
     with tf.GradientTape() as tape:
-        x, p, x1, p1, v0, t0, v1, t1, dH, acc, arand, ls, f2s, fms, bs = mcmc(x0, p0)
+        x, p, x1, p1, v0, t0, v1, t1, dH, acc, arand, ls, f2s, fms, bs = mcmc(x0, p0, accrand)
         lv = loss(x, p, x0, p0, x1, p1, v0, t0, v1, t1, dH, acc, arand, ls, f2s, fms, bs)
     plaqWoT = mcmc.generate.action.plaquetteWoTrans(x)
     plaq = mcmc.generate.action.plaquette(x)
@@ -394,14 +434,21 @@ def run(conf, mcmc, loss, opt, x0, weights=None, requireInv=False):
 def setup(conf):
     tf.random.set_seed(conf.seed)
     tk.backend.set_floatx('float64')
-    tf.config.set_soft_device_placement(True)
-    tf.config.optimizer.set_jit(False)
+    tf.config.set_soft_device_placement(conf.softPlace)
+    if conf.xlaCluster:
+        tf.config.optimizer.set_jit('autoclustering')    # changes RNG behavior
+    else:
+        tf.config.optimizer.set_jit(False)
     tf.config.threading.set_inter_op_parallelism_threads(conf.nthrIop)    # ALCF suggests number of socket
     tf.config.threading.set_intra_op_parallelism_threads(conf.nthr)    # ALCF suggests number of physical cores
     os.environ["OMP_NUM_THREADS"] = str(conf.nthr)
     os.environ["KMP_BLOCKTIME"] = "0"
     os.environ["KMP_SETTINGS"] = "1"
     os.environ["KMP_AFFINITY"]= "granularity=fine,verbose,compact,1,0"
+    tf.print('NTHMC', str(datetime.datetime.now()), summarize=-1)
+    tf.print('Python', sys.version, summarize=-1)
+    tf.print('TensorFlow', tf.version.VERSION, tf.version.GIT_VERSION, tf.version.COMPILER_VERSION, summarize=-1)
+    tf.print('Device', *tf.config.get_visible_devices(), summarize=-1)
 
 if __name__ == '__main__':
     import ftr

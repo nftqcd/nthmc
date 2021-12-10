@@ -78,7 +78,6 @@ class TransformChain(tl.Layer):
             if hasattr(t,'invMaxIter'):
                 if self.invMaxIter < t.invMaxIter:
                     self.invMaxIter = t.invMaxIter
-    @tf.function
     def call(self, x):
         y = x
         l = tf.zeros(x.shape[0], dtype=tf.float64)
@@ -88,7 +87,6 @@ class TransformChain(tl.Layer):
             l += t
             bs += b
         return (y, l, bs)
-    @tf.function
     def inv(self, y):
         x = y
         l = tf.zeros(y.shape[0], dtype=tf.float64)
@@ -233,7 +231,6 @@ class GenericStoutSmear(tk.Model):
             b = a
             f += bs[...,k]*self.maskUpdate*fa
         return self.expanddir(f)
-    @tf.function
     def inv(self, y):
         x = y
         i = 0

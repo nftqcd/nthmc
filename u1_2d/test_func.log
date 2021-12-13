@@ -1,0 +1,106 @@
+WARNING:root:Limited tf.compat.v2.summary API due to missing TensorBoard installation.
+WARNING:root:Limited tf.compat.v2.summary API due to missing TensorBoard installation.
+WARNING:root:Limited tf.compat.v2.summary API due to missing TensorBoard installation.
+WARNING:root:Limited tf.summary API due to missing TensorBoard installation.
+2021-12-13 17:00:36.891829: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1510] Created device /job:localhost/replica:0/task:0/device:GPU:0 with 14648 MB memory:  -> device: 0, name: Tesla V100-SXM2-16GB, pci bus id: 0004:04:00.0, compute capability: 7.0
+NTHMC 2021-12-13 17:00:36.042275
+Python 3.8.11 (default, Aug 25 2021, 19:21:08) 
+[GCC 8.4.0]
+TensorFlow 2.6.0 unknown 8.4.0
+Device PhysicalDevice(name='/physical_device:CPU:0', device_type='CPU') PhysicalDevice(name='/physical_device:GPU:0', device_type='GPU')
+Omelyan2MN init with dt 0.4 step/traj 10
+Metropolis init with conf <nthmc.Conf object at 0x7fff78205670>
+Omelyan2MN init with dt 0.4 step/traj 10
+Metropolis init with conf <nthmc.Conf object at 0x7fff78205670>
+* hmc dt <tf.Variable 'Variable:0' shape=() dtype=float64, numpy=0.4> steps/traj <tf.Variable 'Variable:0' shape=() dtype=int64, numpy=10>
+* thmc dt <tf.Variable 'Variable:0' shape=() dtype=float64, numpy=0.4> steps/traj <tf.Variable 'Variable:0' shape=() dtype=int64, numpy=10>
+hmc run 0 took 0.1410808563232422 sec.
+hmc run 1 took 0.1217799186706543 sec.
+hmc run 2 took 0.11960101127624512 sec.
+hmc run 3 took 0.1208810806274414 sec.
+{'current': 25172480, 'peak': 201344768}
+2021-12-13 17:00:39.831402: I tensorflow/stream_executor/cuda/cuda_dnn.cc:369] Loaded cuDNN version 8005
+thmc run 0 took 42.722702980041504 sec.
+thmc run 1 took 30.361876010894775 sec.
+thmc run 2 took 30.331643104553223 sec.
+thmc run 3 took 30.39297103881836 sec.
+{'current': 130077440, 'peak': 15135189760}
+tracing <nthmc.Metropolis object at 0x7ffa404933a0> Tensor("x:0", shape=(3, 2, 512, 512), dtype=float64) Tensor("p:0", shape=(3, 2, 512, 512), dtype=float64) Tensor("r:0", shape=(3,), dtype=float64)
+hmc_fun get concrete took 2.1324539184570312 sec.
+{'current': 130077440, 'peak': 130078208}
+tracing <nthmc.Metropolis object at 0x7ffa404933a0> Tensor("x:0", shape=(3, 2, 512, 512), dtype=float64) Tensor("p:0", shape=(3, 2, 512, 512), dtype=float64) Tensor("r:0", shape=(3,), dtype=float64)
+hmc_jit get concrete took 0.7409799098968506 sec.
+{'current': 130077440, 'peak': 130078208}
+tracing <nthmc.Metropolis object at 0x7ffa40295100> Tensor("x:0", shape=(3, 2, 512, 512), dtype=float64) Tensor("p:0", shape=(3, 2, 512, 512), dtype=float64) Tensor("r:0", shape=(3,), dtype=float64)
+thmc_fun get concrete took 100.1761372089386 sec.
+{'current': 130077440, 'peak': 130078208}
+tracing <nthmc.Metropolis object at 0x7ffa40295100> Tensor("x:0", shape=(3, 2, 512, 512), dtype=float64) Tensor("p:0", shape=(3, 2, 512, 512), dtype=float64) Tensor("r:0", shape=(3,), dtype=float64)
+thmc_jit get concrete took 99.7541229724884 sec.
+{'current': 130077440, 'peak': 130078208}
+2021-12-13 17:06:14.954064: I tensorflow/compiler/mlir/mlir_graph_optimization_pass.cc:185] None of the MLIR Optimization Passes are enabled (registered 2)
+hmc_fun run 0 took 0.33499598503112793 sec.
+hmc_fun run 1 took 0.048278093338012695 sec.
+hmc_fun run 2 took 0.04946708679199219 sec.
+hmc_fun run 3 took 0.049299001693725586 sec.
+{'current': 130079744, 'peak': 344011008}
+2021-12-13 17:06:15.457539: I tensorflow/compiler/xla/service/service.cc:171] XLA service 0x1164926c0 initialized for platform CUDA (this does not guarantee that XLA will be used). Devices:
+2021-12-13 17:06:15.457575: I tensorflow/compiler/xla/service/service.cc:179]   StreamExecutor device (0): Tesla V100-SXM2-16GB, Compute Capability 7.0
+2021-12-13 17:06:15.537911: I tensorflow/compiler/mlir/tensorflow/utils/dump_mlir_util.cc:210] disabling MLIR crash reproducer, set env var `MLIR_CRASH_REPRODUCER_DIRECTORY` to enable.
+2021-12-13 17:06:57.990511: I tensorflow/compiler/jit/xla_compilation_cache.cc:363] Compiled cluster using XLA!  This line is logged at most once for the lifetime of the process.
+hmc_jit run 0 took 42.5843071937561 sec.
+hmc_jit run 1 took 0.014726877212524414 sec.
+hmc_jit run 2 took 0.014798164367675781 sec.
+hmc_jit run 3 took 0.014745950698852539 sec.
+{'current': 130079744, 'peak': 268499712}
+thmc_fun run 0 took 40.750864028930664 sec.
+thmc_fun run 1 took 13.147068977355957 sec.
+thmc_fun run 2 took 12.878084897994995 sec.
+thmc_fun run 3 took 12.818440914154053 sec.
+{'current': 142684416, 'peak': 4810358784}
+2021-12-13 17:11:37.747849: E tensorflow/compiler/xla/service/slow_operation_alarm.cc:55] 
+********************************
+Very slow compile?  If you want to file a bug, run with envvar XLA_FLAGS=--xla_dump_to=/tmp/foo and attach the results.
+Compiling module a_inference_my_func_1205107__XlaMustCompile_true_config_proto___n_007_n_0...02_001_000__executor_type____.231154
+********************************
+thmc_jit run 0 took 233.32551312446594 sec.
+thmc_jit run 1 took 6.085032939910889 sec.
+thmc_jit run 2 took 6.084866046905518 sec.
+thmc_jit run 3 took 6.084275007247925 sec.
+{'current': 142684416, 'peak': 4147312384}
+* hmc dt <tf.Variable 'Variable:0' shape=() dtype=float64, numpy=0.2> steps/traj <tf.Variable 'Variable:0' shape=() dtype=int64, numpy=20>
+* thmc dt <tf.Variable 'Variable:0' shape=() dtype=float64, numpy=0.2> steps/traj <tf.Variable 'Variable:0' shape=() dtype=int64, numpy=20>
+hmc run 0 took 0.23194599151611328 sec.
+hmc run 1 took 0.23065614700317383 sec.
+hmc run 2 took 0.23022103309631348 sec.
+hmc run 3 took 0.2299339771270752 sec.
+{'current': 142684928, 'peak': 299997952}
+thmc run 0 took 58.685253858566284 sec.
+thmc run 1 took 58.408159017562866 sec.
+thmc run 2 took 58.22043800354004 sec.
+thmc run 3 took 58.435003995895386 sec.
+{'current': 142684928, 'peak': 15153050368}
+hmc_fun run 0 took 0.07468295097351074 sec.
+hmc_fun run 1 took 0.07483792304992676 sec.
+hmc_fun run 2 took 0.0747828483581543 sec.
+hmc_fun run 3 took 0.07464909553527832 sec.
+{'current': 142684928, 'peak': 400667648}
+hmc_jit run 0 took 47.74749207496643 sec.
+hmc_jit run 1 took 0.028543949127197266 sec.
+hmc_jit run 2 took 0.028268814086914062 sec.
+hmc_jit run 3 took 0.028249025344848633 sec.
+{'current': 142684928, 'peak': 281107968}
+thmc_fun run 0 took 24.36269187927246 sec.
+thmc_fun run 1 took 24.493286848068237 sec.
+thmc_fun run 2 took 24.08920907974243 sec.
+thmc_fun run 3 took 23.902374982833862 sec.
+{'current': 142684928, 'peak': 4822552064}
+2021-12-13 17:22:12.364746: E tensorflow/compiler/xla/service/slow_operation_alarm.cc:55] 
+********************************
+Very slow compile?  If you want to file a bug, run with envvar XLA_FLAGS=--xla_dump_to=/tmp/foo and attach the results.
+Compiling module a_inference_my_func_1205107__XlaMustCompile_true_config_proto___n_007_n_0...02_001_000__executor_type____.231154
+********************************
+thmc_jit run 0 took 242.688059091568 sec.
+thmc_jit run 1 took 12.080228090286255 sec.
+thmc_jit run 2 took 12.080658197402954 sec.
+thmc_jit run 3 took 12.080511808395386 sec.
+{'current': 142684928, 'peak': 4147318272}

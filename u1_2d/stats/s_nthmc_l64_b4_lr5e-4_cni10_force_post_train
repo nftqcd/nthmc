@@ -1,0 +1,38 @@
+
+# File: ../s_nthmc_l64_b4_lr5e-4_cni10.log
+beta: 4
+nconf: 1024
+blocksize: 32
+forceNorm2:      206.96 +/- 0.0128895   
+forceNorm2Min:   201.204 +/- 0.0290072  
+forceNorm2Max:   212.699 +/- 0.0313641  
+forceNormInf:    6.5097 +/- 0.000218486 
+forceNormInfMin: 6.17507 +/- 0.000948188
+forceNormInfMax: 7.46235 +/- 0.0101031  
+beta: 5
+nconf: 1024
+blocksize: 32
+forceNorm2:      237.434 +/- 0.0163138 
+forceNorm2Min:   230.517 +/- 0.032383  
+forceNorm2Max:   244.385 +/- 0.0350786 
+forceNormInf:    7.92713 +/- 0.00026856
+forceNormInfMin: 7.40846 +/- 0.00121235
+forceNormInfMax: 8.70212 +/- 0.00974425
+beta: 6
+nconf: 1024
+blocksize: 32
+forceNorm2:      264.853 +/- 0.0253675  
+forceNorm2Min:   256.731 +/- 0.0493509  
+forceNorm2Max:   272.936 +/- 0.0497195  
+forceNormInf:    9.26703 +/- 0.000436643
+forceNormInfMin: 8.50014 +/- 0.00198709 
+forceNormInfMax: 10.0753 +/- 0.00706133 
+beta: 7
+nconf: 1024
+blocksize: 32
+forceNorm2:      289.474 +/- 0.0242617  
+forceNorm2Min:   280.383 +/- 0.0585295  
+forceNorm2Max:   298.668 +/- 0.0520976  
+forceNormInf:    10.4985 +/- 0.000807447
+forceNormInfMin: 9.46796 +/- 0.00310549 
+forceNormInfMax: 11.533 +/- 0.00343019  

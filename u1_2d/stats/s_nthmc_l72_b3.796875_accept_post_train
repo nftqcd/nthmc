@@ -1,0 +1,22 @@
+
+# File: ../s_nthmc_l72_b3.796875.log
+beta: 3.796875
+nconf: 1024
+blocksize: 32
+accept: 0.817383 +/- 0.00177737
+beta: 5.0625
+nconf: 1024
+blocksize: 32
+accept: 0.825531 +/- 0.00219315
+beta: 6.328125
+nconf: 1024
+blocksize: 32
+accept: 0.794647 +/- 0.00230248
+beta: 7.59375
+nconf: 1024
+blocksize: 32
+accept: 0.787445 +/- 0.0027693
+beta: 8.859375
+nconf: 0
+blocksize: 32
+accept: 0 +/- 0

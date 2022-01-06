@@ -1,0 +1,26 @@
+beta: 1.12890625
+stepsize: 0.33333333333333331 step/traj: 12
+beta: 2.2578125
+stepsize: 0.26666666666666666 step/traj: 15
+beta: 3.38671875
+stepsize: 0.23529411764705882 step/traj: 17
+beta: 4.515625
+stepsize: 0.21052631578947367 step/traj: 19
+beta: 5.64453125
+stepsize: 0.19047619047619047 step/traj: 21
+beta: 6.7734375
+stepsize: 0.18181818181818182 step/traj: 22
+beta: 7.90234375
+stepsize: 0.16666666666666666 step/traj: 24
+beta: 9.03125
+stepsize: 0.16 step/traj: 25
+beta: 10.16015625
+stepsize: 0.15384615384615385 step/traj: 26
+beta: 11.2890625
+stepsize: 0.14285714285714285 step/traj: 28
+beta: 12.41796875
+stepsize: 0.14285714285714285 step/traj: 28
+beta: 13.546875
+stepsize: 0.13333333333333333 step/traj: 30
+beta: 14.67578125
+stepsize: 0.12903225806451613 step/traj: 31

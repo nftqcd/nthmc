@@ -1,0 +1,54 @@
+
+# File: ../s_hmc_l66_params.log
+beta: 1.0634765625
+nconf: 8192
+blocksize: 32
+accept: 0.840667 +/- 0.000377648
+beta: 2.126953125
+nconf: 8192
+blocksize: 32
+accept: 0.819349 +/- 0.00034943
+beta: 3.1904296875
+nconf: 8192
+blocksize: 32
+accept: 0.815468 +/- 0.000406574
+beta: 4.25390625
+nconf: 8192
+blocksize: 32
+accept: 0.829992 +/- 0.000381067
+beta: 5.3173828125
+nconf: 8192
+blocksize: 32
+accept: 0.796535 +/- 0.000403539
+beta: 6.380859375
+nconf: 8192
+blocksize: 32
+accept: 0.764888 +/- 0.000452492
+beta: 7.4443359375
+nconf: 8192
+blocksize: 32
+accept: 0.800426 +/- 0.000407563
+beta: 8.5078125
+nconf: 8192
+blocksize: 32
+accept: 0.792789 +/- 0.000395151
+beta: 9.5712890625
+nconf: 8192
+blocksize: 32
+accept: 0.827727 +/- 0.00039802
+beta: 10.634765625
+nconf: 8192
+blocksize: 32
+accept: 0.815262 +/- 0.00044949
+beta: 11.6982421875
+nconf: 8192
+blocksize: 32
+accept: 0.779274 +/- 0.000458322
+beta: 12.76171875
+nconf: 8192
+blocksize: 32
+accept: 0.812015 +/- 0.000405845
+beta: 13.8251953125
+nconf: 8192
+blocksize: 32
+accept: 0.812967 +/- 0.000416404

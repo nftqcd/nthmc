@@ -1,0 +1,29 @@
+
+# File: ../s_nthmc_l64_b6_step5e-6_p7o16_8cn6_8cn8.log
+beta: 5
+nconf: 1024
+blocksize: 32
+plaq:    0.893411 +/- 2.44873e-5
+plaqMin: 0.888487 +/- 5.37831e-5
+plaqMax: 0.898274 +/- 5.05697e-5
+plaqMapped:    0.78269 +/- 4.34419e-5 
+plaqMappedMin: 0.77326 +/- 8.72448e-5 
+plaqMappedMax: 0.792028 +/- 9.73698e-5
+beta: 6
+nconf: 1024
+blocksize: 32
+plaq:    0.912355 +/- 2.94539e-5
+plaqMin: 0.908269 +/- 4.65966e-5
+plaqMax: 0.916357 +/- 5.41991e-5
+plaqMapped:    0.818548 +/- 5.52106e-5
+plaqMappedMin: 0.810466 +/- 9.08997e-5
+plaqMappedMax: 0.826439 +/- 0.00010526
+beta: 7
+nconf: 1024
+blocksize: 32
+plaq:    0.925539 +/- 1.97787e-5
+plaqMin: 0.922101 +/- 4.29724e-5
+plaqMax: 0.928901 +/- 3.95784e-5
+plaqMapped:    0.844115 +/- 3.90426e-5
+plaqMappedMin: 0.83722 +/- 8.00315e-5 
+plaqMappedMax: 0.850818 +/- 8.17785e-5

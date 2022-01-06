@@ -1,0 +1,29 @@
+
+# File: ../s_nthmc_l64_b6_5cn8_5cn10_lr1e-5.log
+beta: 5
+nconf: 1024
+blocksize: 32
+plaq:    0.893348 +/- 3.23189e-5
+plaqMin: 0.888452 +/- 6.10968e-5
+plaqMax: 0.898204 +/- 5.35472e-5
+plaqMapped:    0.781606 +/- 6.34561e-5 
+plaqMappedMin: 0.771755 +/- 0.000111395
+plaqMappedMax: 0.791349 +/- 0.000111385
+beta: 6
+nconf: 1024
+blocksize: 32
+plaq:    0.912413 +/- 2.41794e-5
+plaqMin: 0.908328 +/- 4.86254e-5
+plaqMax: 0.916358 +/- 4.04941e-5
+plaqMapped:    0.819241 +/- 4.72619e-5
+plaqMappedMin: 0.81093 +/- 9.64531e-5 
+plaqMappedMax: 0.827224 +/- 8.2424e-5 
+beta: 7
+nconf: 1024
+blocksize: 32
+plaq:    0.925533 +/- 2.37393e-5
+plaqMin: 0.922047 +/- 4.32838e-5
+plaqMax: 0.928881 +/- 4.99282e-5
+plaqMapped:    0.845514 +/- 4.7366e-5 
+plaqMappedMin: 0.838418 +/- 9.60802e-5
+plaqMappedMax: 0.852351 +/- 9.48538e-5

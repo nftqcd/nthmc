@@ -1,0 +1,142 @@
+
+# File: ../s_hmc_l64_params.log
+beta: 1
+nconf: 8192
+blocksize: 32
+accept: 0.803931 +/- 0.000397412
+beta: 2
+nconf: 8192
+blocksize: 32
+accept: 0.789102 +/- 0.000454216
+beta: 3
+nconf: 8192
+blocksize: 32
+accept: 0.833714 +/- 0.000382032
+beta: 4
+nconf: 8192
+blocksize: 32
+accept: 0.801308 +/- 0.000410024
+beta: 5
+nconf: 8192
+blocksize: 32
+accept: 0.825212 +/- 0.000384763
+beta: 6
+nconf: 8192
+blocksize: 32
+accept: 0.801952 +/- 0.000451183
+beta: 7
+nconf: 8192
+blocksize: 32
+accept: 0.788479 +/- 0.000407329
+beta: 8
+nconf: 8192
+blocksize: 32
+accept: 0.778374 +/- 0.000484155
+beta: 9
+nconf: 8192
+blocksize: 32
+accept: 0.812729 +/- 0.000411513
+beta: 10
+nconf: 8192
+blocksize: 32
+accept: 0.816953 +/- 0.00042224
+beta: 11
+nconf: 8192
+blocksize: 32
+accept: 0.808896 +/- 0.000440208
+beta: 12
+nconf: 8192
+blocksize: 32
+accept: 0.809175 +/- 0.000382179
+beta: 13
+nconf: 8192
+blocksize: 32
+accept: 0.812453 +/- 0.000392519
+beta: 14
+nconf: 8192
+blocksize: 32
+accept: 0.810425 +/- 0.000463396
+beta: 15
+nconf: 8192
+blocksize: 32
+accept: 0.817829 +/- 0.000416154
+beta: 16
+nconf: 8192
+blocksize: 32
+accept: 0.782429 +/- 0.000454172
+beta: 17
+nconf: 8192
+blocksize: 32
+accept: 0.820233 +/- 0.000408731
+beta: 18
+nconf: 8192
+blocksize: 32
+accept: 0.826576 +/- 0.000420065
+beta: 19
+nconf: 8192
+blocksize: 32
+accept: 0.796469 +/- 0.000434219
+beta: 20
+nconf: 8192
+blocksize: 32
+accept: 0.810998 +/- 0.000422334
+beta: 21
+nconf: 8192
+blocksize: 32
+accept: 0.804009 +/- 0.000407353
+beta: 22
+nconf: 8192
+blocksize: 32
+accept: 0.794643 +/- 0.000435387
+beta: 23
+nconf: 8192
+blocksize: 32
+accept: 0.791847 +/- 0.000475257
+beta: 24
+nconf: 8192
+blocksize: 32
+accept: 0.798402 +/- 0.000460405
+beta: 25
+nconf: 8192
+blocksize: 32
+accept: 0.812989 +/- 0.000429349
+beta: 26
+nconf: 8192
+blocksize: 32
+accept: 0.808873 +/- 0.000458982
+beta: 27
+nconf: 8192
+blocksize: 32
+accept: 0.797186 +/- 0.000439205
+beta: 28
+nconf: 8192
+blocksize: 32
+accept: 0.80533 +/- 0.000449769
+beta: 29
+nconf: 8192
+blocksize: 32
+accept: 0.803422 +/- 0.000465839
+beta: 30
+nconf: 8192
+blocksize: 32
+accept: 0.797925 +/- 0.000458807
+beta: 31
+nconf: 8192
+blocksize: 32
+accept: 0.803555 +/- 0.00042847
+beta: 32
+nconf: 8192
+blocksize: 32
+accept: 0.802813 +/- 0.00049001
+beta: 33
+nconf: 8192
+blocksize: 32
+accept: 0.797291 +/- 0.000449411
+beta: 34
+nconf: 8192
+blocksize: 32
+accept: 0.804259 +/- 0.000451005
+beta: 35
+nconf: 276
+blocksize: 32
+accept: 0.804433 +/- 0.00213771

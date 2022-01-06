@@ -1,0 +1,119 @@
+
+# File: ../s_hmc_l82_params.log
+beta: 1.6416015625
+nconf: 8192
+blocksize: 32
+forceNorm2:      167.577 +/- 0.00118622
+forceNorm2Min:   163.565 +/- 0.0046509 
+forceNorm2Max:   171.586 +/- 0.00499113
+forceNormInf:    3.28199 +/- 2.40078e-7
+forceNormInfMin: 3.27239 +/- 1.92158e-5
+forceNormInfMax: 3.2832 +/- 3.72431e-9 
+beta: 3.283203125
+nconf: 8192
+blocksize: 32
+forceNorm2:      273.331 +/- 0.00291421 
+forceNorm2Min:   265.801 +/- 0.00998877 
+forceNorm2Max:   280.892 +/- 0.00952738 
+forceNormInf:    6.54168 +/- 5.1794e-6  
+forceNormInfMin: 6.38177 +/- 0.000230817
+forceNormInfMax: 6.5664 +/- 6.4687e-8   
+beta: 4.9248046875
+nconf: 8192
+blocksize: 32
+forceNorm2:      348.238 +/- 0.00400131 
+forceNorm2Min:   337.885 +/- 0.0133829  
+forceNorm2Max:   358.639 +/- 0.0128898  
+forceNormInf:    9.57768 +/- 5.19928e-5 
+forceNormInfMin: 8.85737 +/- 0.000692067
+forceNormInfMax: 9.84949 +/- 1.26945e-6 
+beta: 6.56640625
+nconf: 8192
+blocksize: 32
+forceNorm2:      410.293 +/- 0.00570897 
+forceNorm2Min:   397.554 +/- 0.0201419  
+forceNorm2Max:   423.068 +/- 0.0150678  
+forceNormInf:    12.1262 +/- 0.000135237
+forceNormInfMin: 10.8325 +/- 0.000913675
+forceNormInfMax: 13.1303 +/- 2.81361e-5 
+beta: 8.2080078125
+nconf: 8192
+blocksize: 32
+forceNorm2:      462.882 +/- 0.00669466 
+forceNorm2Min:   448.112 +/- 0.0184552  
+forceNorm2Max:   477.73 +/- 0.0189987   
+forceNormInf:    14.2559 +/- 0.000187994
+forceNormInfMin: 12.4833 +/- 0.00110641 
+forceNormInfMax: 16.3671 +/- 0.000445419
+beta: 9.849609375
+nconf: 8192
+blocksize: 32
+forceNorm2:      510.511 +/- 0.00725665
+forceNorm2Min:   493.891 +/- 0.0210398 
+forceNorm2Max:   527.273 +/- 0.0204595 
+forceNormInf:    16.123 +/- 0.000238292
+forceNormInfMin: 13.9438 +/- 0.0013376 
+forceNormInfMax: 19.3766 +/- 0.00195596
+beta: 11.4912109375
+nconf: 8192
+blocksize: 32
+forceNorm2:      554.814 +/- 0.00756587 
+forceNorm2Min:   536.487 +/- 0.0237379  
+forceNorm2Max:   573.275 +/- 0.0236746  
+forceNormInf:    17.8162 +/- 0.000303028
+forceNormInfMin: 15.2889 +/- 0.00146203 
+forceNormInfMax: 22.0799 +/- 0.00352147 
+beta: 13.1328125
+nconf: 8192
+blocksize: 32
+forceNorm2:      595.003 +/- 0.00851859
+forceNorm2Min:   575.132 +/- 0.0254699 
+forceNorm2Max:   615.067 +/- 0.0228631 
+forceNormInf:    19.349 +/- 0.000326213
+forceNormInfMin: 16.4986 +/- 0.00179564
+forceNormInfMax: 24.5194 +/- 0.00497787
+beta: 14.7744140625
+nconf: 8192
+blocksize: 32
+forceNorm2:      632.553 +/- 0.00907733 
+forceNorm2Min:   611.191 +/- 0.0286405  
+forceNorm2Max:   654.074 +/- 0.025697   
+forceNormInf:    20.7687 +/- 0.000376808
+forceNormInfMin: 17.6205 +/- 0.00206321 
+forceNormInfMax: 26.7609 +/- 0.00651596 
+beta: 16.416015625
+nconf: 8192
+blocksize: 32
+forceNorm2:      667.798 +/- 0.00960713 
+forceNorm2Min:   645.108 +/- 0.0288686  
+forceNorm2Max:   690.73 +/- 0.0266116   
+forceNormInf:    22.0916 +/- 0.000406558
+forceNormInfMin: 18.6746 +/- 0.00195113 
+forceNormInfMax: 28.8353 +/- 0.00739376 
+beta: 18.0576171875
+nconf: 8192
+blocksize: 32
+forceNorm2:      702.146 +/- 0.0105764  
+forceNorm2Min:   678.129 +/- 0.0289512  
+forceNorm2Max:   726.419 +/- 0.02865    
+forceNormInf:    23.3623 +/- 0.000438096
+forceNormInfMin: 19.6929 +/- 0.0022148  
+forceNormInfMax: 30.7901 +/- 0.00836799 
+beta: 19.69921875
+nconf: 8192
+blocksize: 32
+forceNorm2:      734.904 +/- 0.0112965  
+forceNorm2Min:   709.538 +/- 0.0343489  
+forceNorm2Max:   760.445 +/- 0.0326701  
+forceNormInf:    24.5698 +/- 0.000458352
+forceNormInfMin: 20.663 +/- 0.00240777  
+forceNormInfMax: 32.6543 +/- 0.00877833 
+beta: 21.3408203125
+nconf: 8192
+blocksize: 32
+forceNorm2:      765.248 +/- 0.0117278  
+forceNorm2Min:   738.778 +/- 0.0351867  
+forceNorm2Max:   791.923 +/- 0.0346263  
+forceNormInf:    25.6937 +/- 0.000499037
+forceNormInfMin: 21.5552 +/- 0.00230427 
+forceNormInfMax: 34.4149 +/- 0.0103507  

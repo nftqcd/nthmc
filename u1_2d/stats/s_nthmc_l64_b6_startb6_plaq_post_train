@@ -1,0 +1,17 @@
+
+# File: ../s_nthmc_l64_b6_startb6.log
+beta: 6
+nconf: 1024
+blocksize: 32
+plaq:    0.912335 +/- 2.1483e-5 
+plaqMin: 0.908262 +/- 4.87461e-5
+plaqMax: 0.916271 +/- 4.11048e-5
+plaqMapped:    0.81302 +/- 4.50393e-5  
+plaqMappedMin: 0.804215 +/- 0.000101175
+plaqMappedMax: 0.821541 +/- 9.311e-5   
+beta: 7
+nconf: 0
+blocksize: 32
+|length error: betaForFile
+|   echo(>'plaq: ';'plaqMin: ';'plaqMax: ')    ,.errdisplay|:bsPlaq jackknifeEst ensembleMean,<plaq
+|[-28] /home/xjin/W/nthmc/u1_2d/stats/./plaq_post_train.ijs

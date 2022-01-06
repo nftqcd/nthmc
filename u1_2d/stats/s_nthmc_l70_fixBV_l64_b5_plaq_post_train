@@ -1,0 +1,11 @@
+
+# File: ../s_nthmc_l70_fixBV_l64_b5.log
+beta: 5.9814453125
+nconf: 1024
+blocksize: 32
+plaq:    0.912065 +/- 2.40117e-5
+plaqMin: 0.908307 +/- 4.8755e-5 
+plaqMax: 0.915716 +/- 3.93041e-5
+plaqMapped:    0.842231 +/- 4.25998e-5
+plaqMappedMin: 0.835604 +/- 8.65713e-5
+plaqMappedMax: 0.848669 +/- 7.1244e-5 

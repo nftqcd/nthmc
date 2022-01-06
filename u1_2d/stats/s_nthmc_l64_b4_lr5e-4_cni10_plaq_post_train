@@ -1,0 +1,38 @@
+
+# File: ../s_nthmc_l64_b4_lr5e-4_cni10.log
+beta: 4
+nconf: 1024
+blocksize: 32
+plaq:    0.863528 +/- 3.89251e-5
+plaqMin: 0.857159 +/- 7.16364e-5
+plaqMax: 0.869777 +/- 7.45415e-5
+plaqMapped:    0.827278 +/- 5.04001e-5
+plaqMappedMin: 0.81895 +/- 9.52283e-5 
+plaqMappedMax: 0.835436 +/- 9.5283e-5 
+beta: 5
+nconf: 1024
+blocksize: 32
+plaq:    0.893406 +/- 2.37458e-5
+plaqMin: 0.888413 +/- 6.06878e-5
+plaqMax: 0.898246 +/- 6.06035e-5
+plaqMapped:    0.866112 +/- 3.08845e-5
+plaqMappedMin: 0.859648 +/- 7.92929e-5
+plaqMappedMax: 0.872379 +/- 7.86858e-5
+beta: 6
+nconf: 1024
+blocksize: 32
+plaq:    0.912389 +/- 3.21087e-5
+plaqMin: 0.908283 +/- 5.64978e-5
+plaqMax: 0.916363 +/- 5.16903e-5
+plaqMapped:    0.890534 +/- 4.09102e-5
+plaqMappedMin: 0.885255 +/- 7.23824e-5
+plaqMappedMax: 0.895639 +/- 6.64892e-5
+beta: 7
+nconf: 1024
+blocksize: 32
+plaq:    0.925521 +/- 2.29573e-5
+plaqMin: 0.922086 +/- 3.95402e-5
+plaqMax: 0.928917 +/- 5.38526e-5
+plaqMapped:    0.9073 +/- 2.93258e-5  
+plaqMappedMin: 0.902916 +/- 5.00009e-5
+plaqMappedMax: 0.91162 +/- 6.86168e-5 

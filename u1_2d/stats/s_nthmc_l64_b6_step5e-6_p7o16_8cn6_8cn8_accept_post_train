@@ -1,0 +1,14 @@
+
+# File: ../s_nthmc_l64_b6_step5e-6_p7o16_8cn6_8cn8.log
+beta: 5
+nconf: 1024
+blocksize: 32
+accept: 0.80072 +/- 0.00202653
+beta: 6
+nconf: 1024
+blocksize: 32
+accept: 0.779633 +/- 0.00194009
+beta: 7
+nconf: 1024
+blocksize: 32
+accept: 0.801147 +/- 0.00205331

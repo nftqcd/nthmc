@@ -1,0 +1,38 @@
+
+# File: ../s_nthmc_l64_b4.log
+beta: 4
+nconf: 1024
+blocksize: 32
+plaq:    0.863542 +/- 3.69086e-5
+plaqMin: 0.857093 +/- 6.71135e-5
+plaqMax: 0.869761 +/- 7.43342e-5
+plaqMapped:    0.80186 +/- 5.18717e-5  
+plaqMappedMin: 0.792778 +/- 8.93067e-5 
+plaqMappedMax: 0.810649 +/- 0.000106043
+beta: 5
+nconf: 1024
+blocksize: 32
+plaq:    0.893437 +/- 3.47256e-5
+plaqMin: 0.888374 +/- 5.26846e-5
+plaqMax: 0.898278 +/- 5.86522e-5
+plaqMapped:    0.843906 +/- 4.90193e-5
+plaqMappedMin: 0.836696 +/- 7.25459e-5
+plaqMappedMax: 0.850819 +/- 8.54121e-5
+beta: 6
+nconf: 1024
+blocksize: 32
+plaq:    0.912346 +/- 2.30373e-5
+plaqMin: 0.90826 +/- 4.33066e-5 
+plaqMax: 0.916282 +/- 5.0155e-5 
+plaqMapped:    0.870891 +/- 3.27258e-5
+plaqMappedMin: 0.864982 +/- 5.50521e-5
+plaqMappedMax: 0.876609 +/- 7.23788e-5
+beta: 7
+nconf: 1024
+blocksize: 32
+plaq:    0.925469 +/- 2.88068e-5
+plaqMin: 0.922028 +/- 3.97817e-5
+plaqMax: 0.928856 +/- 5.33785e-5
+plaqMapped:    0.8898 +/- 4.19273e-5  
+plaqMappedMin: 0.884799 +/- 5.56887e-5
+plaqMappedMax: 0.894718 +/- 8.03872e-5

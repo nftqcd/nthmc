@@ -1,0 +1,70 @@
+beta: 1
+stepsize: 0.36363636363636365 step/traj: 11
+beta: 2
+stepsize: 0.2857142857142857 step/traj: 14
+beta: 3
+stepsize: 0.23529411764705882 step/traj: 17
+beta: 4
+stepsize: 0.22222222222222221 step/traj: 18
+beta: 5
+stepsize: 0.2 step/traj: 20
+beta: 6
+stepsize: 0.19047619047619047 step/traj: 21
+beta: 7
+stepsize: 0.18181818181818182 step/traj: 22
+beta: 8
+stepsize: 0.17391304347826086 step/traj: 23
+beta: 9
+stepsize: 0.16 step/traj: 25
+beta: 10
+stepsize: 0.15384615384615385 step/traj: 26
+beta: 11
+stepsize: 0.14814814814814814 step/traj: 27
+beta: 12
+stepsize: 0.14285714285714285 step/traj: 28
+beta: 13
+stepsize: 0.13793103448275862 step/traj: 29
+beta: 14
+stepsize: 0.13333333333333333 step/traj: 30
+beta: 15
+stepsize: 0.12903225806451613 step/traj: 31
+beta: 16
+stepsize: 0.12903225806451613 step/traj: 31
+beta: 17
+stepsize: 0.12121212121212122 step/traj: 33
+beta: 18
+stepsize: 0.11764705882352941 step/traj: 34
+beta: 19
+stepsize: 0.11764705882352941 step/traj: 34
+beta: 20
+stepsize: 0.11428571428571428 step/traj: 35
+beta: 21
+stepsize: 0.1111111111111111 step/traj: 36
+beta: 22
+stepsize: 0.1111111111111111 step/traj: 36
+beta: 23
+stepsize: 0.10810810810810811 step/traj: 37
+beta: 24
+stepsize: 0.10526315789473684 step/traj: 38
+beta: 25
+stepsize: 0.10256410256410256 step/traj: 39
+beta: 26
+stepsize: 0.1 step/traj: 40
+beta: 27
+stepsize: 0.1 step/traj: 40
+beta: 28
+stepsize: 0.0975609756097561 step/traj: 41
+beta: 29
+stepsize: 0.095238095238095233 step/traj: 42
+beta: 30
+stepsize: 0.095238095238095233 step/traj: 42
+beta: 31
+stepsize: 0.093023255813953487 step/traj: 43
+beta: 32
+stepsize: 0.090909090909090912 step/traj: 44
+beta: 33
+stepsize: 0.090909090909090912 step/traj: 44
+beta: 34
+stepsize: 0.088888888888888892 step/traj: 45
+beta: 35
+stepsize: 0.086956521739130432 step/traj: 46

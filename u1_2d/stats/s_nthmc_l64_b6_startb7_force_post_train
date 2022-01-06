@@ -1,0 +1,11 @@
+
+# File: ../s_nthmc_l64_b6_startb7.log
+beta: 7
+nconf: 1024
+blocksize: 32
+forceNorm2:      212.766 +/- 0.0118492 
+forceNorm2Min:   206.056 +/- 0.0293068 
+forceNorm2Max:   219.999 +/- 0.0494204 
+forceNormInf:    8.04145 +/- 0.00139291
+forceNormInfMin: 6.99189 +/- 0.00183615
+forceNormInfMax: 21.9812 +/- 0.115874  

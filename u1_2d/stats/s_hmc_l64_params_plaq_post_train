@@ -1,0 +1,317 @@
+
+# File: ../s_hmc_l64_params.log
+beta: 1
+nconf: 8192
+blocksize: 32
+plaq:    0.446389 +/- 1.90855e-5
+plaqMin: 0.422073 +/- 5.17448e-5
+plaqMax: 0.470425 +/- 7.37398e-5
+plaqMapped:    0.446389 +/- 1.90855e-5
+plaqMappedMin: 0.422073 +/- 5.17448e-5
+plaqMappedMax: 0.470425 +/- 7.37398e-5
+beta: 2
+nconf: 8192
+blocksize: 32
+plaq:    0.69775 +/- 1.5417e-5  
+plaqMin: 0.681137 +/- 3.84805e-5
+plaqMax: 0.714104 +/- 4.40552e-5
+plaqMapped:    0.69775 +/- 1.5417e-5  
+plaqMappedMin: 0.681137 +/- 3.84805e-5
+plaqMappedMax: 0.714104 +/- 4.40552e-5
+beta: 3
+nconf: 8192
+blocksize: 32
+plaq:    0.809976 +/- 8.92447e-6
+plaqMin: 0.798719 +/- 2.66055e-5
+plaqMax: 0.820814 +/- 3.08457e-5
+plaqMapped:    0.809976 +/- 8.92447e-6
+plaqMappedMin: 0.798719 +/- 2.66055e-5
+plaqMappedMax: 0.820814 +/- 3.08457e-5
+beta: 4
+nconf: 8192
+blocksize: 32
+plaq:    0.86352 +/- 7.07588e-6 
+plaqMin: 0.855463 +/- 1.98973e-5
+plaqMax: 0.87132 +/- 2.04758e-5 
+plaqMapped:    0.86352 +/- 7.07588e-6 
+plaqMappedMin: 0.855463 +/- 1.98973e-5
+plaqMappedMax: 0.87132 +/- 2.04758e-5 
+beta: 5
+nconf: 8192
+blocksize: 32
+plaq:    0.893383 +/- 5.61894e-6
+plaqMin: 0.887101 +/- 1.51119e-5
+plaqMax: 0.899448 +/- 1.6828e-5 
+plaqMapped:    0.893383 +/- 5.61894e-6
+plaqMappedMin: 0.887101 +/- 1.51119e-5
+plaqMappedMax: 0.899448 +/- 1.6828e-5 
+beta: 6
+nconf: 8192
+blocksize: 32
+plaq:    0.912373 +/- 5.23917e-6
+plaqMin: 0.907243 +/- 1.28486e-5
+plaqMax: 0.917344 +/- 1.46676e-5
+plaqMapped:    0.912373 +/- 5.23917e-6
+plaqMappedMin: 0.907243 +/- 1.28486e-5
+plaqMappedMax: 0.917344 +/- 1.46676e-5
+beta: 7
+nconf: 8192
+blocksize: 32
+plaq:    0.925532 +/- 4.62757e-6
+plaqMin: 0.921183 +/- 1.1356e-5 
+plaqMax: 0.929763 +/- 1.22573e-5
+plaqMapped:    0.925532 +/- 4.62757e-6
+plaqMappedMin: 0.921183 +/- 1.1356e-5 
+plaqMappedMax: 0.929763 +/- 1.22573e-5
+beta: 8
+nconf: 8192
+blocksize: 32
+plaq:    0.93524 +/- 4.16519e-6 
+plaqMin: 0.931457 +/- 1.03502e-5
+plaqMax: 0.938908 +/- 1.19754e-5
+plaqMapped:    0.93524 +/- 4.16519e-6 
+plaqMappedMin: 0.931457 +/- 1.03502e-5
+plaqMappedMax: 0.938908 +/- 1.19754e-5
+beta: 9
+nconf: 8192
+blocksize: 32
+plaq:    0.942685 +/- 3.31985e-6
+plaqMin: 0.939337 +/- 7.66199e-6
+plaqMax: 0.945925 +/- 9.50141e-6
+plaqMapped:    0.942685 +/- 3.31985e-6
+plaqMappedMin: 0.939337 +/- 7.66199e-6
+plaqMappedMax: 0.945925 +/- 9.50141e-6
+beta: 10
+nconf: 8192
+blocksize: 32
+plaq:    0.948591 +/- 3.21607e-6
+plaqMin: 0.945594 +/- 8.43239e-6
+plaqMax: 0.95148 +/- 8.6172e-6  
+plaqMapped:    0.948591 +/- 3.21607e-6
+plaqMappedMin: 0.945594 +/- 8.43239e-6
+plaqMappedMax: 0.95148 +/- 8.6172e-6  
+beta: 11
+nconf: 8192
+blocksize: 32
+plaq:    0.953399 +/- 2.95707e-6
+plaqMin: 0.950677 +/- 7.19153e-6
+plaqMax: 0.95602 +/- 7.83275e-6 
+plaqMapped:    0.953399 +/- 2.95707e-6
+plaqMappedMin: 0.950677 +/- 7.19153e-6
+plaqMappedMax: 0.95602 +/- 7.83275e-6 
+beta: 12
+nconf: 8192
+blocksize: 32
+plaq:    0.95738 +/- 2.5783e-6  
+plaqMin: 0.954888 +/- 6.40148e-6
+plaqMax: 0.959789 +/- 7.11757e-6
+plaqMapped:    0.95738 +/- 2.5783e-6  
+plaqMappedMin: 0.954888 +/- 6.40148e-6
+plaqMappedMax: 0.959789 +/- 7.11757e-6
+beta: 13
+nconf: 8192
+blocksize: 32
+plaq:    0.960733 +/- 2.68932e-6
+plaqMin: 0.958444 +/- 5.96401e-6
+plaqMax: 0.962954 +/- 7.08191e-6
+plaqMapped:    0.960733 +/- 2.68932e-6
+plaqMappedMin: 0.958444 +/- 5.96401e-6
+plaqMappedMax: 0.962954 +/- 7.08191e-6
+beta: 14
+nconf: 8192
+blocksize: 32
+plaq:    0.96359 +/- 2.1335e-6  
+plaqMin: 0.961467 +/- 4.93572e-6
+plaqMax: 0.965637 +/- 5.68971e-6
+plaqMapped:    0.96359 +/- 2.1335e-6  
+plaqMappedMin: 0.961467 +/- 4.93572e-6
+plaqMappedMax: 0.965637 +/- 5.68971e-6
+beta: 15
+nconf: 8192
+blocksize: 32
+plaq:    0.966058 +/- 1.94264e-6
+plaqMin: 0.964081 +/- 4.76804e-6
+plaqMax: 0.967971 +/- 6.04145e-6
+plaqMapped:    0.966058 +/- 1.94264e-6
+plaqMappedMin: 0.964081 +/- 4.76804e-6
+plaqMappedMax: 0.967971 +/- 6.04145e-6
+beta: 16
+nconf: 8192
+blocksize: 32
+plaq:    0.968218 +/- 2.02559e-6
+plaqMin: 0.96636 +/- 4.87302e-6 
+plaqMax: 0.970011 +/- 5.92174e-6
+plaqMapped:    0.968218 +/- 2.02559e-6
+plaqMappedMin: 0.96636 +/- 4.87302e-6 
+plaqMappedMax: 0.970011 +/- 5.92174e-6
+beta: 17
+nconf: 8192
+blocksize: 32
+plaq:    0.970118 +/- 1.8363e-6 
+plaqMin: 0.968378 +/- 4.23916e-6
+plaqMax: 0.971806 +/- 5.22691e-6
+plaqMapped:    0.970118 +/- 1.8363e-6 
+plaqMappedMin: 0.968378 +/- 4.23916e-6
+plaqMappedMax: 0.971806 +/- 5.22691e-6
+beta: 18
+nconf: 8192
+blocksize: 32
+plaq:    0.971802 +/- 1.75504e-6
+plaqMin: 0.970159 +/- 4.46604e-6
+plaqMax: 0.97339 +/- 5.19288e-6 
+plaqMapped:    0.971802 +/- 1.75504e-6
+plaqMappedMin: 0.970159 +/- 4.46604e-6
+plaqMappedMax: 0.97339 +/- 5.19288e-6 
+beta: 19
+nconf: 8192
+blocksize: 32
+plaq:    0.973308 +/- 1.63094e-6
+plaqMin: 0.971753 +/- 4.25425e-6
+plaqMax: 0.974823 +/- 4.66413e-6
+plaqMapped:    0.973308 +/- 1.63094e-6
+plaqMappedMin: 0.971753 +/- 4.25425e-6
+plaqMappedMax: 0.974823 +/- 4.66413e-6
+beta: 20
+nconf: 8192
+blocksize: 32
+plaq:    0.974662 +/- 1.49771e-6
+plaqMin: 0.973188 +/- 3.68268e-6
+plaqMax: 0.976086 +/- 4.74833e-6
+plaqMapped:    0.974662 +/- 1.49771e-6
+plaqMappedMin: 0.973188 +/- 3.68268e-6
+plaqMappedMax: 0.976086 +/- 4.74833e-6
+beta: 21
+nconf: 8192
+blocksize: 32
+plaq:    0.975885 +/- 1.27213e-6
+plaqMin: 0.974474 +/- 3.57683e-6
+plaqMax: 0.977252 +/- 4.4019e-6 
+plaqMapped:    0.975885 +/- 1.27213e-6
+plaqMappedMin: 0.974474 +/- 3.57683e-6
+plaqMappedMax: 0.977252 +/- 4.4019e-6 
+beta: 22
+nconf: 8192
+blocksize: 32
+plaq:    0.976993 +/- 1.47953e-6
+plaqMin: 0.975655 +/- 3.44522e-6
+plaqMax: 0.978292 +/- 4.57996e-6
+plaqMapped:    0.976993 +/- 1.47953e-6
+plaqMappedMin: 0.975655 +/- 3.44522e-6
+plaqMappedMax: 0.978292 +/- 4.57996e-6
+beta: 23
+nconf: 8192
+blocksize: 32
+plaq:    0.978005 +/- 1.36917e-6
+plaqMin: 0.976715 +/- 3.13947e-6
+plaqMax: 0.979247 +/- 4.11256e-6
+plaqMapped:    0.978005 +/- 1.36917e-6
+plaqMappedMin: 0.976715 +/- 3.13947e-6
+plaqMappedMax: 0.979247 +/- 4.11256e-6
+beta: 24
+nconf: 8192
+blocksize: 32
+plaq:    0.978928 +/- 1.29196e-6
+plaqMin: 0.977699 +/- 2.96634e-6
+plaqMax: 0.980118 +/- 3.83157e-6
+plaqMapped:    0.978928 +/- 1.29196e-6
+plaqMappedMin: 0.977699 +/- 2.96634e-6
+plaqMappedMax: 0.980118 +/- 3.83157e-6
+beta: 25
+nconf: 8192
+blocksize: 32
+plaq:    0.979778 +/- 1.1908e-6 
+plaqMin: 0.978605 +/- 3.05734e-6
+plaqMax: 0.980915 +/- 3.69613e-6
+plaqMapped:    0.979778 +/- 1.1908e-6 
+plaqMappedMin: 0.978605 +/- 3.05734e-6
+plaqMappedMax: 0.980915 +/- 3.69613e-6
+beta: 26
+nconf: 8192
+blocksize: 32
+plaq:    0.980562 +/- 1.29961e-6
+plaqMin: 0.979429 +/- 2.87723e-6
+plaqMax: 0.981659 +/- 3.35898e-6
+plaqMapped:    0.980562 +/- 1.29961e-6
+plaqMappedMin: 0.979429 +/- 2.87723e-6
+plaqMappedMax: 0.981659 +/- 3.35898e-6
+beta: 27
+nconf: 8192
+blocksize: 32
+plaq:    0.981291 +/- 1.14199e-6
+plaqMin: 0.980201 +/- 2.85401e-6
+plaqMax: 0.98234 +/- 2.98369e-6 
+plaqMapped:    0.981291 +/- 1.14199e-6
+plaqMappedMin: 0.980201 +/- 2.85401e-6
+plaqMappedMax: 0.98234 +/- 2.98369e-6 
+beta: 28
+nconf: 8192
+blocksize: 32
+plaq:    0.981962 +/- 1.10772e-6
+plaqMin: 0.980903 +/- 2.67176e-6
+plaqMax: 0.982979 +/- 2.99616e-6
+plaqMapped:    0.981962 +/- 1.10772e-6
+plaqMappedMin: 0.980903 +/- 2.67176e-6
+plaqMappedMax: 0.982979 +/- 2.99616e-6
+beta: 29
+nconf: 8192
+blocksize: 32
+plaq:    0.982594 +/- 1.08292e-6
+plaqMin: 0.981582 +/- 2.61567e-6
+plaqMax: 0.983583 +/- 3.45559e-6
+plaqMapped:    0.982594 +/- 1.08292e-6
+plaqMappedMin: 0.981582 +/- 2.61567e-6
+plaqMappedMax: 0.983583 +/- 3.45559e-6
+beta: 30
+nconf: 8192
+blocksize: 32
+plaq:    0.983178 +/- 1.18173e-6
+plaqMin: 0.982192 +/- 2.67028e-6
+plaqMax: 0.984124 +/- 2.99978e-6
+plaqMapped:    0.983178 +/- 1.18173e-6
+plaqMappedMin: 0.982192 +/- 2.67028e-6
+plaqMappedMax: 0.984124 +/- 2.99978e-6
+beta: 31
+nconf: 8192
+blocksize: 32
+plaq:    0.98372 +/- 1.09824e-6 
+plaqMin: 0.982767 +/- 2.49098e-6
+plaqMax: 0.984639 +/- 2.9318e-6 
+plaqMapped:    0.98372 +/- 1.09824e-6 
+plaqMappedMin: 0.982767 +/- 2.49098e-6
+plaqMappedMax: 0.984639 +/- 2.9318e-6 
+beta: 32
+nconf: 8192
+blocksize: 32
+plaq:    0.984235 +/- 9.44095e-7
+plaqMin: 0.983315 +/- 2.32126e-6
+plaqMax: 0.985123 +/- 2.42337e-6
+plaqMapped:    0.984235 +/- 9.44095e-7
+plaqMappedMin: 0.983315 +/- 2.32126e-6
+plaqMappedMax: 0.985123 +/- 2.42337e-6
+beta: 33
+nconf: 8192
+blocksize: 32
+plaq:    0.984718 +/- 9.90081e-7
+plaqMin: 0.983824 +/- 2.20321e-6
+plaqMax: 0.985583 +/- 2.85237e-6
+plaqMapped:    0.984718 +/- 9.90081e-7
+plaqMappedMin: 0.983824 +/- 2.20321e-6
+plaqMappedMax: 0.985583 +/- 2.85237e-6
+beta: 34
+nconf: 8192
+blocksize: 32
+plaq:    0.985171 +/- 9.83652e-7
+plaqMin: 0.984304 +/- 2.256e-6  
+plaqMax: 0.986008 +/- 2.83003e-6
+plaqMapped:    0.985171 +/- 9.83652e-7
+plaqMappedMin: 0.984304 +/- 2.256e-6  
+plaqMappedMax: 0.986008 +/- 2.83003e-6
+beta: 35
+nconf: 276
+blocksize: 32
+plaq:    0.985594 +/- 3.46835e-6
+plaqMin: 0.984747 +/- 6.81462e-6
+plaqMax: 0.986386 +/- 6.11941e-6
+plaqMapped:    0.985594 +/- 3.46835e-6
+plaqMappedMin: 0.984747 +/- 6.81462e-6
+plaqMappedMax: 0.986386 +/- 6.11941e-6

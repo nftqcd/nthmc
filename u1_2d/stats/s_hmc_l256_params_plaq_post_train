@@ -1,0 +1,74 @@
+
+# File: ../s_hmc_l256_params.log
+beta: 1
+nconf: 8192
+blocksize: 32
+plaq:    0.446384 +/- 4.69496e-6
+plaqMin: 0.440343 +/- 1.36274e-5
+plaqMax: 0.452389 +/- 1.75726e-5
+plaqMapped:    0.446384 +/- 4.69496e-6
+plaqMappedMin: 0.440343 +/- 1.36274e-5
+plaqMappedMax: 0.452389 +/- 1.75726e-5
+beta: 2
+nconf: 8192
+blocksize: 32
+plaq:    0.697777 +/- 3.60565e-6
+plaqMin: 0.693656 +/- 1.02379e-5
+plaqMax: 0.701856 +/- 1.13303e-5
+plaqMapped:    0.697777 +/- 3.60565e-6
+plaqMappedMin: 0.693656 +/- 1.02379e-5
+plaqMappedMax: 0.701856 +/- 1.13303e-5
+beta: 3
+nconf: 8192
+blocksize: 32
+plaq:    0.809983 +/- 2.38095e-6
+plaqMin: 0.807215 +/- 6.65913e-6
+plaqMax: 0.812731 +/- 8.60559e-6
+plaqMapped:    0.809983 +/- 2.38095e-6
+plaqMappedMin: 0.807215 +/- 6.65913e-6
+plaqMappedMax: 0.812731 +/- 8.60559e-6
+beta: 4
+nconf: 8192
+blocksize: 32
+plaq:    0.863524 +/- 1.88983e-6
+plaqMin: 0.861525 +/- 4.74567e-6
+plaqMax: 0.865499 +/- 5.8496e-6 
+plaqMapped:    0.863524 +/- 1.88983e-6
+plaqMappedMin: 0.861525 +/- 4.74567e-6
+plaqMappedMax: 0.865499 +/- 5.8496e-6 
+beta: 5
+nconf: 8192
+blocksize: 32
+plaq:    0.893383 +/- 1.44545e-6
+plaqMin: 0.891833 +/- 3.58941e-6
+plaqMax: 0.894916 +/- 4.47923e-6
+plaqMapped:    0.893383 +/- 1.44545e-6
+plaqMappedMin: 0.891833 +/- 3.58941e-6
+plaqMappedMax: 0.894916 +/- 4.47923e-6
+beta: 6
+nconf: 8192
+blocksize: 32
+plaq:    0.912361 +/- 1.30361e-6
+plaqMin: 0.911092 +/- 2.95168e-6
+plaqMax: 0.913619 +/- 3.77414e-6
+plaqMapped:    0.912361 +/- 1.30361e-6
+plaqMappedMin: 0.911092 +/- 2.95168e-6
+plaqMappedMax: 0.913619 +/- 3.77414e-6
+beta: 7
+nconf: 8192
+blocksize: 32
+plaq:    0.925534 +/- 1.10361e-6
+plaqMin: 0.924459 +/- 2.70937e-6
+plaqMax: 0.926601 +/- 3.35171e-6
+plaqMapped:    0.925534 +/- 1.10361e-6
+plaqMappedMin: 0.924459 +/- 2.70937e-6
+plaqMappedMax: 0.926601 +/- 3.35171e-6
+beta: 8
+nconf: 1927
+blocksize: 32
+plaq:    0.935232 +/- 2.08309e-6
+plaqMin: 0.934296 +/- 5.10222e-6
+plaqMax: 0.936155 +/- 5.79758e-6
+plaqMapped:    0.935232 +/- 2.08309e-6
+plaqMappedMin: 0.934296 +/- 5.10222e-6
+plaqMappedMax: 0.936155 +/- 5.79758e-6

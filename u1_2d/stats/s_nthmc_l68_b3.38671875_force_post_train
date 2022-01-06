@@ -1,0 +1,47 @@
+
+# File: ../s_nthmc_l68_b3.38671875.log
+beta: 3.38671875
+nconf: 1024
+blocksize: 32
+forceNorm2:      200.339 +/- 0.0138509  
+forceNorm2Min:   194.641 +/- 0.032813   
+forceNorm2Max:   206.032 +/- 0.024056   
+forceNormInf:    5.92234 +/- 0.000132109
+forceNormInfMin: 5.66288 +/- 0.000914847
+forceNormInfMax: 6.51042 +/- 0.00493906 
+beta: 4.515625
+nconf: 1024
+blocksize: 32
+forceNorm2:      239.515 +/- 0.0154554  
+forceNorm2Min:   232.368 +/- 0.0275799  
+forceNorm2Max:   246.692 +/- 0.0334979  
+forceNormInf:    7.71077 +/- 0.000342941
+forceNormInfMin: 7.21317 +/- 0.00111939 
+forceNormInfMax: 8.27504 +/- 0.00341361 
+beta: 5.64453125
+nconf: 1024
+blocksize: 32
+forceNorm2:      272.681 +/- 0.0264832  
+forceNorm2Min:   264.186 +/- 0.0557441  
+forceNorm2Max:   281.121 +/- 0.0482243  
+forceNormInf:    9.33656 +/- 0.000460155
+forceNormInfMin: 8.48758 +/- 0.0029077  
+forceNormInfMax: 10.1333 +/- 0.00355842 
+beta: 6.7734375
+nconf: 1024
+blocksize: 32
+forceNorm2:      301.638 +/- 0.0263433  
+forceNorm2Min:   291.937 +/- 0.0606129  
+forceNorm2Max:   311.33 +/- 0.0440253   
+forceNormInf:    10.7577 +/- 0.000892143
+forceNormInfMin: 9.58532 +/- 0.0032648  
+forceNormInfMax: 11.9651 +/- 0.00324112 
+beta: 7.90234375
+nconf: 881
+blocksize: 32
+forceNorm2:      328.369 +/- 0.0289285 
+forceNorm2Min:   317.56 +/- 0.0637809  
+forceNorm2Max:   339.155 +/- 0.0599679 
+forceNormInf:    12.0227 +/- 0.00127044
+forceNormInfMin: 10.5748 +/- 0.00360209
+forceNormInfMax: 13.7608 +/- 0.00425895

@@ -1,0 +1,44 @@
+
+# File: ../s_nthmc_l72_b3.796875.log
+beta: 3.796875
+nconf: 1024
+blocksize: 32
+plaq:    0.855278 +/- 3.26882e-5
+plaqMin: 0.849318 +/- 6.08181e-5
+plaqMax: 0.861104 +/- 6.29956e-5
+plaqMapped:    0.801722 +/- 4.41499e-5
+plaqMappedMin: 0.79376 +/- 8.07471e-5 
+plaqMappedMax: 0.809518 +/- 8.55634e-5
+beta: 5.0625
+nconf: 1024
+blocksize: 32
+plaq:    0.894828 +/- 2.2935e-5 
+plaqMin: 0.890476 +/- 4.80123e-5
+plaqMax: 0.899087 +/- 4.52664e-5
+plaqMapped:    0.854805 +/- 3.10503e-5
+plaqMappedMin: 0.848872 +/- 6.757e-5  
+plaqMappedMax: 0.860594 +/- 6.11167e-5
+beta: 6.328125
+nconf: 1024
+blocksize: 32
+plaq:    0.917176 +/- 2.52322e-5
+plaqMin: 0.913768 +/- 4.54924e-5
+plaqMax: 0.920562 +/- 3.64546e-5
+plaqMapped:    0.885256 +/- 3.475e-5  
+plaqMappedMin: 0.880564 +/- 6.36473e-5
+plaqMappedMax: 0.889921 +/- 4.8773e-5 
+beta: 7.59375
+nconf: 1024
+blocksize: 32
+plaq:    0.931613 +/- 2.23352e-5
+plaqMin: 0.928784 +/- 3.37153e-5
+plaqMax: 0.934417 +/- 4.63133e-5
+plaqMapped:    0.90507 +/- 3.05566e-5 
+plaqMappedMin: 0.901163 +/- 4.60083e-5
+plaqMappedMax: 0.908955 +/- 6.52862e-5
+beta: 8.859375
+nconf: 0
+blocksize: 32
+|length error: betaForFile
+|   echo(>'plaq: ';'plaqMin: ';'plaqMax: ')    ,.errdisplay|:bsPlaq jackknifeEst ensembleMean,<plaq
+|[-28] /home/xjin/W/nthmc/u1_2d/stats/./plaq_post_train.ijs

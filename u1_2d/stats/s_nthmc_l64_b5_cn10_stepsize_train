@@ -1,0 +1,8 @@
+beta: 4
+stepsize: 0.125 step/traj: 32
+beta: 5
+stepsize: 0.17391304347826086 step/traj: 23
+beta: 6
+stepsize: 0.21052631578947367 step/traj: 19
+beta: 7
+stepsize: 0.21052631578947367 step/traj: 19

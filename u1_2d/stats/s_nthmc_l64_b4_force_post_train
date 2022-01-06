@@ -1,0 +1,38 @@
+
+# File: ../s_nthmc_l64_b4.log
+beta: 4
+nconf: 1024
+blocksize: 32
+forceNorm2:      190.002 +/- 0.0140918  
+forceNorm2Min:   184.15 +/- 0.0357768   
+forceNorm2Max:   195.882 +/- 0.0235508  
+forceNormInf:    6.42334 +/- 0.000347432
+forceNormInfMin: 5.95103 +/- 0.00121785 
+forceNormInfMax: 8.19493 +/- 0.0158409  
+beta: 5
+nconf: 1024
+blocksize: 32
+forceNorm2:      217.326 +/- 0.0182808  
+forceNorm2Min:   210.391 +/- 0.0391537  
+forceNorm2Max:   224.262 +/- 0.033914   
+forceNormInf:    7.73152 +/- 0.000427781
+forceNormInfMin: 7.08032 +/- 0.00170135 
+forceNormInfMax: 9.13433 +/- 0.0213543  
+beta: 6
+nconf: 1024
+blocksize: 32
+forceNorm2:      241.163 +/- 0.0205865  
+forceNorm2Min:   233.16 +/- 0.0408116   
+forceNorm2Max:   249.103 +/- 0.0385585  
+forceNormInf:    8.94886 +/- 0.000650165
+forceNormInfMin: 8.03915 +/- 0.00273951 
+forceNormInfMax: 10.2202 +/- 0.0128708  
+beta: 7
+nconf: 1024
+blocksize: 32
+forceNorm2:      263.21 +/- 0.0289406   
+forceNorm2Min:   254.393 +/- 0.0532336  
+forceNorm2Max:   272.09 +/- 0.0436654   
+forceNormInf:    10.0591 +/- 0.000861576
+forceNormInfMin: 8.9083 +/- 0.00250861  
+forceNormInfMax: 11.4879 +/- 0.00695323 

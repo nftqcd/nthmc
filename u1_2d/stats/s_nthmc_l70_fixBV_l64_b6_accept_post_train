@@ -1,0 +1,6 @@
+
+# File: ../s_nthmc_l70_fixBV_l64_b6.log
+beta: 7.177734375
+nconf: 1024
+blocksize: 32
+accept: 0.756226 +/- 0.00228888

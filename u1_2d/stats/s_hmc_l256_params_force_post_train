@@ -1,0 +1,74 @@
+
+# File: ../s_hmc_l256_params.log
+beta: 1
+nconf: 8192
+blocksize: 32
+forceNorm2:      342.509 +/- 0.000533912
+forceNorm2Min:   340.038 +/- 0.00273008 
+forceNorm2Max:   344.984 +/- 0.00292443 
+forceNormInf:    1.99996 +/- 6.28279e-9 
+forceNormInfMin: 1.99965 +/- 5.44868e-7 
+forceNormInfMax: 2 +/- 9.45942e-11      
+beta: 2
+nconf: 8192
+blocksize: 32
+forceNorm2:      606.364 +/- 0.00152977
+forceNorm2Min:   601.484 +/- 0.00612661
+forceNorm2Max:   611.255 +/- 0.00586121
+forceNormInf:    3.99975 +/- 3.73148e-8
+forceNormInfMin: 3.99769 +/- 3.37879e-6
+forceNormInfMax: 4 +/- 4.42898e-10     
+beta: 3
+nconf: 8192
+blocksize: 32
+forceNorm2:      801.454 +/- 0.00248032
+forceNorm2Min:   794.436 +/- 0.00865956
+forceNorm2Max:   808.491 +/- 0.00843439
+forceNormInf:    5.99835 +/- 2.40426e-7
+forceNormInfMin: 5.9847 +/- 2.25423e-5 
+forceNormInfMax: 6 +/- 2.36269e-9      
+beta: 4
+nconf: 8192
+blocksize: 32
+forceNorm2:      957.177 +/- 0.00352116 
+forceNorm2Min:   948.297 +/- 0.0118091  
+forceNorm2Max:   966.079 +/- 0.0110145  
+forceNormInf:    7.989 +/- 1.72342e-6   
+forceNormInfMin: 7.90892 +/- 0.000107455
+forceNormInfMax: 8 +/- 1.71309e-8       
+beta: 5
+nconf: 8192
+blocksize: 32
+forceNorm2:      1090.16 +/- 0.00420454 
+forceNorm2Min:   1079.65 +/- 0.0145649  
+forceNorm2Max:   1100.69 +/- 0.0135964  
+forceNormInf:    9.93774 +/- 1.00603e-5 
+forceNormInfMin: 9.64709 +/- 0.000304434
+forceNormInfMax: 9.99999 +/- 1.283e-7   
+beta: 6
+nconf: 8192
+blocksize: 32
+forceNorm2:      1208.4 +/- 0.00521754  
+forceNorm2Min:   1196.41 +/- 0.0142016  
+forceNorm2Max:   1220.4 +/- 0.0161329   
+forceNormInf:    11.7658 +/- 3.58293e-5 
+forceNormInfMin: 11.1608 +/- 0.000469339
+forceNormInfMax: 11.9999 +/- 8.41807e-7 
+beta: 7
+nconf: 8192
+blocksize: 32
+forceNorm2:      1316.1 +/- 0.00566676 
+forceNorm2Min:   1302.77 +/- 0.018081  
+forceNorm2Max:   1329.45 +/- 0.0160607 
+forceNormInf:    13.4224 +/- 6.07314e-5
+forceNormInfMin: 12.508 +/- 0.000644829
+forceNormInfMax: 13.9995 +/- 5.57132e-6
+beta: 8
+nconf: 1927
+blocksize: 32
+forceNorm2:      1415.73 +/- 0.0134048  
+forceNorm2Min:   1401.1 +/- 0.0388738   
+forceNorm2Max:   1430.34 +/- 0.0411333  
+forceNormInf:    14.9211 +/- 0.000185566
+forceNormInfMin: 13.7249 +/- 0.00160663 
+forceNormInfMax: 15.9963 +/- 8.05121e-5 

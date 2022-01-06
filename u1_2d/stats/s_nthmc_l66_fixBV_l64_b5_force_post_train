@@ -1,0 +1,11 @@
+
+# File: ../s_nthmc_l66_fixBV_l64_b5.log
+beta: 5.3173828125
+nconf: 1024
+blocksize: 32
+forceNorm2:      206.396 +/- 0.0115195  
+forceNorm2Min:   200.184 +/- 0.032595   
+forceNorm2Max:   212.62 +/- 0.0380269   
+forceNormInf:    7.28202 +/- 0.000933649
+forceNormInfMin: 6.51213 +/- 0.00146016 
+forceNormInfMax: 12.4829 +/- 0.0700856  

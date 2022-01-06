@@ -1,0 +1,54 @@
+
+# File: ../s_hmc_l72_params.log
+beta: 1.265625
+nconf: 8192
+blocksize: 32
+accept: 0.832237 +/- 0.000395986
+beta: 2.53125
+nconf: 8192
+blocksize: 32
+accept: 0.809375 +/- 0.000430352
+beta: 3.796875
+nconf: 8192
+blocksize: 32
+accept: 0.796033 +/- 0.000420423
+beta: 5.0625
+nconf: 8192
+blocksize: 32
+accept: 0.799515 +/- 0.000427358
+beta: 6.328125
+nconf: 8192
+blocksize: 32
+accept: 0.809908 +/- 0.000430196
+beta: 7.59375
+nconf: 8192
+blocksize: 32
+accept: 0.82359 +/- 0.000393955
+beta: 8.859375
+nconf: 8192
+blocksize: 32
+accept: 0.798297 +/- 0.000420685
+beta: 10.125
+nconf: 8192
+blocksize: 32
+accept: 0.827888 +/- 0.000398979
+beta: 11.390625
+nconf: 8192
+blocksize: 32
+accept: 0.815573 +/- 0.000412011
+beta: 12.65625
+nconf: 8192
+blocksize: 32
+accept: 0.796761 +/- 0.000417256
+beta: 13.921875
+nconf: 8192
+blocksize: 32
+accept: 0.790888 +/- 0.000436801
+beta: 15.1875
+nconf: 8192
+blocksize: 32
+accept: 0.791849 +/- 0.000442258
+beta: 16.453125
+nconf: 8192
+blocksize: 32
+accept: 0.807533 +/- 0.000409481

@@ -1,0 +1,18 @@
+
+# File: ../s_nthmc_l64_b4_lr1e-3_cni10.log
+beta: 4
+nconf: 1024
+blocksize: 32
+accept: 0.81665 +/- 0.00164594
+beta: 5
+nconf: 1024
+blocksize: 32
+accept: 0.807037 +/- 0.00261513
+beta: 6
+nconf: 1024
+blocksize: 32
+accept: 0.81192 +/- 0.00240525
+beta: 7
+nconf: 1024
+blocksize: 32
+accept: 0.802155 +/- 0.00207293

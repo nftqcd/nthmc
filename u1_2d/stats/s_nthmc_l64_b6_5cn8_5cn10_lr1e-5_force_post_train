@@ -1,0 +1,29 @@
+
+# File: ../s_nthmc_l64_b6_5cn8_5cn10_lr1e-5.log
+beta: 5
+nconf: 1024
+blocksize: 32
+forceNorm2:      178.409 +/- 0.0134389 
+forceNorm2Min:   172.882 +/- 0.0241566 
+forceNorm2Max:   184.017 +/- 0.0210724 
+forceNormInf:    7.09745 +/- 0.00175209
+forceNormInfMin: 5.77445 +/- 0.00158145
+forceNormInfMax: 15.5074 +/- 0.0691444 
+beta: 6
+nconf: 1024
+blocksize: 32
+forceNorm2:      198.332 +/- 0.0150906 
+forceNorm2Min:   192.061 +/- 0.032708  
+forceNorm2Max:   204.646 +/- 0.0357258 
+forceNormInf:    7.55683 +/- 0.00144378
+forceNormInfMin: 6.52313 +/- 0.00198933
+forceNormInfMax: 14.4999 +/- 0.080239  
+beta: 7
+nconf: 1024
+blocksize: 32
+forceNorm2:      216.704 +/- 0.0174677 
+forceNorm2Min:   209.765 +/- 0.0426862 
+forceNorm2Max:   223.696 +/- 0.0415461 
+forceNormInf:    8.19316 +/- 0.00123903
+forceNormInfMin: 7.24101 +/- 0.00226254
+forceNormInfMax: 13.6954 +/- 0.0616326 

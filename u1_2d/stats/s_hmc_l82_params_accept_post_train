@@ -1,0 +1,54 @@
+
+# File: ../s_hmc_l82_params.log
+beta: 1.6416015625
+nconf: 8192
+blocksize: 32
+accept: 0.793716 +/- 0.000456036
+beta: 3.283203125
+nconf: 8192
+blocksize: 32
+accept: 0.813496 +/- 0.000430504
+beta: 4.9248046875
+nconf: 8192
+blocksize: 32
+accept: 0.83187 +/- 0.000392207
+beta: 6.56640625
+nconf: 8192
+blocksize: 32
+accept: 0.76723 +/- 0.000432459
+beta: 8.2080078125
+nconf: 8192
+blocksize: 32
+accept: 0.817668 +/- 0.000434924
+beta: 9.849609375
+nconf: 8192
+blocksize: 32
+accept: 0.818293 +/- 0.000435248
+beta: 11.4912109375
+nconf: 8192
+blocksize: 32
+accept: 0.786825 +/- 0.000452684
+beta: 13.1328125
+nconf: 8192
+blocksize: 32
+accept: 0.798887 +/- 0.000435236
+beta: 14.7744140625
+nconf: 8192
+blocksize: 32
+accept: 0.804165 +/- 0.000451553
+beta: 16.416015625
+nconf: 8192
+blocksize: 32
+accept: 0.814762 +/- 0.000403429
+beta: 18.0576171875
+nconf: 8192
+blocksize: 32
+accept: 0.807551 +/- 0.000435208
+beta: 19.69921875
+nconf: 8192
+blocksize: 32
+accept: 0.7989 +/- 0.000446658
+beta: 21.3408203125
+nconf: 8192
+blocksize: 32
+accept: 0.804152 +/- 0.000449342

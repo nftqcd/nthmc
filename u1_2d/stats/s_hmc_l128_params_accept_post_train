@@ -1,0 +1,58 @@
+
+# File: ../s_hmc_l128_params.log
+beta: 1
+nconf: 8192
+blocksize: 32
+accept: 0.817476 +/- 0.000415935
+beta: 2
+nconf: 8192
+blocksize: 32
+accept: 0.778209 +/- 0.000432184
+beta: 3
+nconf: 8192
+blocksize: 32
+accept: 0.80657 +/- 0.000415994
+beta: 4
+nconf: 8192
+blocksize: 32
+accept: 0.796045 +/- 0.000450801
+beta: 5
+nconf: 8192
+blocksize: 32
+accept: 0.818352 +/- 0.000390734
+beta: 6
+nconf: 8192
+blocksize: 32
+accept: 0.807512 +/- 0.000409149
+beta: 7
+nconf: 8192
+blocksize: 32
+accept: 0.797529 +/- 0.000440815
+beta: 8
+nconf: 8192
+blocksize: 32
+accept: 0.819008 +/- 0.000399501
+beta: 9
+nconf: 8192
+blocksize: 32
+accept: 0.801529 +/- 0.000429704
+beta: 10
+nconf: 8192
+blocksize: 32
+accept: 0.804476 +/- 0.000426623
+beta: 11
+nconf: 8192
+blocksize: 32
+accept: 0.819329 +/- 0.000412178
+beta: 12
+nconf: 8192
+blocksize: 32
+accept: 0.78559 +/- 0.000456925
+beta: 13
+nconf: 8192
+blocksize: 32
+accept: 0.779674 +/- 0.000446709
+beta: 14
+nconf: 310
+blocksize: 32
+accept: 0.808291 +/- 0.00256309

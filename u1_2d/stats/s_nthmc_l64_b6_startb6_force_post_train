@@ -1,0 +1,17 @@
+
+# File: ../s_nthmc_l64_b6_startb6.log
+beta: 6
+nconf: 1024
+blocksize: 32
+forceNorm2:      194.663 +/- 0.0134213 
+forceNorm2Min:   188.536 +/- 0.0248185 
+forceNorm2Max:   202.162 +/- 0.0661929 
+forceNormInf:    7.68715 +/- 0.00216468
+forceNormInfMin: 6.30995 +/- 0.00150541
+forceNormInfMax: 23.7885 +/- 0.125756  
+beta: 7
+nconf: 0
+blocksize: 32
+|length error: betaForFile
+|   echo(>'forceNorm2: ';'forceNorm2Min: ';'forceNorm2Max: ';'forceNormInf: ';'forceNormInfMin: ';'forceNormInfMax: ')    ,.errdisplay|:bs jackknifeEst ensembleMean,<force
+|[-25] /home/xjin/W/nthmc/u1_2d/stats/./force_post_train.ijs

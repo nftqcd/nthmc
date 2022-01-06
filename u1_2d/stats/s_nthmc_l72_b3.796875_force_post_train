@@ -1,0 +1,44 @@
+
+# File: ../s_nthmc_l72_b3.796875.log
+beta: 3.796875
+nconf: 1024
+blocksize: 32
+forceNorm2:      214.073 +/- 0.0139532  
+forceNorm2Min:   208.242 +/- 0.0244264  
+forceNorm2Max:   219.942 +/- 0.0288676  
+forceNormInf:    6.36355 +/- 0.000262902
+forceNormInfMin: 5.96983 +/- 0.00104488 
+forceNormInfMax: 7.41082 +/- 0.00669302 
+beta: 5.0625
+nconf: 1024
+blocksize: 32
+forceNorm2:      254.669 +/- 0.0160875  
+forceNorm2Min:   247.451 +/- 0.0390442  
+forceNorm2Max:   261.941 +/- 0.0281066  
+forceNormInf:    8.15082 +/- 0.000525631
+forceNormInfMin: 7.49489 +/- 0.00243278 
+forceNormInfMax: 9.18223 +/- 0.0103214  
+beta: 6.328125
+nconf: 1024
+blocksize: 32
+forceNorm2:      289.815 +/- 0.0249284  
+forceNorm2Min:   281.273 +/- 0.0379193  
+forceNorm2Max:   298.368 +/- 0.0422428  
+forceNormInf:    9.75956 +/- 0.000694914
+forceNormInfMin: 8.7555 +/- 0.0028501   
+forceNormInfMax: 10.973 +/- 0.00816377  
+beta: 7.59375
+nconf: 1024
+blocksize: 32
+forceNorm2:      320.959 +/- 0.0271921  
+forceNorm2Min:   311.29 +/- 0.0543758   
+forceNorm2Max:   330.623 +/- 0.0530064  
+forceNormInf:    11.1646 +/- 0.000994862
+forceNormInfMin: 9.85623 +/- 0.00354551 
+forceNormInfMax: 12.7697 +/- 0.00567423 
+beta: 8.859375
+nconf: 0
+blocksize: 32
+|length error: betaForFile
+|   echo(>'forceNorm2: ';'forceNorm2Min: ';'forceNorm2Max: ';'forceNormInf: ';'forceNormInfMin: ';'forceNormInfMax: ')    ,.errdisplay|:bs jackknifeEst ensembleMean,<force
+|[-25] /home/xjin/W/nthmc/u1_2d/stats/./force_post_train.ijs

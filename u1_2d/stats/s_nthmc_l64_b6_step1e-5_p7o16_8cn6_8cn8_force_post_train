@@ -1,0 +1,29 @@
+
+# File: ../s_nthmc_l64_b6_step1e-5_p7o16_8cn6_8cn8.log
+beta: 5
+nconf: 1024
+blocksize: 32
+forceNorm2:      175.987 +/- 0.0131918 
+forceNorm2Min:   170.179 +/- 0.0241641 
+forceNorm2Max:   181.896 +/- 0.0344017 
+forceNormInf:    7.14683 +/- 0.00215387
+forceNormInfMin: 5.88323 +/- 0.0018669 
+forceNormInfMax: 14.6669 +/- 0.0730009 
+beta: 6
+nconf: 1024
+blocksize: 32
+forceNorm2:      195.247 +/- 0.0180997 
+forceNorm2Min:   188.665 +/- 0.0291786 
+forceNorm2Max:   201.812 +/- 0.0310268 
+forceNormInf:    7.72091 +/- 0.00147798
+forceNormInfMin: 6.63389 +/- 0.00191946
+forceNormInfMax: 13.658 +/- 0.0616208  
+beta: 7
+nconf: 1024
+blocksize: 32
+forceNorm2:      212.676 +/- 0.0189586 
+forceNorm2Min:   205.332 +/- 0.0415252 
+forceNorm2Max:   219.996 +/- 0.0416541 
+forceNormInf:    8.39778 +/- 0.00153626
+forceNormInfMin: 7.32882 +/- 0.00276629
+forceNormInfMax: 13.1049 +/- 0.0639786 

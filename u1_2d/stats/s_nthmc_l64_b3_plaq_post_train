@@ -1,0 +1,47 @@
+
+# File: ../s_nthmc_l64_b3.log
+beta: 3
+nconf: 1024
+blocksize: 32
+plaq:    0.81002 +/- 6.2328e-5  
+plaqMin: 0.801053 +/- 9.17918e-5
+plaqMax: 0.8187 +/- 0.000102835 
+plaqMapped:    0.783571 +/- 7.01044e-5 
+plaqMappedMin: 0.773553 +/- 0.000102234
+plaqMappedMax: 0.793275 +/- 0.000116916
+beta: 4
+nconf: 1024
+blocksize: 32
+plaq:    0.863531 +/- 3.84964e-5
+plaqMin: 0.857028 +/- 8.20057e-5
+plaqMax: 0.869913 +/- 9.09251e-5
+plaqMapped:    0.84361 +/- 4.35192e-5  
+plaqMappedMin: 0.836263 +/- 9.28394e-5 
+plaqMappedMax: 0.850822 +/- 0.000101172
+beta: 5
+nconf: 1024
+blocksize: 32
+plaq:    0.893398 +/- 3.39504e-5
+plaqMin: 0.888358 +/- 6.75351e-5
+plaqMax: 0.898298 +/- 6.31427e-5
+plaqMapped:    0.877419 +/- 3.81974e-5
+plaqMappedMin: 0.871683 +/- 7.76758e-5
+plaqMappedMax: 0.882991 +/- 7.25343e-5
+beta: 6
+nconf: 1024
+blocksize: 32
+plaq:    0.912358 +/- 2.86453e-5
+plaqMin: 0.908228 +/- 4.85284e-5
+plaqMax: 0.916373 +/- 6.15986e-5
+plaqMapped:    0.899005 +/- 3.20511e-5
+plaqMappedMin: 0.894294 +/- 5.44116e-5
+plaqMappedMax: 0.903597 +/- 7.07286e-5
+beta: 7
+nconf: 1024
+blocksize: 32
+plaq:    0.925497 +/- 2.58554e-5
+plaqMin: 0.922055 +/- 4.45358e-5
+plaqMax: 0.928877 +/- 3.26011e-5
+plaqMapped:    0.914026 +/- 2.91563e-5
+plaqMappedMin: 0.910089 +/- 4.93076e-5
+plaqMappedMax: 0.917897 +/- 3.86884e-5

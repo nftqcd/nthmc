@@ -1,0 +1,11 @@
+
+# File: ../s_nthmc_l76_fixBV_l64_b6.log
+beta: 8.4609375
+nconf: 1024
+blocksize: 32
+plaq:    0.938891 +/- 1.61915e-5
+plaqMin: 0.936483 +/- 3.02103e-5
+plaqMax: 0.941214 +/- 3.0101e-5 
+plaqMapped:    0.869161 +/- 3.21894e-5
+plaqMappedMin: 0.863982 +/- 6.33696e-5
+plaqMappedMax: 0.87415 +/- 5.2472e-5  

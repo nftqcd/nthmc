@@ -1,0 +1,18 @@
+
+# File: ../s_nthmc_l64_b4_cn8.log
+beta: 4
+nconf: 1024
+blocksize: 32
+accept: 0.801147 +/- 0.00246638
+beta: 5
+nconf: 1024
+blocksize: 32
+accept: 0.794647 +/- 0.00183078
+beta: 6
+nconf: 1024
+blocksize: 32
+accept: 0.826233 +/- 0.00229106
+beta: 7
+nconf: 1024
+blocksize: 32
+accept: 0.848053 +/- 0.00203454

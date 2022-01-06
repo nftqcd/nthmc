@@ -1,0 +1,34 @@
+
+# File: ../s_hmc_l256_params.log
+beta: 1
+nconf: 8192
+blocksize: 32
+accept: 0.796608 +/- 0.000453881
+beta: 2
+nconf: 8192
+blocksize: 32
+accept: 0.801208 +/- 0.000457474
+beta: 3
+nconf: 8192
+blocksize: 32
+accept: 0.799902 +/- 0.000445479
+beta: 4
+nconf: 8192
+blocksize: 32
+accept: 0.80533 +/- 0.000417034
+beta: 5
+nconf: 8192
+blocksize: 32
+accept: 0.810415 +/- 0.000399978
+beta: 6
+nconf: 8192
+blocksize: 32
+accept: 0.81158 +/- 0.000441824
+beta: 7
+nconf: 8192
+blocksize: 32
+accept: 0.810219 +/- 0.000431448
+beta: 8
+nconf: 1927
+blocksize: 32
+accept: 0.80157 +/- 0.000810571

@@ -1,0 +1,54 @@
+
+# File: ../s_hmc_l74_params.log
+beta: 1.3369140625
+nconf: 8192
+blocksize: 32
+accept: 0.816401 +/- 0.00038908
+beta: 2.673828125
+nconf: 8192
+blocksize: 32
+accept: 0.831686 +/- 0.000371825
+beta: 4.0107421875
+nconf: 8192
+blocksize: 32
+accept: 0.824313 +/- 0.000392902
+beta: 5.34765625
+nconf: 8192
+blocksize: 32
+accept: 0.826554 +/- 0.000394264
+beta: 6.6845703125
+nconf: 8192
+blocksize: 32
+accept: 0.78273 +/- 0.000409469
+beta: 8.021484375
+nconf: 8192
+blocksize: 32
+accept: 0.799735 +/- 0.000458989
+beta: 9.3583984375
+nconf: 8192
+blocksize: 32
+accept: 0.813954 +/- 0.000434235
+beta: 10.6953125
+nconf: 8192
+blocksize: 32
+accept: 0.790147 +/- 0.000390721
+beta: 12.0322265625
+nconf: 8192
+blocksize: 32
+accept: 0.779649 +/- 0.000453218
+beta: 13.369140625
+nconf: 8192
+blocksize: 32
+accept: 0.775213 +/- 0.000441182
+beta: 14.7060546875
+nconf: 8192
+blocksize: 32
+accept: 0.792021 +/- 0.000432508
+beta: 16.04296875
+nconf: 8192
+blocksize: 32
+accept: 0.786353 +/- 0.000435854
+beta: 17.3798828125
+nconf: 8192
+blocksize: 32
+accept: 0.788982 +/- 0.000489738

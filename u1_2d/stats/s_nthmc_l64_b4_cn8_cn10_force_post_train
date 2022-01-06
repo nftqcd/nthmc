@@ -1,0 +1,38 @@
+
+# File: ../s_nthmc_l64_b4_cn8_cn10.log
+beta: 4
+nconf: 1024
+blocksize: 32
+forceNorm2:      191.304 +/- 0.0157132 
+forceNorm2Min:   185.498 +/- 0.0375197 
+forceNorm2Max:   197.102 +/- 0.0264291 
+forceNormInf:    6.39587 +/- 0.00040916
+forceNormInfMin: 5.94404 +/- 0.00146872
+forceNormInfMax: 8.10448 +/- 0.0155835 
+beta: 5
+nconf: 1024
+blocksize: 32
+forceNorm2:      218.999 +/- 0.0194159  
+forceNorm2Min:   212.073 +/- 0.0353874  
+forceNorm2Max:   225.866 +/- 0.0296558  
+forceNormInf:    7.70897 +/- 0.000387206
+forceNormInfMin: 7.08646 +/- 0.00191195 
+forceNormInfMax: 9.08537 +/- 0.0174328  
+beta: 6
+nconf: 1024
+blocksize: 32
+forceNorm2:      243.088 +/- 0.0224046 
+forceNorm2Min:   235.156 +/- 0.046183  
+forceNorm2Max:   251.029 +/- 0.0353787 
+forceNormInf:    8.93693 +/- 0.00053825
+forceNormInfMin: 8.06383 +/- 0.00239103
+forceNormInfMax: 10.1595 +/- 0.00908035
+beta: 7
+nconf: 1024
+blocksize: 32
+forceNorm2:      265.458 +/- 0.0274683  
+forceNorm2Min:   256.573 +/- 0.0539101  
+forceNorm2Max:   274.381 +/- 0.042731   
+forceNormInf:    10.0678 +/- 0.000930765
+forceNormInfMin: 8.9497 +/- 0.00325553  
+forceNormInfMax: 11.4127 +/- 0.00790724 

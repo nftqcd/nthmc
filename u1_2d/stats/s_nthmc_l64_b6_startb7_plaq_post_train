@@ -1,0 +1,11 @@
+
+# File: ../s_nthmc_l64_b6_startb7.log
+beta: 7
+nconf: 1024
+blocksize: 32
+plaq:    0.925552 +/- 1.39808e-5
+plaqMin: 0.922129 +/- 3.43178e-5
+plaqMax: 0.928853 +/- 2.38831e-5
+plaqMapped:    0.840962 +/- 2.90535e-5
+plaqMappedMin: 0.833556 +/- 7.88213e-5
+plaqMappedMax: 0.848118 +/- 5.1458e-5 

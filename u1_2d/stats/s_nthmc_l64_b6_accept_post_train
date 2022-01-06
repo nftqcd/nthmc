@@ -1,0 +1,10 @@
+
+# File: ../s_nthmc_l64_b6.log
+beta: 5
+nconf: 1024
+blocksize: 32
+accept: 0.86261 +/- 0.00172602
+beta: 6
+nconf: 0
+blocksize: 32
+accept: 0 +/- 0

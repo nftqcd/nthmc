@@ -1,6 +1,5 @@
 logs_betaMap=\
 	t_force_b25_0_bs0.log\
-	t_force_b25_0_bs1.log\
 
 logs_hmc=\
 	t_hmc_0.log\
@@ -10,25 +9,51 @@ logs_hmc=\
 	t_hmc_4.log\
 	t_hmc_5.log\
 
+logs_steptuned=\
+	s_hmc_l64_params.log\
+	s_hmc_l66_params.log\
+	s_hmc_l68_params.log\
+	s_hmc_l70_params.log\
+	s_hmc_l72_params.log\
+	s_hmc_l74_params.log\
+	s_hmc_l76_params.log\
+	s_hmc_l82_params.log\
+	s_hmc_l88_params.log\
+	s_hmc_l128_params.log\
+	s_hmc_l256_params.log\
+	s_nthmc_l64_b3.log\
+	s_nthmc_l68_b3.38671875.log\
+	s_nthmc_l72_b3.796875.log\
+	s_nthmc_l64_b4.log\
+	s_nthmc_l64_b4_lr1e-3_cni10.log\
+	s_nthmc_l64_b4_lr5e-4.log\
+	s_nthmc_l64_b4_lr5e-4_cni10.log\
+	s_nthmc_l64_b4_t2_lr5e-4.log\
+	s_nthmc_l64_b4_cn8.log\
+	s_nthmc_l64_b4_cn8_cn10.log\
+	s_nthmc_l64_b5.log\
+	s_nthmc_l64_b5_cn10.log\
+	s_nthmc_l66_fixBV_l64_b5.log\
+	s_nthmc_l68_fixBV_l64_b5.log\
+	s_nthmc_l70_fixBV_l64_b5.log\
+	s_nthmc_l72_fixBV_l64_b5.log\
+	s_nthmc_l74_fixBV_l64_b5.log\
+	s_nthmc_l76_fixBV_l64_b5.log\
+	s_nthmc_l64_b6.log\
+	s_nthmc_l64_b6_startb6.log\
+	s_nthmc_l64_b6_startb7.log\
+	s_nthmc_l64_b6_5cn8_5cn10_lr1e-5.log\
+	s_nthmc_l64_b6_step1e-5_p7o16_8cn6_8cn8.log\
+	s_nthmc_l64_b6_step5e-6_p7o16_8cn6_8cn8.log\
+	s_nthmc_l66_fixBV_l64_b6.log\
+	s_nthmc_l68_fixBV_l64_b6.log\
+	s_nthmc_l70_fixBV_l64_b6.log\
+	s_nthmc_l72_fixBV_l64_b6.log\
+	s_nthmc_l74_fixBV_l64_b6.log\
+	s_nthmc_l76_fixBV_l64_b6.log\
+
 logs=\
 	$logs_hmc\
-	t_force_b25_0.log\
-	t_force_b25_1.log\
-	t_force_b25_2.log\
-	t_force_b25_3.log\
-	t_force_b25_0.1.log\
-	t_force_b25_0.mac.log\
-	t_force_b25_0.cuda.log\
-	t_force_b25_0s.cuda.log\
-	t_force_b25_0s0.log\
-	t_force_b25_0s1.log\
-	t_force_b25_0s2.log\
-	t_force_b25_0s3.log\
-	t_force_b25_0s4.log\
-	t_force_b25_0s5.log\
-	t_force_b25_1.cuda.log\
-	t_force_b25_1l.cuda.log\
-	t_force_b25_1.1.log\
 	t_force_b25_0s0a.log\
 	t_force_b25_0s2a.log\
 	t_force_b25_0s4a.log\
@@ -48,6 +73,11 @@ results=\
 	${logs_betaMap:%.log=%_dq2_betaMap_post_train}\
 	${logs_betaMap:%.log=%_force_betaMap_post_train}\
 	${logs_betaMap:%.log=%_plaq_betaMap_post_train}\
+	${logs_steptuned:%.log=%_stepsize_train}\
+	${logs_steptuned:%.log=%_accept_post_train}\
+	${logs_steptuned:%.log=%_dq2_post_train}\
+	${logs_steptuned:%.log=%_force_post_train}\
+	${logs_steptuned:%.log=%_plaq_post_train}\
 	${logs:%.log=%_accept_post_train}\
 	${logs:%.log=%_dq2_post_train}\
 	${logs:%.log=%_force_post_train}\

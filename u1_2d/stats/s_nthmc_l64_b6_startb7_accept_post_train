@@ -1,0 +1,6 @@
+
+# File: ../s_nthmc_l64_b6_startb7.log
+beta: 7
+nconf: 1024
+blocksize: 32
+accept: 0.760498 +/- 0.00205202

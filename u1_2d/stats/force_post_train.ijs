@@ -5,9 +5,9 @@ NB. naive choice of block size
 bs=:32
 
 betaForFile=: 4 :0
-	betastr=.display x
+	betastr=.16 display x
 	echo 'beta: ',betastr
-	force=.}.getRes'9 awk ''/^beta:/{if(b==1)exit;b=0;p=0} /^beta: ',betastr,'$/{b=1} b==1&&/^# post-training inference step/{p=1} p==1&&/^force:/{print;p=0}'' ',y
+	force=.}.getRes'9 awk ''/^beta:/{if(b==1)exit;b=0;p=0} /^beta: ',betastr,'$/{b=1} b==1&&/^# (post-training )?inference step/{p=1} p==1&&/^force:/{print;p=0}'' ',y
 	nconf=.#force
 	echo 'nconf: ',display nconf
 	echo 'blocksize: ',display bs

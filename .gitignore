@@ -1,4 +1,6 @@
 __pycache__/
+configs
+weights
 *.log
 *.aux
 *.bcf
@@ -9,3 +11,4 @@ __pycache__/
 *.run.xml
 *-eps-converted-to.pdf
 ._*
+.DS_Store

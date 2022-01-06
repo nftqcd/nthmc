@@ -449,6 +449,7 @@ def setup(conf):
     tf.print('Python', sys.version, summarize=-1)
     tf.print('TensorFlow', tf.version.VERSION, tf.version.GIT_VERSION, tf.version.COMPILER_VERSION, summarize=-1)
     tf.print('Device', *tf.config.get_visible_devices(), summarize=-1)
+    tf.print('RandomSeed', conf.seed, summarize=-1)
 
 if __name__ == '__main__':
     import ftr

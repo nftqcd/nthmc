@@ -69,7 +69,7 @@ class PeriodicConv(tl.Layer):
         # tf.print('PeriodicConv:y_return',y,summarize=-1)
         return y
 
-class TransformChain(tl.Layer):
+class TransformChain(tk.Model):
     def __init__(self, transforms, name='TransformChain', **kwargs):
         super(TransformChain, self).__init__(autocast=False, name=name, **kwargs)
         self.chain = transforms

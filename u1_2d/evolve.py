@@ -2,6 +2,7 @@ import nthmc
 import tensorflow as tf
 import tensorflow.keras as tk
 import tensorflow.keras.layers as tl
+import numpy
 from numpy import inf
 
 class Omelyan2MN(tl.Layer):
@@ -247,3 +248,8 @@ class RegressStepTuner:
         else:
             changed = False
         return changed
+
+def saveConfs(x, file):
+    t0 = tf.timestamp()
+    numpy.save(file, x.numpy(), allow_pickle=False, fix_imports=False)
+    tf.print('# save to',file,' time:',tf.timestamp()-t0,'sec',summarize=-1)

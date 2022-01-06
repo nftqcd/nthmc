@@ -1,0 +1,17 @@
+#!/usr/bin/env rc
+
+if(! ~ $#* 2 3){
+	echo $0 beta length [logfile] >[1=2]
+	exit 1
+}
+
+b=$1
+v=$2
+
+if(~ $#* 3)
+	f=$3'_accept_post_train'
+if not
+	f='s_hmc_l'$v'_params_accept_post_train'
+
+bs=`{echo $b'*'$v'*'$v'/4096'|hoc}
+sed -n '/^beta: '$bs'$/,/^accept: /p' '../../u1_2d/stats/'$f | paste - - - -

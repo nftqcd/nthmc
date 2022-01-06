@@ -1,0 +1,31 @@
+#!/usr/bin/env rc
+
+if(! ~ $#* 3 4){
+	echo $0 beta length delta [logfile] >[1=2]
+	exit 1
+}
+
+b=$1
+v=$2
+d=$3
+
+if(~ $#* 4)
+	f=$4'_dq2_post_train'
+if not
+	f='s_hmc_l'$v'_params_dq2_post_train'
+
+bs=`{echo $b'*'$v'*'$v'/4096'|hoc}
+xe=`{
+	sed -n '/^beta: '$bs'$/,/^beta: /{/^BEGIN dQ2$/,/^END dQ2$/{/^ *'$d' /p;};}' '../../u1_2d/stats/'$f |
+	awk '{print $2,$4}'
+}
+if(~ $#xe 0)
+	exit nonexistent
+
+ch=`{awk '$1=='$bs'{print $2}' ../../u1_2d/exact_topo_sus_infv.output}
+q2=`{echo '2*'$v'*'$v'*'$ch|hoc}
+
+echo $bs `{
+	echo $xe(1)'/'$q2|hoc
+	echo $xe(2)'/'$q2|hoc
+}

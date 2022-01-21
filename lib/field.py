@@ -1,14 +1,6 @@
 import tensorflow as tf
 from operator import itemgetter
 
-class Field:
-    def __init__(self, group, beta=6.0, size=(8,8), name='Field'):
-        self.beta=beta
-        self.size=size
-        self.nd=len(size)
-        self.name=name
-        self.g=group
-
 def maxValueKey(d):
     return max(d, key=d.get)
 

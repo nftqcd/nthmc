@@ -44,7 +44,7 @@ transform = lambda: ftr.TransformChain([
 ftr.checkDep(transform())
 rng = tf.random.Generator.from_seed(conf.seed)
 actionFun = lambda: nthmc.U1d2(beta=4.0, beta0=2.0, size=(16,16), transform=transform(), nbatch=conf.nbatch, rng=rng.split()[0])
-loss = lambda action: forcetrain.LossFun(action, betaMap=2.5, cNorm2=1.0, cNormInf=1.0)
+loss = lambda action: forcetrain.LossFun(action, betaMap=2.5, cNorm2=1.0/16.0, cNorm4=0.0, cNorm6=0.0, cNorm8=0.0, cNormInf=1.0)
 opt = tk.optimizers.Adam(learning_rate=0.002)
 mcmc = lambda action: nthmc.Metropolis(conf, nthmc.LeapFrog(conf, action))
 x, mc, ls = forcetrain.run(conf, actionFun, mcmc, loss, opt)

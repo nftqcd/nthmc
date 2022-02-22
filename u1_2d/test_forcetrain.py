@@ -7,6 +7,7 @@ import field
 
 conf = nthmc.Conf(nbatch=3, nepoch=2, nstepEpoch=2, nstepMixing=2, nstepPostTrain=2, initDt=0.05, stepPerTraj=4, nconfStepTune=0, nthr=2, nthrIop=1, xlaCluster=False)
 nthmc.setup(conf)
+#tf.config.run_functions_eagerly(True)
 op0 = (((1,2,-1,-2), (1,-2,-1,2)),
        ((1,1,2,-1,-1,-2), (1,1,-2,-1,-1,2), (1,2,-1,-1,-2,1), (1,-2,-1,-1,2,1)))
 # requires different coefficient bounds:
@@ -58,3 +59,32 @@ tf.print('from loss:',po_ls,summarize=-1)
 tf.print('Final plaquette after transformation:')
 tf.print('from MCMC:',p_mc,summarize=-1)
 tf.print('from loss:',p_ls,summarize=-1)
+
+def check(x, y, expected):
+    good = True
+    if len(x)!=len(y):
+        tf.print('Error: lengths of results do not match:',x,y,summarize=-1)
+        good = False
+    if len(x)!=len(expected):
+        tf.print('Error: unexpected length:',x,'expected:',expected,summarize=-1)
+        good = False
+    if len(y)!=len(expected):
+        tf.print('Error: unexpected length:',y,'expected:',expected,summarize=-1)
+        good = False
+    CT = 1e-14
+    if any([abs(a-b)>CT for a,b in zip(x,y)]):
+        tf.print('Error: results do not match:',x,y,summarize=-1)
+        good = False
+    if any([abs(a-b)>CT for a,b in zip(x,expected)]):
+        tf.print('Error: unexpected results:',x,'expected:',expected,summarize=-1)
+        good = False
+    if any([abs(a-b)>CT for a,b in zip(y,expected)]):
+        tf.print('Error: unexpected results:',y,'expected:',expected,summarize=-1)
+        good = False
+    return good
+
+good = check(po_mc, po_ls, [0.78018070391738314, 0.74491830557848471, 0.76857616055902422])
+good = good and check(p_mc, p_ls, [0.78472570547365139, 0.75066954223482651, 0.77384157030129985])
+
+if not good:
+    sys.exit('Test failed.')

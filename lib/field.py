@@ -1,5 +1,4 @@
 import tensorflow as tf
-from operator import itemgetter
 
 def maxValueKey(d):
     return max(d, key=d.get)
@@ -84,41 +83,37 @@ class OrdPathInt:
     def __init__(self, path):
         "path: ±int"
         if isinstance(path, int) and path != 0:
-            self.path = path
-            if path > 0:
-                self.isadjoint = False
-            else:
-                self.isadjoint = True
+            self.d = path
         else:
             raise ValueError(f'path should be ±int: {path}.')
     def __eq__(self, x):
         if isinstance(x, OrdPathInt):
-            return self.path == x.path
+            return self.d == x.d
         else:
             return False
     def __hash__(self):
-        return hash(self.path)
+        return hash(self.d)
     def __str__(self):
-        return f'{self.path}'
+        return f'{self.d}'
     def __repr__(self):
-        return f'OrdPathInt#{id(self)}({repr(self.path)})'
+        return f'OrdPathInt#{id(self)}({repr(self.d)})'
     def adjoint(self):
-        return OrdPathInt(-self.path)
+        return OrdPathInt(-self.d)
     def flatten(self):
-        return (self.path,)
+        return (self.d,)
     def position(self):
         "return: Coord relative to the left most starting point."
-        if self.path > 0:
+        if self.d > 0:
             x = []    # empty is zero
         else:
-            p = -self.path
+            p = -self.d
             x = p*[0]
             x[p-1] = -1
         return Coord(x)
-    def deltax(self):
-        p = abs(self.path)
+    def deltaX(self):
+        p = abs(self.d)
         d = p*[0]
-        if self.path > 0:
+        if self.d > 0:
             d[p-1] = 1
         else:
             d[p-1] = -1
@@ -126,192 +121,263 @@ class OrdPathInt:
 
 class OrdPathPair:
     def __init__(self, left, right):
-        self.left = left
-        self.right = right
+        self.l = left
+        self.r = right
     def __eq__(self, x):
         if isinstance(x, OrdPathPair):
-            return self.left == x.left and self.right == x.right
+            return self.l == x.l and self.r == x.r
         else:
             return False
     def __hash__(self):
-        return hash((self.left,self.right))
+        return hash((self.l,self.r))
     def __str__(self):
-        return f'topath(({self.left}, {self.right}))'
+        return f'Pair({self.l}, {self.r})'
     def __repr__(self):
-        return f'OrdPathPair#{id(self)}({repr(self.left)}, {repr(self.right)})'
+        return f'OrdPathPair#{id(self)}({repr(self.l)}, {repr(self.r)})'
     def adjoint(self):
-        return OrdPathPair(self.right.adjoint(), self.left.adjoint())
+        return OrdPathPair(self.r.adjoint(), self.l.adjoint())
     def flatten(self):
-        return self.left.flatten() + self.right.flatten()
+        return self.l.flatten() + self.r.flatten()
     def position(self):
         "We always multiply left by a shifted right."
-        return self.left.position()
-    def deltax(self):
-        return self.left.deltax() + self.right.deltax()
-    # only for pair
-    def deltalr(self):
-        d = self.left.position() - (self.left.deltax() + self.right.position())
-        return d
+        return self.l.position()
+    def deltaX(self):
+        return self.l.deltaX() + self.r.deltaX()
 
-class OrdPathSeg:
-    def __init__(self, path, isadjoint):
-        self.path = path
-        self.isadjoint = isadjoint
+class OrdPathList:
+    def __init__(self, path):
+        if isinstance(path, list):
+            self.s = path
+        else:
+            raise ValueError(f'OrdPathList accepts a list but got: {path}')
     def __eq__(self, x):
-        if isinstance(x, OrdPathSeg):
-            return self.path == x.path and self.isadjoint == x.isadjoint
+        if isinstance(x, OrdPathList):
+            return self.s == x.s
         else:
             return False
     def __hash__(self):
-        return hash((self.path,self.isadjoint))
+        return hash(self.s)
     def __str__(self):
-        return f'topath(({self.path}, {self.isadjoint}))'
+        return f'Path({self.s})'
     def __repr__(self):
-        return f'OrdPathSeg#{id(self)}({repr(self.path)}, {repr(self.isadjoint)})'
+        return f'OrdPathSeg#{id(self)}({repr(self.s)})'
     def adjoint(self):
-        return OrdPathSeg(self.path, not self.isadjoint)
+        s = []
+        for p in reversed(self.s):
+            s.append(p.adjoint())
+        return OrdPathList(s)
     def flatten(self):
-        if self.isadjoint:
-            return self.path.adjoint().flatten()
-        else:
-            return self.path.flatten()
+        s = ()
+        for l in self.s:
+            s = s + l.flatten()
+        return s
     def position(self):
-        "return: Coord relative to the left most starting point."
-        d = self.path.position()
-        if self.isadjoint:
-            d -= self.path.deltax()
-        return d
-    def deltax(self):
-        d = self.path.deltax()
-        if self.isadjoint:
-            return -d
+        if len(self.s)>0:
+            return self.s[0].position()
         else:
-            return d
+            return Coord([])
+    def deltaX(self):
+        d = Coord([])
+        for l in self.s:
+            d += l.deltaX()
+        return d
+
+class OrdPathAdj:
+    def __init__(self, path):
+        if isinstance(path, (OrdPathInt, OrdPathPair, OrdPathList)):
+            self.p = path
+        else:
+            raise ValueError(f'path should be one of OrdPathInt, OrdPathPair, OrdPathList, but got: {path}.')
+    def __eq__(self, x):
+        if isinstance(x, OrdPathAdj):
+            return self.p == x.p
+        else:
+            return False
+    def __hash__(self):
+        return hash(self.p)
+    def __str__(self):
+        return f'Adj({self.p})'
+    def __repr__(self):
+        return f'OrdPathAdj#{id(self)}({repr(self.p)})'
+    def adjoint(self):
+        return self.p
+    def flatten(self):
+        return self.p.adjoint().flatten()
+    def position(self):
+        return self.p.position() - self.p.deltaX()
+    def deltaX(self):
+        return -self.p.deltaX()
 
 def topath(xs):
-    "Convert possibly nested int sequences to OrdPath*()."
+    "Convert possibly nested int sequences to OrdPath*().  We do not nest OrdPathList, but leave outer lists as lists."
     if isinstance(xs, int):
         return OrdPathInt(xs)
     elif isinstance(xs, tuple) and len(xs) == 2:
-        if isinstance(xs[1], bool):
-            return OrdPathSeg(topath(xs[0]), xs[1])
-        else:
-            return OrdPathPair(*xs)
+        return OrdPathPair(*xs)
     elif isinstance(xs, (tuple, list)):
-        return [topath(x) for x in xs]
-    elif isinstance(xs, (OrdPathInt, OrdPathPair, OrdPathSeg)):
+        ps = [topath(x) for x in xs]
+        if isinstance(ps[0], OrdPathList):
+            return ps
+        else:
+            return OrdPathList(ps)
+    elif isinstance(xs, (OrdPathInt, OrdPathPair, OrdPathList)):
         return xs
     else:
         raise ValueError(f'topath: cannot convert: {xs}')
 
+def adjointOp(path):
+    """ Like adjoint(), but create new OrdPathAdj if it's not already OrdPathAdj or OrdPathInt . """
+    if isinstance(path, OrdPathInt):
+        return path.adjoint()
+    elif isinstance(path, OrdPathAdj):
+        return path.p
+    else:
+        return OrdPathAdj(path)
+
+def mostSharedPair(paths):
+    """
+    Receives paths and search each element of OrdPathList.
+    Return an OrdPathPair occured most frequently among all the paths,
+    and its count.
+    If there are no pairs, return OrdPath(k:opList) with len 0, and 0.
+    """
+    pc = {}
+    while True:
+        p = None
+        pa = None
+        fp = None
+        fpa = None
+        c = 0
+        ca = 0
+        for ps in paths:
+            if not (isinstance(ps, OrdPathList) and len(ps.s)>1):
+                continue
+            i = 0
+            while i<len(ps.s)-1:
+                i += 1
+                t = OrdPathPair(ps.s[i-1],ps.s[i])
+                ft = t.flatten()
+                if c==0:
+                    p = t
+                    pa = OrdPathPair(adjointOp(t.r), adjointOp(t.l))
+                    if p in pc or pa in pc:
+                        continue
+                    fp = p.flatten()
+                    fpa = tuple([-x for x in reversed(fp)])
+                    c = 1
+                    i += 1
+                elif ft == fp:
+                    c += 1
+                    i += 1
+                elif ft == fpa:
+                    ca += 1
+                    i += 1
+        if c==0:
+            # no new pairs
+            break
+        else:
+            ct = c+ca
+            if c>=ca:
+                pc[p] = ct
+            else:
+                pc[pa] = ct
+    c = 0
+    for k,v in pc.items():
+        # If there are multiple paris with the max count,
+        # which one we return depends on implementation of Table.
+        if v>c:
+            c = v
+            p = k
+    if c==0:
+        return (OrdPathList([]), 0)
+    else:
+        return (p, c)
+
+def groupByPair(paths, pair):
+    fp = pair.flatten()
+    afp = tuple([-x for x in reversed(fp)])
+    pairAdj = OrdPathAdj(pair)
+    newpaths = []
+    for ps in paths:
+        if not isinstance(ps, OrdPathList):
+            newpaths.append(ps)
+            continue
+        p = []
+        i = 0
+        n = len(ps.s)
+        while i<n-1:
+            t = ps.s[i].flatten() + ps.s[i+1].flatten()
+            if t == fp:
+                p.append(pair)
+                i += 2
+            elif t == afp:
+                p.append(pairAdj)
+                i += 2
+            else:
+                p.append(ps.s[i])
+                i += 1
+        if i==n-1:
+            p.append(ps.s[i])
+        newpaths.append(p[0] if len(p)==1 else OrdPathList(p))
+    return newpaths
+
+def minimizeShifts(paths, segments, counts):
+    # print(f'minimizeShifts: paths: {paths}')
+    # print(f'minimizeShifts: segments: {segments}')
+    # print(f'minimizeShifts: counts: {counts}')
+    # TODO
+    return paths
+
 class OrdPaths:
+    """ Build a tree of operations.  Runtime: O(N^3) with N=len(paths). """
     def __init__(self, paths):
         """
-        paths: (path, ...)
+        paths: (OrdPathList, ...)
         """
-        segments = {}
-        while any(len(p)>1 for p in paths):
-            # print(f'OrdPaths: paths: {paths}')
-            p,c = self.getMostSharedPair(paths)
-            if p.left.isadjoint and p.right.isadjoint:
-                p = p.adjoint()
-            segments[p.flatten()] = (p, c)
-            # print(f'OrdPaths: mostShared c: {c} p: {p}')
-            dx = p.deltalr()
-            # print(f'dx: {dx}')
-            paths = self.groupByPair(paths, p)
-        paths = tuple([p[0] for p in paths])  # len(p)==1 from while above
-        paths = self.minimizeShifts(paths, segments)
-        self.paths = paths
+        pgroup = paths
+        segments = []
+        counts = []
+        p,c = mostSharedPair(pgroup)
+        while isinstance(p, OrdPathPair):
+            segments.append(p)
+            counts.append(c)
+            pgroup = groupByPair(pgroup, p)
+            p,c = mostSharedPair(pgroup)
+        pgroup = minimizeShifts(pgroup, segments, counts)
+        self.paths = pgroup
         self.segments = segments
+        self.counts = counts
         #print(f'OrdPaths.paths: {self.paths}')
         #print(f'OrdPaths,segments: {self.segments}')
     def __eq__(self, x):
         if isinstance(x, OrdPaths):
-            return self.paths == x.paths
+            return self.paths == x.paths and self.segments == x.segments and self.counts == x.counts
         else:
             return False
     def __hash__(self):
-        return hash(tuple([tuple(p) for p in self.paths]))
-
+        return hash(tuple(self.paths))
+    def __str__(self):
+        s = 'OrdPaths:\n    Paths:'
+        for p in self.paths:
+            s += f'\n        {p}'
+        s += '\n    Segments:'
+        for i in range(len(self.segments)):
+            s += f'\n        {self.segments[i]}  {self.counts[i]}'
+        return s
+    def __repr__(self):
+        return f'OrdPaths#{id(self)}({repr(self.paths)}, {repr(self.segments)}, {repr(self.counts)})'
     def optimal(self, path):
         """
         path: (±dim, ...)
         return: (optimal splitting tree in OrdPath*, isadjoint)
         """
-        if path in self.segments:
-            return self.segments[path][0], False
-        else:
-            apath = tuple([-d for d in reversed(path)])
-            if apath in self.segments:
-                return self.segments[apath][0], True
-            else:
-                raise ValueError(f'Do not know how to optimize path: {path}')
-
-    def getMostSharedPair(self, paths):
-        "return: an OrdPathPair and its occurance among all the paths."
-        pairs = {}
-        while True:
-            pair = None
-            apair = None
-            count = 0
-            for ps in paths:
-                # print(f'getMostSharedPair: ps: {ps}')
-                if len(ps) < 2:
-                    continue
-                # for i in range(len(ps)-1):
-                for i in reversed(range(len(ps)-1)):
-                    t = OrdPathPair(ps[i],ps[i+1])
-                    ta = t.adjoint()
-                    # print(f'getMostSharedPair: t: {t}')
-                    if t in pairs or ta in pairs:
-                        continue
-                    if pair is None:
-                        pair = t
-                        apair = ta
-                        count = 1
-                        # print(f'getMostSharedPair: pair: {pair}')
-                    elif t == pair or t == apair:
-                        # Now counting the pair
-                        count += 1
-            if pair is None:
-                # no new pairs
-                break
-            else:
-                pairs[pair] = count
-        p = maxValueKey(pairs)
-        return p,pairs[p]
-
-    def groupByPair(self, paths, pair):
-        apair = pair.adjoint()
-        newpaths = []
-        for ps in paths:
-            p = []
-            i = 0
-            np = len(ps)
-            while i < np:
-                if i != np-1:
-                    t = OrdPathPair(*ps[i:i+2])
-                    if t == pair:
-                        p.append(OrdPathSeg(pair,False))
-                        i += 2
-                    elif t == apair:
-                        p.append(OrdPathSeg(pair,True))
-                        i += 2
-                    else:
-                        p.append(ps[i])
-                        i += 1
-                else:
-                    p.append(ps[i])
-                    i += 1
-            newpaths.append(p)
-        return newpaths
-
-    def minimizeShifts(self, paths, segments):
-        # print(f'minimizeShifts: paths: {paths}')
-        # print(f'minimizeShifts: segments: {segments}')
-        # TODO
-        return paths
+        apath = tuple([-d for d in reversed(path)])
+        for p in self.segments:
+            if path == p.flatten():
+                return p, False
+            elif apath == p.flatten():
+                return p, True
+        raise ValueError(f'OrdPaths.optimal: Do not know how to optimize path: {path}')
 
 class OrdProduct:
     def __init__(self, ordPaths, x, g):
@@ -325,42 +391,92 @@ class OrdProduct:
         self.x = x
         self.g = g
         self.segments = {}
+        for s in ordPaths.segments:
+            if isinstance(s, OrdPathPair):
+                l,la = self.fetch(s.l)
+                r,ra = self.fetch(s.r)
+                sh = (s.l.position() - s.l.deltaX() - s.r.position()).x
+                self.segments[s.flatten()] = self.g.mul(l, tf.roll(r, shift=(0,)+sh, axis=tuple(range(len(sh)+1))), la, ra)
+            else:
+                raise ValueError(f'Internal error: OrdProduct got a non-OrdPathPair segment: {s}')
 
     def prodList(self):
-        return [self.prod(p.flatten()) for p in self.ordPaths.paths]
+        res = []
+        for p in self.ordPaths.paths:
+            res.append(self.finishProd(p))
+        return res
     def prod(self, pathRaw):
         path, isadjoint = self.ordPaths.optimal(pathRaw)
-        z = self.prod_helper(path, isadjoint)
-        p = path.position().x
-        if any([x != 0 for x in p]):
-            z = tf.roll(z, shift=[0]+[-i for i in p], axis=tuple(range(len(p)+1)))
-        return z
-    def prod_helper(self, path, isadjoint = False):
-        if path in self.segments:
-            z = self.segments[path]
-            if isadjoint:
-                z = self.g.adjoint(z)
-        elif isinstance(path, OrdPathInt):
-            z = self.x[:,abs(path.path)-1]
-            if path.path < 0:
-                z = self.g.adjoint(z)
-            self.segments[path] = z
-            if isadjoint:
-                z = self.g.adjoint(z)
-        elif isinstance(path, OrdPathPair):
-            l = path.left
-            r = path.right
-            s = path.deltalr().x
-            z = self.g.mul(self.prod_helper(l), tf.roll(self.prod_helper(r), shift=(0,)+s, axis=tuple(range(len(s)+1))))
-            self.segments[path] = z
-            if isadjoint:
-                z = self.g.adjoint(z)
-        elif isinstance(path, OrdPathSeg):
-            z = self.prod_helper(path.path, path.isadjoint != isadjoint)
+        return self.finishProd(path, isadjoint)
+    def finishProd(self, p, adj=False):
+        if isinstance(p, OrdPathAdj):
+            f = self.segments[p.p.flatten()]
+            if not adj:
+                f = self.g.adjoint(f)
         else:
-            raise ValueError(f'Do not know how to compute path: {path}')
-        return z
+            f = self.segments[p.flatten()]
+            if adj:
+                f = self.g.adjoint(f)
+        pos = (-p.position()).x
+        if any([x != 0 for x in pos]):
+            f = tf.roll(f, shift=(0,)+pos, axis=tuple(range(len(pos)+1)))
+        return f
+    def fetch(self, s):
+        if isinstance(s, OrdPathInt):
+            if s.d>0:
+                return (self.x[:,s.d-1], False)
+            else:
+                return (self.x[:,-s.d-1], True)
+        elif isinstance(s, OrdPathPair):
+            return (self.segments[s.flatten()], False)
+        elif isinstance(s, OrdPathList):
+            raise ValueError(f'fetch does not work with OrdPathlist: {s}')
+        else:  # OrdPathAdj
+            f,a = self.fetch(s.p)
+            return (f, a != True)
 
 if __name__ == '__main__':
-    ps = OrdPaths([[1,1,2,2,-1,-1,-2,-2]])
+    ps = OrdPaths(topath([[1,1,2,2,-1,-1,-2,-2]]))
+    print(ps)
+    ps = OrdPaths(topath([
+        [2,-1,-2,1],
+        [3,-1,-3,1],
+        [3,-2,-3,2],
+        [4,-1,-4,1],
+        [4,-2,-4,2],
+        [4,-3,-4,3],
+        [-1,-2,1,2],
+        [-1,-3,1,3],
+        [-2,-3,2,3],
+        [-1,-4,1,4],
+        [-2,-4,2,4],
+        [-3,-4,3,4],
+        [-2,1,2,-1],
+        [-3,1,3,-1],
+        [-3,2,3,-2],
+        [-4,1,4,-1],
+        [-4,2,4,-2],
+        [-4,3,4,-3],
+    ]))
+    print(ps)
+    ps = OrdPaths(topath([
+        [-1,-1,2,2,1,1,-2,-2],
+        [2,2,1,1,-2,-2,-1,-1],
+        [1,1,-2,-2,-1,-1,2,2],
+        [-2,-2,-1,-1,2,2,1,1],
+    ]))
+    print(ps)
+    ps = OrdPaths(topath([
+      [1,2,-1,-2], [2,1,-2,-1], [1,-2,-1,2], [2,-1,-2,1], [-1,-2,1,2],
+      [1,2,-1,-2,1,-2,-1,2], [-1,-2,1,2,-1,2,1,-2], [-2,-1,2,1,1,-2,-1,2], [-2,1,2,-1,-1,-2,1,2],
+      [2,-1,-2,1,-2,-1,2,1]]))
+    print(ps)
+    ps = OrdPaths(topath([
+      [1,1,1,1,1,1,1,1],
+      [-1,-1,-1,-1,-1,-1,-1,-1],
+      [-1,-1],
+      [-1,-1,1],
+      [1,1,-1],
+      [1,-1,-1],
+      [-1,-1,-1]]))
     print(ps)

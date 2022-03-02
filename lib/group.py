@@ -77,6 +77,17 @@ class SU3(Group):
         p2 = tf.math.real(tf.norm(p, ord='fro', axis=[-2,-1]))**2 - 8.0
         return 0.5*tf.math.reduce_sum(tf.reshape(p2, [p.shape[0], -1]), axis=1)
 
+def eyeOf(m):
+    return tf.eye(*m.shape[-2:], batch_shape=[1]*(len(m.shape)-2), dtype=m.dtype)
+
+def norm2(m, axis=[-2,-1]):
+    "No reduction if axis is empty."
+    n = tf.math.real(tf.math.conj(m)*m)
+    if len(axis)==0:
+        return n
+    else:
+        return tf.math.reduce_sum(n, axis=axis)
+
 # Converted from qex/src/maths/matrixFunctions.nim
 # Last two dims in a tensor contain matrices.
 # WARNING: below only works for SU3 for now
@@ -169,3 +180,22 @@ def projectSU(x):
     d = tf.linalg.det(m)    # after projectU: 1=|d
     p = (1.0/(-nc)) * tf.math.atan2(tf.math.imag(d), tf.math.real(d))
     return tf.reshape(tf.dtypes.complex(tf.math.cos(p), tf.math.sin(p)),p.shape+[1,1]) * m
+
+def checkU(x):
+  ## Returns the average and maximum of the sum of deviations of x^dag x.
+  nc = x.shape[-1]
+  d = norm2(tf.linalg.matmul(x,x,adjoint_a=True) - eyeOf(x))
+  a = tf.math.reduce_mean(d, axis=range(1,len(d.shape)))
+  b = tf.math.reduce_max(d, axis=range(1,len(d.shape)))
+  c = 2*(nc*nc+1)
+  return tf.math.sqrt(a/c),tf.math.sqrt(b/c)
+
+def checkSU(x):
+  ## Returns the average and maximum of the sum of deviations of x^dag x and det(x) from unitarity.
+  nc = x.shape[-1]
+  d = norm2(tf.linalg.matmul(x,x,adjoint_a=True) - eyeOf(x))
+  d += norm2(-1 + tf.linalg.det(x), axis=[])
+  a = tf.math.reduce_mean(d, axis=range(1,len(d.shape)))
+  b = tf.math.reduce_max(d, axis=range(1,len(d.shape)))
+  c = 2*(nc*nc+1)
+  return tf.math.sqrt(a/c),tf.math.sqrt(b/c)

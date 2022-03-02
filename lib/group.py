@@ -57,7 +57,7 @@ class SU3(Group):
     def diff2Trace(x):
         tf.print('TODO')
     def exp(m):
-        eye = tf.eye(3,batch_shape=[1]*(len(m.shape)-2),dtype=m.dtype)
+        eye = eyeOf(m)
         x = eye + 1.0/12.0 * m
         for i in tf.range(11, 0, -1):
             x = eye + 1.0/tf.cast(i,m.dtype)*tf.linalg.matmul(m,x)
@@ -65,7 +65,7 @@ class SU3(Group):
     def projectTAH(x):
         r = 0.5*(x - tf.linalg.adjoint(x))
         d = tf.linalg.trace(r) / 3.0
-        r -= tf.reshape(d,d.shape+[1,1])*tf.eye(3,batch_shape=[1]*len(d.shape),dtype=d.dtype)
+        r -= tf.reshape(d,d.shape+[1,1])*eyeOf(x)
         return r
     def random(shape, rng):
         r = rng.normal(shape, dtype=tf.float64)
@@ -74,7 +74,7 @@ class SU3(Group):
     def randomMom(shape, rng):
         return randTAH3(shape[:-2], rng)
     def momEnergy(p):
-        p2 = tf.math.real(tf.norm(p, ord='fro', axis=[-2,-1]))**2 - 8.0
+        p2 = norm2(p) - 8.0
         return 0.5*tf.math.reduce_sum(tf.reshape(p2, [p.shape[0], -1]), axis=1)
 
 def eyeOf(m):

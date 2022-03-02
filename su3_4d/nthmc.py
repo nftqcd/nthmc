@@ -49,13 +49,18 @@ class Conf:
         self.xlaCluster = xlaCluster
         self.seed = seed
 
+C1Symanzik = -1.0/12.0  # tree-level
+C1Iwasaki = -0.331
+C1DBW2 = -1.4088
+
 class SU3d4(tl.Layer):
-    def __init__(self, rng, nbatch=1, transform=ftr.Ident(), beta = 6.0, beta0 = 3.0, size = [4,4,4,4], name='SU3d4', **kwargs):
+    def __init__(self, rng, nbatch=1, transform=ftr.Ident(), beta = 6.0, beta0 = 3.0, c1 = 0, size = [4,4,4,4], name='SU3d4', **kwargs):
         super(SU3d4, self).__init__(autocast=False, name=name, **kwargs)
         self.g = group.SU3
         self.targetBeta = tf.constant(beta, dtype=tf.float64)
         self.beta = tf.Variable(beta, dtype=tf.float64, trainable=False, name=name+'.beta')
         self.beta0 = beta0
+        self.c1 = tf.constant(c1, dtype=tf.float64)
         self.size = size
         self.transform = transform
         self.volume = size[0]*size[1]*size[2]*size[3]
@@ -86,22 +91,33 @@ class SU3d4(tl.Layer):
     def topoCharge(self, x):
         # FIXME
         return 0.0
-    def plaqFieldsWoTrans(self, x):
+    def coeffs(self):
+        "Coefficients for the plaquette and rectangle terms."
+        return ((1.0-8.0*self.c1)*self.beta, self.c1*self.beta)
+    def plaqFieldsWoTrans(self, x, needsRect=False):
         ps = []
+        rs = []
         for mu in range(1,4):
             for nu in range(0,mu):
                 xmunu = self.g.mul(x[:,mu], tf.roll(x[:,nu], shift=-1, axis=mu+1))
                 xnumu = self.g.mul(x[:,nu], tf.roll(x[:,mu], shift=-1, axis=nu+1))
-                ps.append(self.g.trace(self.g.mul(xmunu, xnumu, adjoint_l=True)))
-        return ps
+                ps.append(self.g.trace(self.g.mul(xmunu, xnumu, adjoint_r=True)))
+                if needsRect:
+                    uu = self.g.mul(x[:,nu], xmunu, adjoint_l=True)
+                    ur = self.g.mul(x[:,mu], xnumu, adjoint_l=True)
+                    ul = self.g.mul(xmunu, tf.roll(x[:,mu], shift=-1, axis=nu+1), adjoint_r=True)
+                    ud = self.g.mul(xnumu, tf.roll(x[:,nu], shift=-1, axis=mu+1), adjoint_r=True)
+                    rs.append(self.g.trace(self.g.mul(ul, tf.roll(ur, shift=1, axis=mu+1), adjoint_r=True)))
+                    rs.append(self.g.trace(self.g.mul(uu, tf.roll(ud, shift=1, axis=nu+1), adjoint_r=True)))
+        return ps, rs
     def plaquetteListWoTrans(self, x):
-        ps = self.plaqFieldsWoTrans(x)
+        ps,_ = self.plaqFieldsWoTrans(x)
         return [tf.reduce_mean(p, axis=range(1,len(p.shape)))/3.0 for p in ps]
     def plaquetteList(self, x):
         y, _, _ = self.transform(x)
         return self.plaquetteListWoTrans(y)
     def plaquetteWoTrans(self, x):
-        ps = self.plaqFieldsWoTrans(x)
+        ps,_ = self.plaqFieldsWoTrans(x)
         psum = 0.0
         for p in ps:
             psum += tf.reduce_sum(tf.math.real(p), axis=range(1,len(p.shape)))
@@ -112,11 +128,18 @@ class SU3d4(tl.Layer):
     def action(self, x):
         "Returns the action, the log Jacobian, and extra info from transform."
         y, l, bs = self.transform(x)
-        ps = self.plaqFieldsWoTrans(y)
+        cp, cr = self.coeffs()
+        ps, rs = self.plaqFieldsWoTrans(y, needsRect=True)
         psum = 0.0
         for p in ps:
             psum += tf.reduce_sum(tf.math.real(p), axis=range(1,len(p.shape)))
-        a = self.beta*(self.volume*6 - psum/3.0)
+        a = cp*psum
+        if cr!=0.0:
+            rsum = 0.0
+            for r in rs:
+                rsum += tf.reduce_sum(tf.math.real(r), axis=range(1,len(r.shape)))
+            a += cr*rsum
+        a = (-1.0/3.0)*a
         return a-l, l, bs
     def derivActionPlaqManual(self, x0):
         cp = tf.cast(self.beta/3.0, x0.dtype)

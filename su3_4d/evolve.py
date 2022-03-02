@@ -295,7 +295,7 @@ if __name__ == '__main__':
     nthmc.setup(conf)
     action = nthmc.SU3d4(tf.random.Generator.from_seed(conf.seed), conf.nbatch,
         transform=ftr.Ident(),
-        beta=6, beta0=6,
+        beta=0.7796, beta0=0.7796, c1=nthmc.C1DBW2,
         size = [8,8,8,8])
     x0 = action.random()
     with tf.GradientTape(watch_accessed_variables=False) as tape:

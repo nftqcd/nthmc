@@ -58,7 +58,7 @@ class TestOrderedPaths(ut.TestCase):
 
     def test_fabctc(self):
         # [T^a, T^b] = f^abc T^c
-        fabctc = g.su3fabc(T)
+        fabctc = g.su3fabc(tf.transpose(T,perm=list(range(1,len(T.shape)))+[0]))
         for a in range(8):
             for b in range(8):
                 with self.subTest(a=a,b=b):
@@ -66,7 +66,7 @@ class TestOrderedPaths(ut.TestCase):
 
     def test_anticomm(self):
         # {T^a, T^b} = - 1/3 delta^ab + i d^abc T^c
-        dabctc = g.su3dabc(T)
+        dabctc = g.su3dabc(tf.transpose(T,perm=list(range(1,len(T.shape)))+[0]))
         i = tf.dtypes.complex(tf.constant(0,dtype=tf.float64), tf.constant(1,dtype=tf.float64))
         dab3 = (-1.0/3.0)*tf.eye(3, dtype=tf.complex128)
         for a in range(8):

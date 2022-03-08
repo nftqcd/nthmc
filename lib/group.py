@@ -59,10 +59,7 @@ class SU3(Group):
     def exp(m):
         return exp(m)
     def projectTAH(x):
-        r = 0.5*(x - tf.linalg.adjoint(x))
-        d = tf.linalg.trace(r) / 3.0
-        r -= tf.reshape(d,d.shape+[1,1])*eyeOf(x)
-        return r
+        return projectTAH(x)
     def random(shape, rng):
         r = rng.normal(shape, dtype=tf.float64)
         i = rng.normal(shape, dtype=tf.float64)
@@ -165,17 +162,24 @@ def rsqrtPHM3(x):
 
 def projectU(x):
     "x (x'x)^{-1/2}"
-    nc = 3
+    nc = x.shape[-1]
     t = tf.linalg.matmul(x,x,adjoint_a=True)
     t2 = rsqrtPHM3(t)
     return tf.linalg.matmul(x, t2)
 
 def projectSU(x):
-    nc = 3
+    nc = x.shape[-1]
     m = projectU(x)
     d = tf.linalg.det(m)    # after projectU: 1=|d
     p = (1.0/(-nc)) * tf.math.atan2(tf.math.imag(d), tf.math.real(d))
     return tf.reshape(tf.dtypes.complex(tf.math.cos(p), tf.math.sin(p)),p.shape+[1,1]) * m
+
+def projectTAH(x):
+    nc = x.shape[-1]
+    r = 0.5*(x - tf.linalg.adjoint(x))
+    d = tf.linalg.trace(r) / nc
+    r -= tf.reshape(d,d.shape+[1,1])*eyeOf(x)
+    return r
 
 def checkU(x):
     ## Returns the average and maximum of the sum of deviations of x^dag x.
@@ -200,16 +204,16 @@ def su3vec(x):
     """
     Only for x in su(3).  Return 8 real numbers, X^a T^a = X.  Convention: tr{T^a T^a} = -1/2
     """
-    # s3 = 0.57735026918962576451    # sqrt(1/3)
-    r3 = 1.7320508075688772935    # sqrt(3)
+    s3 = 0.57735026918962576451    # sqrt(1/3)
+    # r3 = 1.7320508075688772935    # sqrt(3)
     c = -2
     return tf.stack([
         c*tf.math.imag(x[...,0,1]), c*tf.math.real(x[...,0,1]),
         tf.math.imag(x[...,1,1])-tf.math.imag(x[...,0,0]),
         c*tf.math.imag(x[...,0,2]), c*tf.math.real(x[...,0,2]),
         c*tf.math.imag(x[...,1,2]), c*tf.math.real(x[...,1,2]),
-        # s3*(2*tf.math.imag(x[...,2,2])-tf.math.imag(x[...,1,1])-tf.math.imag(x[...,0,0]))
-        r3*tf.math.imag(x[...,2,2])
+        s3*(2*tf.math.imag(x[...,2,2])-tf.math.imag(x[...,1,1])-tf.math.imag(x[...,0,0]))
+        # r3*tf.math.imag(x[...,2,2])
     ], axis=-1)
 
 def su3fromvec(v):
@@ -353,7 +357,7 @@ def su3ad(x):
     """
     adX^{ab} = - f^{abc} X^c = f^{abc} 2 tr(X T^c) = 2 tr(X [T^a, T^b])
     """
-    return -su3fabc(su3vec(x))
+    return su3fabc(-su3vec(x))
 
 def su3adapply(adx, y):
     """
@@ -399,3 +403,33 @@ def diffexp(adX, order=13):
     for i in tf.range(order, 1, -1):
         x = eye + 1.0/tf.cast(i,m.dtype)*tf.linalg.matmul(m,x)
     return x
+
+def SU3JacobianTF(x, f, is_SU3=True):
+    """
+    Compute Jacobian using TensorFlow GradientTape.
+    Note for TensorFlow,
+        ∇_z f = (∂_z f + ∂_z f†)†
+    In order to have the proper gradient info, we always project the result to su(3).
+    If is_SU3 is True, we multiply the result by its adjoint before projecting.
+    Otherwise we assume the result is su3 and project it directly.
+    The input x must be in SU(3).
+    Returns f(x) and its Jacobian in ad.
+    [d/dSU(3)] SU(3)
+        T^c_km X_ml (-2) (∂_X_kl F(X)_in) F(X)†_nj T^a_ji
+          = T^c_km X_ml (-2) F'(X)_{kl,in} F(X)†_nj T^a_ji
+    [d/dSU(3)] su(3)
+        (T^c X)_kl (∂_X_kl F(X)^a)
+        T^c_km X_ml (∂_X_kl F(X)^a)
+          = T^c_km X_ml F'(X)^a_{kl}
+    """
+    with tf.GradientTape(watch_accessed_variables=False, persistent=True) as t:
+        t.watch(x)
+        Z = f(x)
+        if is_SU3:
+            z = tf.linalg.matmul(Z,tf.stop_gradient(Z),adjoint_b=True)
+        else:
+            z = Z
+        z = tf.cast(su3vec(z), tf.complex128)
+    jzx = t.jacobian(z,x,experimental_use_pfor=False)
+    tj = tf.math.real(tf.einsum('aik,kj,bij->ba', su3gen(), x, tf.math.conj(jzx)))
+    return Z,tj

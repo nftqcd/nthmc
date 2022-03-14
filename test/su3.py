@@ -42,6 +42,8 @@ class TestSU3(ut.TestCase):
         self.X = g.su3fromvec(self.x)
         self.y = tf.constant([-0.574, -0.56, -0.508, -0.442, -0.324, -0.14, 0.162, 0.648], dtype=tf.float64)
         self.Y = g.su3fromvec(self.y)
+        self.z = tf.constant([0.481, -0.755, 0.009, 0.773, -0.463, 0.301, -0.916, -0.172], dtype=tf.float64)
+        self.Z = g.su3fromvec(self.z)
 
     def test_xata(self):
         # X = X^a T^a
@@ -76,18 +78,7 @@ class TestSU3(ut.TestCase):
         q = g.su3fromvec(g.su3vec(m-adj(m))/2)
         self.checkEqv(p,q)
 
-    def test_diffProjTAH(self):
-        """
-        F = T^b ∂_b tr[M + M†]
-          = T^b tr[T^b M - M† T^b]
-          = T^b tr[T^b (M - M†)]
-        F^a = tr[T^a (M - M†)]
-        ∂_c f^a = tr[T^a (T^c M + M† T^c)]
-                = 1/2 tr[{T^a,T^c} (M+M†) + [T^a,T^c] (M-M†)]
-                = 1/2 tr[d^acb T^b i (M+M†) - 1/3 δ^ac (M+M†) + f^acb T^b (M-M†)]
-                = 1/2 { d^acb tr[T^b i(M+M†)] - 1/3 δ^ac tr(M+M†) + f^acb F^b }
-                = 1/2 { d^acb tr[T^b i(M+M†)] - 1/3 δ^ac tr(M+M†) - adF^ac }
-        """
+    def test_diffprojectTAH(self):
         X = g.exp(self.X)
         Y = g.exp(self.Y)
         ep = 0.12
@@ -95,17 +86,57 @@ class TestSU3(ut.TestCase):
         def f(x):
             nonlocal Y, M
             M = ep * mul(x,Y,adjoint_b=True)
-            return -g.projectTAH(M)
-        F,tj = g.SU3JacobianTF(X, f, is_SU3=False)
+            return g.projectTAH(M)
+        P,tj = g.SU3JacobianTF(X, f, is_SU3=False)
 
-        adF = g.su3ad(F)
-        Ms = M+adj(M)
-        trMs = tr(Ms)
-        j = 0.5*(g.su3dabc(-0.5*g.su3vec(I*Ms)) + (-re(trMs)/3.0)*g.eyeOf(adF) - adF)
-        with self.subTest(target='det'):
-            self.checkEqv(det(j), det(tj))
-        with self.subTest(target='mat'):
-            self.checkEqv(j, tj)
+        with self.subTest(project='given'):
+            j = g.diffprojectTAH(M, P)
+            with self.subTest(target='det'):
+                self.checkEqv(det(j), det(tj))
+            with self.subTest(target='mat'):
+                self.checkEqv(j, tj)
+        with self.subTest(project='recompute'):
+            j = g.diffprojectTAH(M)
+            with self.subTest(target='det'):
+                self.checkEqv(det(j), det(tj))
+            with self.subTest(target='mat'):
+                self.checkEqv(j, tj)
+
+    def test_diff2projectTAH(self):
+        """
+        P^a = -tr[T^a (M - M†)]
+        ∂_c P^a = -tr[T^a (T^c M + M† T^c)]
+                = -1/2 { d^acb tr[T^b i(M+M†)] - 1/3 δ^ac tr(M+M†) + f^acb F^b }
+        ∂_d ∂_c P^a = -tr[T^a T^c T^d M - T^c T^a M† T^d]
+        Use diffProjTAH, but use T^d M for M.
+        """
+        X = g.exp(self.X)
+        Y = g.exp(self.Y)
+        Z = g.exp(self.Z)
+        ep = 0.12
+        """ For 2nd derivative here,
+        [d/dSU(3)] { [d/dSU(3)] su(3) }
+            = (T^c Y])_mn ∂_Y_mn { (T^b X)_ij (∂_X_ij F(X,Y)^a) }
+            = T^c_ml Y_ln ∂_Y_mn { T^b_ik X_kj (∂_X_ij F(X,Y)^a) }
+            = T^c_ml Y_ln { ∂Y ∂X F(X,Y) }^ab_mn
+        """
+        with tf.GradientTape(watch_accessed_variables=False, persistent=True) as t:
+            t.watch(Y)
+            def f(x):
+                nonlocal Y, Z
+                M = ep * mul(x,mul(Z,Y),adjoint_b=True)
+                return g.projectTAH(M)
+            F,tj = g.SU3JacobianTF(X, f, is_SU3=False)
+            tjC = tf.cast(tj, tf.complex128)
+        tj2m = t.jacobian(tjC, Y, experimental_use_pfor=False)
+        tj2 = re(tf.einsum('cml,ln,abmn->abc', T, Y, conj(tj2m)))
+        for i in range(8):
+            M = ep * mul(X,mul(Z,mul(T[i],Y)),adjoint_b=True)
+            j = g.diffprojectTAH(M)
+            with self.subTest(target='det'):
+                self.checkEqv(det(j), det(tj2[...,i]))
+            with self.subTest(target='mat'):
+                self.checkEqv(j, tj2[...,i])
 
     def test_fabctc(self):
         # [T^a, T^b] = f^abc T^c
@@ -146,13 +177,6 @@ class TestSU3(ut.TestCase):
         with self.subTest(v='y'):
             self.exp_helper(self.X)
 
-    def test_diffexp0(self):
-        v = tf.constant([1,0,0,0,0,0,0,0],dtype=tf.float64)
-        for i in range(8):
-            with self.subTest(a=i):
-                self.diffexp_helper(v)
-                v = tf.roll(v,shift=1,axis=0)
-
     def exp_helper(self, x):
         ex = g.exp(x)
         exm = tf.linalg.expm(x)
@@ -160,6 +184,13 @@ class TestSU3(ut.TestCase):
             self.checkEqv(det(ex), 1, tol=1e-22)    # error from series expansion
         with self.subTest(target='mat'):
             self.checkEqv(ex, exm, tol=1e-22)    # error from series expansion
+
+    def test_diffexp0(self):
+        v = tf.constant([1,0,0,0,0,0,0,0],dtype=tf.float64)
+        for i in range(8):
+            with self.subTest(a=i):
+                self.diffexp_helper(v)
+                v = tf.roll(v,shift=1,axis=0)
 
     def test_diffexp(self):
         with self.subTest(v='x'):
@@ -209,8 +240,12 @@ class TestSU3(ut.TestCase):
               - 1/2 [(exp(adF)-1)]^ac
             = 1/2 { [(exp(adF)+1)]^ac + [(exp(adF)-1)/adF]^ab {d^bcd tr[T^d i (M + M†)] - 1/3 δ^bc tr[M + M†]} }
             = 1/2 { [(exp(adF)+1)]^ac + J(-F)^ab {d^bcd tr[T^d i (M + M†)] - 1/3 δ^bc tr[M + M†]} }
+        det(-2 tr[(∂_c Z) Z† T^a])
+            = det(exp(adF)^ac + J(-F)^ab [∂_c F]^b)
+            = det(δ^ac + J(F)^ab [∂_c F]^b)
         Note:
             exp(adX) Y = exp(X) Y exp(-X)  for X,Y in g
+            det(exp(adX)) = exp(tr(ln(exp(adX)))) = exp(tr(adX)) = exp(0) = 1
         """
 
         X = g.exp(self.X)
@@ -228,13 +263,6 @@ class TestSU3(ut.TestCase):
         adF = g.su3ad(F)
         Ms = M+adj(M)
         trMs = tr(Ms)
-        with self.subTest(equation='chain rule'):
-            dF = 0.5*(g.su3dabc(-0.5*g.su3vec(I*Ms)) + (-re(trMs)/3.0)*g.eyeOf(adF) - adF)
-            j = g.exp(adF) + mul(g.diffexp(-adF), dF)
-            with self.subTest(target='det'):
-                self.checkEqv(det(j), det(tj), tol=1e-20)
-            with self.subTest(target='mat'):
-                self.checkEqv(j, tj, tol=1e-20)
         with self.subTest(equation='combined'):
             K = (-re(trMs)/3.0)*g.eyeOf(adF) + g.su3dabc(-0.5*g.su3vec(I*Ms))
             j = 0.5*(g.exp(adF)+g.eyeOf(adF) + mul(g.diffexp(-adF), K))
@@ -242,6 +270,15 @@ class TestSU3(ut.TestCase):
                 self.checkEqv(det(j), det(tj), tol=1e-20)
             with self.subTest(target='mat'):
                 self.checkEqv(j, tj, tol=1e-20)
+        dF = g.diffprojectTAH(-M,F)
+        j = g.exp(adF) + mul(g.diffexp(-adF), dF)
+        with self.subTest(equation='chain rule'):
+            with self.subTest(target='det'):
+                self.checkEqv(det(j), det(tj), tol=1e-20)
+            with self.subTest(target='mat'):
+                self.checkEqv(j, tj, tol=1e-20)
+        with self.subTest(equation='det simplified'):
+            self.checkEqv(det(g.eyeOf(adF) + mul(g.diffexp(adF), dF)), det(j))
 
     def checkEqv(self,a,b,tol=1e-28,rtol=1e-14):
         d = a-b

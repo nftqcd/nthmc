@@ -70,6 +70,8 @@ class SU3(Group):
         p2 = norm2(p) - 8.0
         return 0.5*tf.math.reduce_sum(tf.reshape(p2, [p.shape[0], -1]), axis=1)
 
+I = tf.dtypes.complex(tf.constant(0,dtype=tf.float64), tf.constant(1,dtype=tf.float64))
+
 def eyeOf(m):
     return tf.eye(*m.shape[-2:], batch_shape=[1]*(len(m.shape)-2), dtype=m.dtype)
 
@@ -175,6 +177,10 @@ def projectSU(x):
     return tf.reshape(tf.dtypes.complex(tf.math.cos(p), tf.math.sin(p)),p.shape+[1,1]) * m
 
 def projectTAH(x):
+    """
+    returns R = 1/2 (X - X†) - 1/(2 N) tr(X - X†)
+    R = - T^a tr[T^a (X - X†)]
+    """
     nc = x.shape[-1]
     r = 0.5*(x - tf.linalg.adjoint(x))
     d = tf.linalg.trace(r) / nc
@@ -391,11 +397,39 @@ def exp(m, order=12):
         x = eye + 1.0/tf.cast(i,m.dtype)*tf.linalg.matmul(m,x)
     return x
 
+def diffprojectTAH(m, p = None):
+    """
+    returns ∂_c p^a = ∂_c projectTAH(m)^a
+    P^a = -2 T^a {- T^d tr[T^d (M - M†)]}
+        = - tr[T^a (M - M†)]
+    ∂_c P^a = - tr[T^a (T^c M + M† T^c)]
+            = - 1/2 tr[{T^a,T^c} (M+M†) + [T^a,T^c] (M-M†)]
+            = - 1/2 tr[d^acb T^b i (M+M†) - 1/3 δ^ac (M+M†) + f^acb T^b (M-M†)]
+            = - 1/2 { d^acb tr[T^b i(M+M†)] - 1/3 δ^ac tr(M+M†) - f^acb F^b }
+            = - 1/2 { d^acb tr[T^b i(M+M†)] - 1/3 δ^ac tr(M+M†) + adF^ac }
+    """
+    if p is None:
+        p = projectTAH(m)
+    mhalfadP = (-0.5) * su3ad(p)
+    Ms = m+tf.linalg.adjoint(m)
+    return su3dabc(0.25*su3vec(I*Ms)) + (tf.math.real(tf.linalg.trace(Ms))/6.0)*eyeOf(mhalfadP) + mhalfadP
+
 def diffexp(adX, order=13):
     """
     return J(X) = (1-exp{-adX})/adX = Σ_{k=0}^\infty 1/(k+1)! (-adX)^k  upto k=order
     [exp{-X(t)} d/dt exp{X(t)}]_ij = [J(X) d/dt X(t)]_ij = T^a_ij J(X)^ab (-2) T^b_kl [d/dt X(t)]_lk
     J(X) = 1 + 1/2 (-adX) (1 + 1/3 (-adX) (1 + 1/4 (-adX) (1 + ...)))
+    J(s x) ∂_t x = exp(-s x) ∂_t exp(s x)
+    ∂_s J(s x) ∂_t x
+        = - exp(-s x) x ∂_t exp(s x) + exp(-s x) ∂_t x exp(s x)
+        = - exp(-s x) x ∂_t exp(s x) + exp(-s x) [∂_t x] exp(s x) + exp(-s x) x ∂_t exp(s x)
+        = exp(-s x) [∂_t x] exp(s x)
+        = exp(-s adx) ∂_t x
+        = Σ_k 1/k! (-1)^k s^k (adx)^k ∂_t x
+    J(0) = 0
+    J(x) ∂_t x
+        = ∫_0^1 ds Σ_{k=0} 1/k! (-1)^k s^k (adx)^k ∂_t x
+        = Σ_{k=0} 1/(k+1)! (-1)^k (adx)^k ∂_t x
     """
     m = -adX
     eye = eyeOf(m)

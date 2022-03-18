@@ -78,6 +78,38 @@ class TestSU3(ut.TestCase):
         q = g.su3fromvec(g.su3vec(m-adj(m))/2)
         self.checkEqv(p,q)
 
+    def test_projectTAHFromDiff(self):
+        """
+        projectTAH(M) = T^a ∂_a (- tr[M + M†]) = T^a ∂_a (-2 ReTr M)
+        """
+        with tf.GradientTape(watch_accessed_variables=False) as t:
+            t.watch(self.x)
+            m = g.exp(g.su3fromvec(self.x))
+            r = -2*re(tr(m))
+        d = t.gradient(r, self.x)
+        p = g.su3vec(g.projectTAH(m))
+        self.checkEqv(p,d)
+
+    def test_projectTAHFromDiffSU3(self):
+        """
+        Testing TensorFlow's gradient, and our normalization convention.
+        projectTAH(M) = T^a ∂_a (- tr[M + M†]) = T^a ∂_a (-2 ReTr M)
+        """
+        m = g.exp(self.X)
+        r,d = g.SU3GradientTF(lambda x: -2*re(tr(x)), m)
+        p = g.projectTAH(m)
+        self.checkEqv(p,g.su3fromvec(d))
+
+    def test_projectTAHFromDiffSU3Mat(self):
+        """
+        Testing TensorFlow's gradient, and our normalization convention.
+        projectTAH(M) = T^a ∂_a (- tr[M + M†]) = T^a ∂_a (-2 ReTr M)
+        """
+        m = g.exp(self.X)
+        r,d = g.SU3GradientTFMat(lambda x: -2*re(tr(x)), m)
+        p = g.projectTAH(m)
+        self.checkEqv(p,d)
+
     def test_diffprojectTAH(self):
         X = g.exp(self.X)
         Y = g.exp(self.Y)
@@ -87,7 +119,7 @@ class TestSU3(ut.TestCase):
             nonlocal Y, M
             M = ep * mul(x,Y,adjoint_b=True)
             return g.projectTAH(M)
-        P,tj = g.SU3JacobianTF(X, f, is_SU3=False)
+        P,tj = g.SU3JacobianTF(f, X, is_SU3=False)
 
         with self.subTest(project='given'):
             j = g.diffprojectTAH(M, P)
@@ -97,6 +129,81 @@ class TestSU3(ut.TestCase):
                 self.checkEqv(j, tj)
         with self.subTest(project='recompute'):
             j = g.diffprojectTAH(M)
+            with self.subTest(target='det'):
+                self.checkEqv(det(j), det(tj))
+            with self.subTest(target='mat'):
+                self.checkEqv(j, tj)
+
+    def test_diffprojectTAHMat(self):
+        """
+        Same as test_diffprojectTAH but uses SU3JacobianTFMat.
+        """
+        X = g.exp(self.X)
+        Y = g.exp(self.Y)
+        ep = 0.12
+        M = None
+        def f(x):
+            nonlocal Y, M
+            M = ep * mul(x,Y,adjoint_b=True)
+            return g.projectTAH(M)
+        P,tj = g.SU3JacobianTFMat(f, X, is_SU3=False)
+
+        with self.subTest(project='given'):
+            j = g.diffprojectTAH(M, P)
+            with self.subTest(target='det'):
+                self.checkEqv(det(j), det(tj))
+            with self.subTest(target='mat'):
+                self.checkEqv(j, tj)
+        with self.subTest(project='recompute'):
+            j = g.diffprojectTAH(M)
+            with self.subTest(target='det'):
+                self.checkEqv(det(j), det(tj))
+            with self.subTest(target='mat'):
+                self.checkEqv(j, tj)
+        with self.subTest(name='consistency with diffprojectTAHCross'):
+            j = g.diffprojectTAHCross(M, Adx=tf.eye(8, dtype=tf.float64), p=P)
+            with self.subTest(target='det'):
+                self.checkEqv(det(j), det(tj))
+            with self.subTest(target='mat'):
+                self.checkEqv(j, tj)
+
+    def test_diffprojectTAHCross(self):
+        """
+        ∂_Y^b ∂_X^a (-2) ReTr[ X (Z Y)† ] = - ∂_Y^b ∂_X^a tr[ X Y† Z† + Z Y X† ]
+            = - 2 ReTr[T^a (- X Y†) T^b Z†]
+        Note the extra negative sign from ∂_Y^b.
+        """
+        X = g.exp(T[0])
+        Y = g.exp(T[0])
+        Z = g.exp(T[0])
+        ep = 0.12
+        M = None
+        def f(y):
+            nonlocal M
+            M = ep * mul(X,mul(Z,y),adjoint_b=True)
+            return g.projectTAH(M)
+        P,tj = g.SU3JacobianTF(f, Y, is_SU3=False)
+
+        with self.subTest(project='given', Adx='given'):
+            j = -g.diffprojectTAHCross(M, Adx=g.SU3Ad(mul(X,Y,adjoint_b=True)), p=P)
+            with self.subTest(target='det'):
+                self.checkEqv(det(j), det(tj))
+            with self.subTest(target='mat'):
+                self.checkEqv(j, tj)
+        with self.subTest(project='recompute', Adx='given'):
+            j = -g.diffprojectTAHCross(M, Adx=g.SU3Ad(mul(X,Y,adjoint_b=True)))
+            with self.subTest(target='det'):
+                self.checkEqv(det(j), det(tj))
+            with self.subTest(target='mat'):
+                self.checkEqv(j, tj)
+        with self.subTest(project='given', Adx='recompute'):
+            j = -g.diffprojectTAHCross(M, x=mul(X,Y,adjoint_b=True), p=P)
+            with self.subTest(target='det'):
+                self.checkEqv(det(j), det(tj))
+            with self.subTest(target='mat'):
+                self.checkEqv(j, tj)
+        with self.subTest(project='recompute', Adx='recompute'):
+            j = -g.diffprojectTAHCross(M, x=mul(X,Y,adjoint_b=True))
             with self.subTest(target='det'):
                 self.checkEqv(det(j), det(tj))
             with self.subTest(target='mat'):
@@ -126,7 +233,7 @@ class TestSU3(ut.TestCase):
                 nonlocal Y, Z
                 M = ep * mul(x,mul(Z,Y),adjoint_b=True)
                 return g.projectTAH(M)
-            F,tj = g.SU3JacobianTF(X, f, is_SU3=False)
+            F,tj = g.SU3JacobianTF(f, X, is_SU3=False)
             tjC = tf.cast(tj, tf.complex128)
         tj2m = t.jacobian(tjC, Y, experimental_use_pfor=False)
         tj2 = re(tf.einsum('cml,ln,abmn->abc', T, Y, conj(tj2m)))
@@ -147,7 +254,7 @@ class TestSU3(ut.TestCase):
                     self.checkEqv(fabctc[...,a,b], comm[a][b])
 
     def test_anticomm(self):
-        # {T^a, T^b} = - 1/3 delta^ab + i d^abc T^c
+        # {T^a, T^b} = - 1/3 δ^ab + i d^abc T^c
         dabctc = g.su3dabc(tf.transpose(T,perm=list(range(1,len(T.shape)))+[0]))
         dab3 = (-1.0/3.0)*tf.eye(3, dtype=tf.complex128)
         for a in range(8):
@@ -158,6 +265,20 @@ class TestSU3(ut.TestCase):
                     else:
                         self.checkEqv(I*dabctc[...,a,b], acom[a][b])
 
+    def test_tatb(self):
+        """
+        T^a T^b = 1/2 ([T^a, T^b] + {T^a, T^b})
+                = 1/2 (f^abc + i d^abc) T^c - 1/6 δ^ab
+        """
+        tc = tf.transpose(T,perm=list(range(1,len(T.shape)))+[0])
+        fabctc = g.su3fabc(tc)
+        dabctc = g.su3dabc(tc)
+        one = tf.eye(3, dtype=tf.float64)
+        dab = tf.eye(8, dtype=tf.float64)
+        dabone = tf.cast(tf.einsum('ij,kl->ijkl', one, dab), tf.complex128)
+        tatb = tf.einsum('aij,bjk->ikab', T, T)
+        self.checkEqv(0.5*(fabctc+I*dabctc+(-1.0/3.0)*dabone), tatb)
+
     def test_adxy(self):
         adxy = g.su3adapply(g.su3ad(self.X), self.Y)
         self.checkEqv(adxy, mul(self.X,self.Y)-mul(self.Y,self.X))
@@ -165,6 +286,17 @@ class TestSU3(ut.TestCase):
     def test_adyx(self):
         adyx = g.su3adapply(g.su3ad(self.Y), self.X)
         self.checkEqv(adyx, mul(self.Y,self.X)-mul(self.X,self.Y))
+
+    def test_AdX(self):
+        """
+        exp(adx) = Ad[exp(x)], for x in su(3) algebra.
+        """
+        with self.subTest(x='x'):
+            self.checkEqv(g.SU3Ad(g.exp(self.X,order=15)), g.exp(g.su3ad(self.X),order=19))
+        with self.subTest(x='y'):
+            self.checkEqv(g.SU3Ad(g.exp(self.Y,order=15)), g.exp(g.su3ad(self.Y),order=19))
+        with self.subTest(x='z'):
+            self.checkEqv(g.SU3Ad(g.exp(self.Z,order=15)), g.exp(g.su3ad(self.Z),order=19))
 
     def test_exp0(self):
         for i in range(8):
@@ -258,13 +390,13 @@ class TestSU3(ut.TestCase):
             M = ep * mul(x,Y,adjoint_b=True)
             F = -g.projectTAH(M)
             return mul(g.exp(F),x)
-        Z,tj = g.SU3JacobianTF(X, f)
+        Z,tj = g.SU3JacobianTF(f, X)
 
         adF = g.su3ad(F)
         Ms = M+adj(M)
-        trMs = tr(Ms)
+        trMs = re(tr(Ms))
         with self.subTest(equation='combined'):
-            K = (-re(trMs)/3.0)*g.eyeOf(adF) + g.su3dabc(-0.5*g.su3vec(I*Ms))
+            K = (-1.0/3.0)*tf.reshape(trMs,trMs.shape+[1,1])*g.eyeOf(adF) + g.su3dabc(-0.5*g.su3vec(I*Ms))
             j = 0.5*(g.exp(adF)+g.eyeOf(adF) + mul(g.diffexp(-adF), K))
             with self.subTest(target='det'):
                 self.checkEqv(det(j), det(tj), tol=1e-20)
@@ -280,6 +412,143 @@ class TestSU3(ut.TestCase):
         with self.subTest(equation='det simplified'):
             self.checkEqv(det(g.eyeOf(adF) + mul(g.diffexp(adF), dF)), det(j))
 
+    def test_difflndetexpfmuluDiag(self):
+        """
+        ∇_d ln det {δ^ac + J(F)^ab [∂_c F^b]}    # ∇ can act on different links, ∂ only on the updating link
+            = m^{-1}^ca {[∇_d J(F)^ab] [∂_c F^b] + J(F)^ab [∇_d ∂_c F^b]}
+        where
+            m^ac = δ^ac + J(F)^ab [∂_c F^b]
+        This test is for ∇ = ∂.
+        ∇_d adF^ce = ∇_d (- f^ceg F^g) = - f^ceg [∇_d F^g]
+        ∇_d J(F)^ab
+            = Σ_{k=0} 1/(k+1)! (-1)^k ∇_d [(adF)^k]^ab
+            = Σ_{k=1} 1/(k+1)! (-1)^k Σ_{j=0}^{k-1} [adF^j]^ac (∇_d adF^ce) [adF^(k-j-1)]^eb
+            = Σ_{k=1} 1/(k+1)! (-1)^k Σ_{j=0}^{k-1} [adF^j]^ac (- f^cea [∇_d F^a]) [adF^(k-j-1)]^eb
+            = Σ_{k=0} 1/(k+2)! (-1)^k Σ_{j=0}^k [adF^j]^ac f^ceg [∇_d F^g] [adF^(k-j)]^eb
+            = 1/2 ( dadF
+              + (-1)/3 ( adF dadF + dadF adF
+              + (-1)/4 ( adF^2 dadF + adF dadF adF + dadF adF^2
+              + (-1)/5 ( adF^3 dadF + adF^2 dadF adF + adF dadF adF^2 + dadF adF^3
+              + (-1)/6 ( adF^4 dadF + adF^3 dadF adF + adF^2 dadF adF^2 + adF dadF adF^3 + dadF adF^4
+              + (-1)/7 ( adF^5 dadF + adF^4 dadF adF + adF^3 dadF adF^2 + adF^2 dadF adF^3 + adF dadF adF^4 + dadF adF^5 + ... ))))))
+            = 1/2 ( {dadF, 1/2 + (-1)/3 adF (1 + (-1)/4 adF (1 + (-1)/5 adF (1 + (-1)/6 adF (1 + (-1)/7 adF (1 + ...)))))}
+              + (-1)/3 (-1)/4 adF ( {dadF, 1/2 + (-1)/5 adF (1 + (-1)/6 adF (1 + (-1)/7 adF (1 + ...)))}
+              + (-1)/5 (-1)/6 adF ( {dadF, 1/2 + (-1)/7 adF (1 + ... )} + ... ) adF ) adF )
+            = 1/2 ( {dadF, f(2)} + 1/(3*4) adF ( {dadF, f(4)} + 1/(5*6) adF ( {dadF, f(6)} + ... ) adF ) adF )
+            = 1/2 g(2)
+        where
+        f(n) = 1/2 + Σ_{k=1} 1/(k+n)! (-1)^k adF^k
+             = 1/2 + (-1/(n+1)) adF (1 + (-1/(n+2)) adF (1/2 + f(n+2)))
+        g(n) = {dadF, f(n)} + 1/((n+1)(n+2)) adF g(n+2) adF
+        """
+
+        X = g.exp(self.X)
+        Y = g.exp(self.Y)
+        ep = 0.12
+        with tf.GradientTape(watch_accessed_variables=False, persistent=True) as t:
+            t.watch(X)
+            M = ep * mul(X,Y,adjoint_b=True)
+            F = -g.projectTAH(M)
+            adF = g.su3ad(F)
+            dF = g.diffprojectTAH(-M, F)
+            JF = g.diffexp(adF)
+            m = g.eyeOf(adF) + mul(JF, dF)
+            j = tf.math.log(det(m))
+        fx = 0.5*g.projectTAH(mul(t.gradient(j,X), X, adjoint_b=True))    # Factor of 0.5
+        ndF = len(dF.shape)
+        d2F = g.diffprojectTAH(-mul(T,tf.expand_dims(M,-3)))    # []_dcb = ∇_d ∂_c F^b
+        dadF = g.su3fabc(tf.transpose(dF, perm=list(range(ndF-2))+[ndF-1,ndF-2]))    # []_dce = - ∇_d adF^ce
+
+        order = 12.0   # must be an even number
+        one = g.eyeOf(adF)
+        half = 0.5*one
+        fn = half
+        gn = g.eyeOf(dadF)
+        while order>3.0:
+            fn = half + (-1.0/(order-1.0)) * mul(adF, (one + (-1.0/order) * mul(adF, half + fn)))
+            gn = mul(dadF,fn) + mul(fn,dadF) + (1.0/(order*(order-1.0))) * mul(adF, mul(gn, adF))
+            order -= 2.0
+        dJ = 0.5 * gn
+
+        f = tf.einsum('ca,dac->d', tf.linalg.inv(m), mul(dJ,dF) + mul(JF,d2F))
+        with self.subTest(space='su(3)'):
+            self.checkEqv(fx,g.su3fromvec(f))
+        with self.subTest(space='R'):
+            self.checkEqv(g.su3vec(fx),f)
+
+    def test_difflndetexpfmuluOffDiag(self):
+        """
+        ∇_d ln det {δ^ac + J(F)^ab [∂_c F^b]}    # ∇ can act on different links, ∂ only on the updating link
+            = m^{-1}^ca {[∇_d J(F)^ab] [∂_c F^b] + J(F)^ab [∇_d ∂_c F^b]}
+        where
+            m^ac = δ^ac + J(F)^ab [∂_c F^b]
+        This test is for ∇ ≠ ∂, with ∇_d = ∇_Y^d and ∂_c = ∂_X^c, M = X (Z Y)†
+        ∇_d adF^ce = ∇_d (- f^ceg F^g) = - f^ceg [∇_d F^g]
+        ∇_d F^g = ∇_d tr[T^g X (Z Y)† - Z Y X† T^g]
+                = - tr[T^g X Y† T^d Z† + Z T^d Y X† T^g]
+        ∇_d ∂_c F^b = ∇_d tr[T^b T^c X (Z Y)† + Z Y X† T^c T^b]
+                    = tr[- T^b T^c X Y† T^d Z† + Z T^d Y X† T^c T^b]
+                    = tr[- T^b T^c X Y† T^d (X Y†)† X Y† Z† + Z (X Y†)† X Y† T^d Y X† T^c T^b]
+                    = tr[- T^b T^c T^f X Y† Z† + Z Y X† T^f T^c T^b] Ad(X Y†)^fd
+        ∇_d J(F)^ab
+            = Σ_{k=0} 1/(k+1)! (-1)^k ∇_d [(adF)^k]^ab
+            = Σ_{k=1} 1/(k+1)! (-1)^k Σ_{j=0}^{k-1} [adF^j]^ac (∇_d adF^ce) [adF^(k-j-1)]^eb
+            = Σ_{k=1} 1/(k+1)! (-1)^k Σ_{j=0}^{k-1} [adF^j]^ac (- f^cea [∇_d F^a]) [adF^(k-j-1)]^eb
+            = Σ_{k=0} 1/(k+2)! (-1)^k Σ_{j=0}^k [adF^j]^ac f^ceg [∇_d F^g] [adF^(k-j)]^eb
+            = 1/2 ( dadF
+              + (-1)/3 ( adF dadF + dadF adF
+              + (-1)/4 ( adF^2 dadF + adF dadF adF + dadF adF^2
+              + (-1)/5 ( adF^3 dadF + adF^2 dadF adF + adF dadF adF^2 + dadF adF^3
+              + (-1)/6 ( adF^4 dadF + adF^3 dadF adF + adF^2 dadF adF^2 + adF dadF adF^3 + dadF adF^4
+              + (-1)/7 ( adF^5 dadF + adF^4 dadF adF + adF^3 dadF adF^2 + adF^2 dadF adF^3 + adF dadF adF^4 + dadF adF^5 + ... ))))))
+            = 1/2 ( {dadF, 1/2 + (-1)/3 adF (1 + (-1)/4 adF (1 + (-1)/5 adF (1 + (-1)/6 adF (1 + (-1)/7 adF (1 + ...)))))}
+              + (-1)/3 (-1)/4 adF ( {dadF, 1/2 + (-1)/5 adF (1 + (-1)/6 adF (1 + (-1)/7 adF (1 + ...)))}
+              + (-1)/5 (-1)/6 adF ( {dadF, 1/2 + (-1)/7 adF (1 + ... )} + ... ) adF ) adF )
+            = 1/2 ( {dadF, f(2)} + 1/(3*4) adF ( {dadF, f(4)} + 1/(5*6) adF ( {dadF, f(6)} + ... ) adF ) adF )
+            = 1/2 g(2)
+        where
+        f(n) = 1/2 + Σ_{k=1} 1/(k+n)! (-1)^k adF^k
+             = 1/2 + (-1/(n+1)) adF (1 + (-1/(n+2)) adF (1/2 + f(n+2)))
+        g(n) = {dadF, f(n)} + 1/((n+1)(n+2)) adF g(n+2) adF
+        """
+
+        X = g.projectSU(g.exp(self.X))
+        Y = g.projectSU(g.exp(self.Y))
+        Z = g.projectSU(g.exp(self.Z))
+        ep = 0.12
+        with tf.GradientTape(watch_accessed_variables=False, persistent=True) as t:
+            t.watch(Y)
+            M = ep * mul(X,mul(Z,Y),adjoint_b=True)
+            F = -g.projectTAH(M)
+            adF = g.su3ad(F)
+            dF = g.diffprojectTAH(-M, F)    # ∂_c F^b
+            JF = g.diffexp(adF)
+            m = g.eyeOf(adF) + mul(JF, dF)
+            j = tf.math.log(det(m))
+        fx = 0.5*g.projectTAH(mul(t.gradient(j,Y), Y, adjoint_b=True))    # Factor of 0.5
+        Adxy = g.SU3Ad(mul(X,Y,adjoint_b=True))
+        dydF = g.diffprojectTAHCross(M, p=-F, Adx=Adxy)    # ∇_d F^g
+        ndF = len(dF.shape)
+        dadF = g.su3fabc(tf.transpose(dydF, perm=list(range(ndF-2))+[ndF-1,ndF-2]))    # []_dce = - ∇_d adF^ce
+        d2F = tf.einsum('fcb,fd->dcb', g.diffprojectTAH(mul(T,tf.expand_dims(M,-3))), Adxy)    # []_dcb = ∇_d ∂_c F^b
+
+        order = 12.0   # must be an even number
+        one = g.eyeOf(adF)
+        half = 0.5*one
+        fn = half
+        gn = g.eyeOf(dadF)
+        while order>3.0:
+            fn = half + (-1.0/(order-1.0)) * mul(adF, (one + (-1.0/order) * mul(adF, half + fn)))
+            gn = mul(dadF,fn) + mul(fn,dadF) + (1.0/(order*(order-1.0))) * mul(adF, mul(gn, adF))
+            order -= 2.0
+        dJ = 0.5 * gn
+
+        f = tf.einsum('ca,dac->d', tf.linalg.inv(m), mul(dJ,dF) + mul(JF,d2F))
+        with self.subTest(space='su(3)'):
+            self.checkEqv(fx,g.su3fromvec(f))
+        with self.subTest(space='R'):
+            self.checkEqv(g.su3vec(fx),f)
+
     def checkEqv(self,a,b,tol=1e-28,rtol=1e-14):
         d = a-b
         axis = range(len(d.shape))
@@ -293,9 +562,11 @@ class TestSU3(ut.TestCase):
             print(f'abs sq diff: {m}')
             if ma>0 and mb>0:
                 print(f'rel sq diff: {m/mn}')
-        self.assertLess(m, tol)
+        with self.subTest(tolerance='absolute'):
+            self.assertLess(m, tol)
         if ma>0 and mb>0:
-            self.assertLess(m/mn, rtol)
+            with self.subTest(tolerance='relative'):
+                self.assertLess(m/mn, rtol)
 
 if __name__ == '__main__':
     ut.main()

@@ -180,6 +180,7 @@ def projectTAH(x):
     """
     returns R = 1/2 (X - X†) - 1/(2 N) tr(X - X†)
     R = - T^a tr[T^a (X - X†)]
+      = T^a ∂_a (- tr[X + X†])
     """
     nc = x.shape[-1]
     r = 0.5*(x - tf.linalg.adjoint(x))
@@ -208,7 +209,9 @@ def checkSU(x):
 
 def su3vec(x):
     """
-    Only for x in su(3).  Return 8 real numbers, X^a T^a = X.  Convention: tr{T^a T^a} = -1/2
+    Only for x in 3x3 anti-Hermitian.  Return 8 real numbers, X^a T^a = X - 1/3 tr(X).
+    Convention: tr{T^a T^a} = -1/2
+    X^a = - 2 tr[T^a X]
     """
     s3 = 0.57735026918962576451    # sqrt(1/3)
     # r3 = 1.7320508075688772935    # sqrt(3)
@@ -230,13 +233,13 @@ def su3fromvec(v):
     """
     s3 = 0.57735026918962576451    # sqrt(1/3)
     c = -0.5
-    zero = tf.zeros(v[0].shape, dtype=v[0].dtype)
-    x01 = c*tf.dtypes.complex(v[1], v[0])
-    x02 = c*tf.dtypes.complex(v[4], v[3])
-    x12 = c*tf.dtypes.complex(v[6], v[5])
-    x2i = s3*v[7]
-    x0i = c*(x2i+v[2])
-    x1i = c*(x2i-v[2])
+    zero = tf.zeros(v[...,0].shape, dtype=v[...,0].dtype)
+    x01 = c*tf.dtypes.complex(v[...,1], v[...,0])
+    x02 = c*tf.dtypes.complex(v[...,4], v[...,3])
+    x12 = c*tf.dtypes.complex(v[...,6], v[...,5])
+    x2i = s3*v[...,7]
+    x0i = c*(x2i+v[...,2])
+    x1i = c*(x2i-v[...,2])
     return tf.stack([
         tf.stack([tf.dtypes.complex(zero,x0i), -tf.math.conj(x01), -tf.math.conj(x02)], axis=-1),
         tf.stack([x01,                tf.dtypes.complex(zero,x1i), -tf.math.conj(x12)], axis=-1),
@@ -359,9 +362,19 @@ def su3dabc(v):
         tf.stack([ a07, a17, a27, a37, a47, a57, a67, a77], axis=-1),
     ], axis=-1)
 
+def SU3Ad(x):
+    """
+    X T^c X† = AdX T^c = T^b AdX^bc
+    Input x must be in SU(3) group.
+    AdX^bc = - 2 tr[T^b X T^c X†] = - 2 tr[T^c X† T^b X]
+    """
+    y = tf.expand_dims(x, -3)
+    return su3vec(tf.linalg.matmul(y, tf.linalg.matmul(su3gen(), y), adjoint_a=True))
+
 def su3ad(x):
     """
     adX^{ab} = - f^{abc} X^c = f^{abc} 2 tr(X T^c) = 2 tr(X [T^a, T^b])
+    Input x must be in su(3) algebra.
     """
     return su3fabc(-su3vec(x))
 
@@ -386,9 +399,16 @@ def gellMann():
         tf.dtypes.complex(zero3, tf.reshape(tf.constant([0,0,0,0,0,-1,0,1,0],dtype=tf.float64),[3,3])),
         s3*tf.dtypes.complex(tf.reshape(tf.constant([1,0,0,0,1,0,0,0,-2],dtype=tf.float64),[3,3]), zero3)])
 
+_su3gen_private_global_cache_ = None
 def su3gen():
-    "Traceless Anti-Hermitian basis.  tr{T^a T^a} = -1/2"
-    return tf.dtypes.complex(tf.constant(0,dtype=tf.float64),tf.constant(-0.5,dtype=tf.float64)) * gellMann()
+    """
+    T[a,i,j] = T^a_ij
+    Traceless Anti-Hermitian basis.  tr{T^a T^a} = -1/2
+    """
+    global _su3gen_private_global_cache_
+    if _su3gen_private_global_cache_ is None:
+        _su3gen_private_global_cache_ = tf.dtypes.complex(tf.constant(0,dtype=tf.float64),tf.constant(-0.5,dtype=tf.float64)) * gellMann()
+    return _su3gen_private_global_cache_
 
 def exp(m, order=12):
     eye = eyeOf(m)
@@ -399,26 +419,47 @@ def exp(m, order=12):
 
 def diffprojectTAH(m, p = None):
     """
-    returns ∂_c p^a = ∂_c projectTAH(m)^a
-    P^a = -2 T^a {- T^d tr[T^d (M - M†)]}
+    returns ∂_c p^a = ∂_c projectTAH(m)^a = - tr[T^a (T^c M + M† T^c)]
+    P^a = -2 tr[T^a {- T^d tr[T^d (M - M†)]}]
         = - tr[T^a (M - M†)]
+        = - ∂_a tr[M + M†]
     ∂_c P^a = - tr[T^a (T^c M + M† T^c)]
             = - 1/2 tr[{T^a,T^c} (M+M†) + [T^a,T^c] (M-M†)]
             = - 1/2 tr[d^acb T^b i (M+M†) - 1/3 δ^ac (M+M†) + f^acb T^b (M-M†)]
             = - 1/2 { d^acb tr[T^b i(M+M†)] - 1/3 δ^ac tr(M+M†) - f^acb F^b }
             = - 1/2 { d^acb tr[T^b i(M+M†)] - 1/3 δ^ac tr(M+M†) + adF^ac }
+    Note:
+        T^a T^b = 1/2 {(f^abc + i d^abc) T^c - 1/3 δ^ab}
     """
     if p is None:
         p = projectTAH(m)
-    mhalfadP = (-0.5) * su3ad(p)
+    mhalfadP = su3ad((-0.5) * p)
     Ms = m+tf.linalg.adjoint(m)
-    return su3dabc(0.25*su3vec(I*Ms)) + (tf.math.real(tf.linalg.trace(Ms))/6.0)*eyeOf(mhalfadP) + mhalfadP
+    trMs = tf.math.real(tf.linalg.trace(Ms))/6.0
+    return su3dabc(0.25*su3vec(I*Ms)) + tf.reshape(trMs,trMs.shape+[1,1])*eyeOf(mhalfadP) + mhalfadP
+
+def diffprojectTAHCross(m, x = None, Adx = None, p = None):
+    """
+    returns R^ac = ∇_c p^a = ∇_c projectTAH(X Y)^a = - ∇_c ∂_a tr[X Y + Y† X†], where M = X Y
+    The derivatives ∂ is on X and ∇ is on Y.
+    ∇_c P^a = - 2 ReTr[T^a X T^c Y]
+            = - tr[T^a (X T^c X† X Y + Y† X† X T^c X†)]
+            = - tr[T^a (T^b M + M† T^b)] AdX^bc
+    """
+    if Adx is None:
+        if x is None:
+            raise ValueError(f'diffprojectTAHCross must either provide x or Adx.')
+        Adx = SU3Ad(x)
+    return tf.linalg.matmul(diffprojectTAH(m, p), Adx)
 
 def diffexp(adX, order=13):
     """
     return J(X) = (1-exp{-adX})/adX = Σ_{k=0}^\infty 1/(k+1)! (-adX)^k  upto k=order
     [exp{-X(t)} d/dt exp{X(t)}]_ij = [J(X) d/dt X(t)]_ij = T^a_ij J(X)^ab (-2) T^b_kl [d/dt X(t)]_lk
     J(X) = 1 + 1/2 (-adX) (1 + 1/3 (-adX) (1 + 1/4 (-adX) (1 + ...)))
+    J(x) ∂_t x
+        = T^a J(x)^ab (-2) tr[T^b ∂_t x]
+        = exp(-x) ∂_t exp(x)
     J(s x) ∂_t x = exp(-s x) ∂_t exp(s x)
     ∂_s J(s x) ∂_t x
         = - exp(-s x) x ∂_t exp(s x) + exp(-s x) ∂_t x exp(s x)
@@ -438,9 +479,74 @@ def diffexp(adX, order=13):
         x = eye + 1.0/tf.cast(i,m.dtype)*tf.linalg.matmul(m,x)
     return x
 
-def SU3JacobianTF(x, f, is_SU3=True):
+def SU3GradientTF(f, x):
     """
-    Compute Jacobian using TensorFlow GradientTape.
+    Compute gradient using TensorFlow GradientTape.
+    f(x) must be a real scalar value.
+    Returns (f(x),D), where D = T^a D^a = T^a ∂_a f(x)
+    Use real vector derivatives.
+    D^a = ∂_a f(x)
+        = ∂_t f(exp(t T^a) x) |_t=0
+    """
+    v = tf.zeros(8, dtype=tf.float64)
+    with tf.GradientTape(watch_accessed_variables=False) as t:
+        t.watch(v)
+        r = f(tf.linalg.matmul(exp(su3fromvec(v)),x))
+    d = t.gradient(r, v)
+    return r,d
+
+def SU3GradientTFMat(f, x):
+    """
+    Compute gradient using TensorFlow GradientTape.
+    f(x) must be a real scalar value.
+    Returns (f(x),D), where D = T^a D^a = T^a ∂_a f(x)
+    Use Matrix derivatives.
+    D^a = ∂_a f(x)
+        = [∂_a x_ij] [d/dx_ij f(x)]
+        = [T^a_ik x_kj] [d/dx_ij f(x)]
+        = [T^a_ik x†_kj] [d/dx†_ij f(x)]
+    Note for TensorFlow,
+        ∇_z f = (∂_z f + ∂_z f†)† = 2 [∂_z Re(f)]† = 2 ∂_z† Re(f)
+    """
+    with tf.GradientTape(watch_accessed_variables=False) as t:
+        t.watch(x)
+        r = f(x)
+    d = 0.5*projectTAH(tf.linalg.matmul(t.gradient(r, x), x, adjoint_b=True))
+    return r,d
+
+def SU3JacobianTF(f, x, is_SU3=True):
+    """
+    Compute Jacobian using TensorFlow GradientTape with real vector derivatives.
+    Note for TensorFlow,
+        ∇_z f = (∂_z f + ∂_z f†)†
+    In order to have the proper gradient info, we always project the result to su(3).
+    If is_SU3 is True, we multiply the result by its adjoint before projecting.
+    Otherwise we assume the result is su3 and project it directly.
+    The input x must be in SU(3).
+    Returns f(x) and its Jacobian in ad.
+    [d/dSU(3)] SU(3)
+        T^c_km X_ml (-2) (∂_X_kl F(X)_in) F(X)†_nj T^a_ji
+          = T^c_km X_ml (-2) F'(X)_{kl,in} F(X)†_nj T^a_ji
+    [d/dSU(3)] su(3)
+        (T^c X)_kl (∂_X_kl F(X)^a)
+        T^c_km X_ml (∂_X_kl F(X)^a)
+          = T^c_km X_ml F'(X)^a_{kl}
+    """
+    v = tf.zeros(8, dtype=tf.float64)
+    with tf.GradientTape(watch_accessed_variables=False, persistent=True) as t:
+        t.watch(v)
+        Z = f(tf.linalg.matmul(exp(su3fromvec(v)),x))
+        if is_SU3:
+            z = tf.linalg.matmul(Z,tf.stop_gradient(Z),adjoint_b=True)
+        else:
+            z = Z
+        z = su3vec(z)
+    tj = t.jacobian(z,v,experimental_use_pfor=False)
+    return Z,tj
+
+def SU3JacobianTFMat(f, x, is_SU3=True):
+    """
+    Compute Jacobian using TensorFlow GradientTape with matrix derivatives.
     Note for TensorFlow,
         ∇_z f = (∂_z f + ∂_z f†)†
     In order to have the proper gradient info, we always project the result to su(3).

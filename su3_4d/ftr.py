@@ -86,6 +86,7 @@ class TransformChain(tk.Model):
             y, t, b = f(y)
             l += t
             bs += b
+        bs /= len(self.chain)
         return (y, l, bs)
     def inv(self, y):
         x = y

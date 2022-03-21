@@ -70,8 +70,6 @@ class SU3(Group):
         p2 = norm2(p) - 8.0
         return 0.5*tf.math.reduce_sum(tf.reshape(p2, [p.shape[0], -1]), axis=1)
 
-I = tf.dtypes.complex(tf.constant(0,dtype=tf.float64), tf.constant(1,dtype=tf.float64))
-
 def eyeOf(m):
     return tf.eye(*m.shape[-2:], batch_shape=[1]*(len(m.shape)-2), dtype=m.dtype)
 
@@ -436,6 +434,7 @@ def diffprojectTAH(m, p = None):
     mhalfadP = su3ad((-0.5) * p)
     Ms = m+tf.linalg.adjoint(m)
     trMs = tf.math.real(tf.linalg.trace(Ms))/6.0
+    I = tf.dtypes.complex(tf.constant(0,dtype=tf.float64), tf.constant(1,dtype=tf.float64))
     return su3dabc(0.25*su3vec(I*Ms)) + tf.reshape(trMs,trMs.shape+[1,1])*eyeOf(mhalfadP) + mhalfadP
 
 def diffprojectTAHCross(m, x = None, Adx = None, p = None):

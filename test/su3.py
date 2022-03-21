@@ -49,8 +49,7 @@ class TestSU3(ut.TestCase):
         # X = X^a T^a
         X = 0
         for a in range(8):
-            with self.subTest(a=a):
-                X += toCmplx(self.x[a])*T[a]
+            X += toCmplx(self.x[a])*T[a]
         self.checkEqv(X, self.X)
 
     def test_trtatb(self):
@@ -173,9 +172,9 @@ class TestSU3(ut.TestCase):
             = - 2 ReTr[T^a (- X Y†) T^b Z†]
         Note the extra negative sign from ∂_Y^b.
         """
-        X = g.exp(T[0])
-        Y = g.exp(T[0])
-        Z = g.exp(T[0])
+        X = g.projectSU(g.exp(self.X))
+        Y = g.projectSU(g.exp(self.Y))
+        Z = g.projectSU(g.exp(self.Z))
         ep = 0.12
         M = None
         def f(y):
@@ -301,36 +300,40 @@ class TestSU3(ut.TestCase):
     def test_exp0(self):
         for i in range(8):
             with self.subTest(a=i):
-                self.exp_helper(T[i])
+                self.exp_helper(T[i],tol=1e-12,rtol=1e-12)    # error from series expansion
 
     def test_exp(self):
         with self.subTest(v='x'):
-            self.exp_helper(self.X)
+            self.exp_helper(self.X,tol=1e-11,rtol=1e-11)    # error from series expansion
         with self.subTest(v='y'):
-            self.exp_helper(self.X)
+            self.exp_helper(self.Y,tol=1e-12,rtol=1e-12)    # error from series expansion
+        with self.subTest(v='z'):
+            self.exp_helper(self.Z,tol=1e-10,rtol=1e-10)    # error from series expansion
 
-    def exp_helper(self, x):
+    def exp_helper(self, x, tol, rtol):
         ex = g.exp(x)
         exm = tf.linalg.expm(x)
         with self.subTest(target='det'):
-            self.checkEqv(det(ex), 1, tol=1e-22)    # error from series expansion
+            self.checkEqv(det(ex), 1, tol=tol, rtol=rtol)
         with self.subTest(target='mat'):
-            self.checkEqv(ex, exm, tol=1e-22)    # error from series expansion
+            self.checkEqv(ex, exm, tol=tol, rtol=rtol)
 
     def test_diffexp0(self):
         v = tf.constant([1,0,0,0,0,0,0,0],dtype=tf.float64)
         for i in range(8):
             with self.subTest(a=i):
-                self.diffexp_helper(v)
+                self.diffexp_helper(v,tol=1e-11,rtol=1e-11)    # error from series expansion
                 v = tf.roll(v,shift=1,axis=0)
 
     def test_diffexp(self):
         with self.subTest(v='x'):
-            self.diffexp_helper(self.x)
+            self.diffexp_helper(self.x,tol=1e-9,rtol=1e-9)    # error from series expansion
         with self.subTest(v='y'):
-            self.diffexp_helper(self.y)
+            self.diffexp_helper(self.y,tol=1e-10,rtol=1e-10)    # error from series expansion
+        with self.subTest(v='z'):
+            self.diffexp_helper(self.z,tol=1e-9,rtol=1e-8)    # error from series expansion
 
-    def diffexp_helper(self, v):
+    def diffexp_helper(self, v, tol, rtol):
         with tf.GradientTape(watch_accessed_variables=False, persistent=True) as t:
             t.watch(v)
             m = g.su3fromvec(v)
@@ -340,9 +343,9 @@ class TestSU3(ut.TestCase):
         jx = g.diffexp(g.su3ad(m))
         jpx = t.jacobian(ex, v, experimental_use_pfor=False)
         with self.subTest(target='det'):
-            self.checkEqv(det(jx), det(jpx), tol=1e-19)    # error from series expansion
+            self.checkEqv(det(jx), det(jpx), tol=tol, rtol=rtol)
         with self.subTest(target='mat'):
-            self.checkEqv(jx, jpx, tol=1e-19)    # error from series expansion
+            self.checkEqv(jx, jpx, tol=tol, rtol=rtol)
 
     def test_expfmulu(self):
         """
@@ -380,8 +383,8 @@ class TestSU3(ut.TestCase):
             det(exp(adX)) = exp(tr(ln(exp(adX)))) = exp(tr(adX)) = exp(0) = 1
         """
 
-        X = g.exp(self.X)
-        Y = g.exp(self.Y)
+        X = g.projectSU(g.exp(self.X))
+        Y = g.projectSU(g.exp(self.Y))
         ep = 0.12
         M = None
         F = None
@@ -399,16 +402,16 @@ class TestSU3(ut.TestCase):
             K = (-1.0/3.0)*tf.reshape(trMs,trMs.shape+[1,1])*g.eyeOf(adF) + g.su3dabc(-0.5*g.su3vec(I*Ms))
             j = 0.5*(g.exp(adF)+g.eyeOf(adF) + mul(g.diffexp(-adF), K))
             with self.subTest(target='det'):
-                self.checkEqv(det(j), det(tj), tol=1e-20)
+                self.checkEqv(det(j), det(tj))
             with self.subTest(target='mat'):
-                self.checkEqv(j, tj, tol=1e-20)
+                self.checkEqv(j, tj)
         dF = g.diffprojectTAH(-M,F)
         j = g.exp(adF) + mul(g.diffexp(-adF), dF)
         with self.subTest(equation='chain rule'):
             with self.subTest(target='det'):
-                self.checkEqv(det(j), det(tj), tol=1e-20)
+                self.checkEqv(det(j), det(tj))
             with self.subTest(target='mat'):
-                self.checkEqv(j, tj, tol=1e-20)
+                self.checkEqv(j, tj)
         with self.subTest(equation='det simplified'):
             self.checkEqv(det(g.eyeOf(adF) + mul(g.diffexp(adF), dF)), det(j))
 
@@ -549,12 +552,17 @@ class TestSU3(ut.TestCase):
         with self.subTest(space='R'):
             self.checkEqv(g.su3vec(fx),f)
 
-    def checkEqv(self,a,b,tol=1e-28,rtol=1e-14):
+    def checkEqv(self,a,b,tol=1e-13,rtol=1e-13):
         d = a-b
+        v = 1
+        for l in d.shape:
+            v *= l
+        if d.dtype == tf.complex128:
+            v *= 2
         axis = range(len(d.shape))
-        m = g.norm2(d,axis)
-        ma = g.norm2(d+b,axis)    # broadcast to the same shape
-        mb = g.norm2(a-d,axis)
+        m = tf.sqrt(g.norm2(d,axis)/v)
+        ma = tf.sqrt(g.norm2(b+d,axis)/v)    # broadcast to the same shape
+        mb = tf.sqrt(g.norm2(a-d,axis)/v)
         mn = ma if ma>mb else mb
         if m>=tol or (ma>0 and mb>0 and m/mn>=rtol):
             print(f'received {a}')

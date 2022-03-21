@@ -212,8 +212,6 @@ def topath(xs):
     "Convert possibly nested int sequences to OrdPath*().  We do not nest OrdPathList, but leave outer lists as lists."
     if isinstance(xs, int):
         return OrdPathInt(xs)
-    elif isinstance(xs, tuple) and len(xs) == 2:
-        return OrdPathPair(*xs)
     elif isinstance(xs, (tuple, list)):
         ps = [topath(x) for x in xs]
         if isinstance(ps[0], OrdPathList):

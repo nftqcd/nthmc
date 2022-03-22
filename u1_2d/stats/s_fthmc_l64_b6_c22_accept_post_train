@@ -1,0 +1,14 @@
+
+# File: ../s_fthmc_l64_b6_c22.log
+beta: 5
+nconf: 1024
+blocksize: 32
+accept: 0.791779 +/- 0.00217384
+beta: 6
+nconf: 1024
+blocksize: 32
+accept: 0.837189 +/- 0.00220958
+beta: 7
+nconf: 1024
+blocksize: 32
+accept: 0.802734 +/- 0.00263933

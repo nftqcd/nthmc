@@ -1,0 +1,29 @@
+
+# File: ../s_fthmc_l64_b6_c18.log
+beta: 5
+nconf: 1024
+blocksize: 32
+forceNorm2:      220.152 +/- 0.0134628 
+forceNorm2Min:   191.165 +/- 0.100499  
+forceNorm2Max:   253.188 +/- 0.112046  
+forceNormInf:    24.1032 +/- 0.00360197
+forceNormInfMin: 15.2709 +/- 0.01778   
+forceNormInfMax: 41.5725 +/- 0.0545957 
+beta: 6
+nconf: 1024
+blocksize: 32
+forceNorm2:      219.949 +/- 0.0149059 
+forceNorm2Min:   189.971 +/- 0.0891554 
+forceNorm2Max:   254.444 +/- 0.113206  
+forceNormInf:    24.9501 +/- 0.00421657
+forceNormInfMin: 15.4724 +/- 0.0162667 
+forceNormInfMax: 45.9122 +/- 0.0935157 
+beta: 7
+nconf: 1024
+blocksize: 32
+forceNorm2:      219.322 +/- 0.0146007 
+forceNorm2Min:   188.915 +/- 0.0799888 
+forceNorm2Max:   254.864 +/- 0.124223  
+forceNormInf:    25.3982 +/- 0.00372177
+forceNormInfMin: 15.4716 +/- 0.0193165 
+forceNormInfMax: 49.3282 +/- 0.0976201 

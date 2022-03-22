@@ -1,0 +1,29 @@
+
+# File: ../s_fthmc_l64_b6_c26.log
+beta: 5
+nconf: 1024
+blocksize: 32
+forceNorm2:      457.837 +/- 0.0334662 
+forceNorm2Min:   393.609 +/- 0.167434  
+forceNorm2Max:   536.059 +/- 0.275738  
+forceNormInf:    49.0064 +/- 0.00429654
+forceNormInfMin: 30.4895 +/- 0.0302656 
+forceNormInfMax: 89.5842 +/- 0.1619    
+beta: 6
+nconf: 1024
+blocksize: 32
+forceNorm2:      456.776 +/- 0.0339272
+forceNorm2Min:   390.082 +/- 0.143121 
+forceNorm2Max:   539.053 +/- 0.230823 
+forceNormInf:    50.986 +/- 0.00600998
+forceNormInfMin: 30.9945 +/- 0.0313921
+forceNormInfMax: 97.7472 +/- 0.142008 
+beta: 7
+nconf: 1024
+blocksize: 32
+forceNorm2:      454.387 +/- 0.0328404 
+forceNorm2Min:   386.214 +/- 0.187469  
+forceNorm2Max:   538.891 +/- 0.238328  
+forceNormInf:    52.1694 +/- 0.00603858
+forceNormInfMin: 31.1795 +/- 0.0290234 
+forceNormInfMax: 104.666 +/- 0.186535  

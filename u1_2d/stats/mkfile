@@ -51,6 +51,14 @@ logs_steptuned=\
 	s_nthmc_l72_fixBV_l64_b6.log\
 	s_nthmc_l74_fixBV_l64_b6.log\
 	s_nthmc_l76_fixBV_l64_b6.log\
+	s_fthmc_l64_b6.log\
+	s_fthmc_l64_b6_c06.log\
+	s_fthmc_l64_b6_c1.log\
+	s_fthmc_l64_b6_c14.log\
+	s_fthmc_l64_b6_c18.log\
+	s_fthmc_l64_b6_c22.log\
+	s_fthmc_l64_b6_c26.log\
+	s_fthmc_l64_b6_c3.log\
 
 logs=\
 	$logs_hmc\

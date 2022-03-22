@@ -1,0 +1,29 @@
+
+# File: ../s_fthmc_l64_b6_c3.log
+beta: 5
+nconf: 1024
+blocksize: 32
+plaq:    0.893392 +/- 1.78559e-5
+plaqMin: 0.888328 +/- 5.72387e-5
+plaqMax: 0.898226 +/- 3.74693e-5
+plaqMapped:    -0.560347 +/- 0.000105532
+plaqMappedMin: -0.578152 +/- 0.000185792
+plaqMappedMax: -0.542494 +/- 0.000222161
+beta: 6
+nconf: 1024
+blocksize: 32
+plaq:    0.912334 +/- 1.80298e-5
+plaqMin: 0.90825 +/- 4.95882e-5 
+plaqMax: 0.916328 +/- 2.93875e-5
+plaqMapped:    -0.549616 +/- 0.000141494
+plaqMappedMin: -0.567595 +/- 0.000283694
+plaqMappedMax: -0.531396 +/- 0.000214841
+beta: 7
+nconf: 1024
+blocksize: 32
+plaq:    0.925525 +/- 1.11582e-5
+plaqMin: 0.922096 +/- 3.67543e-5
+plaqMax: 0.928895 +/- 2.1011e-5 
+plaqMapped:    -0.540999 +/- 0.000127886
+plaqMappedMin: -0.559515 +/- 0.000252892
+plaqMappedMax: -0.522491 +/- 0.000247382

@@ -1,0 +1,29 @@
+
+# File: ../s_fthmc_l64_b6_c26.log
+beta: 5
+nconf: 1024
+blocksize: 32
+plaq:    0.893387 +/- 1.98391e-5
+plaqMin: 0.888392 +/- 5.31897e-5
+plaqMax: 0.898256 +/- 3.82718e-5
+plaqMapped:    -0.421424 +/- 0.000108442
+plaqMappedMin: -0.441806 +/- 0.000231885
+plaqMappedMax: -0.401038 +/- 0.000223113
+beta: 6
+nconf: 1024
+blocksize: 32
+plaq:    0.912363 +/- 1.53936e-5
+plaqMin: 0.908267 +/- 3.73044e-5
+plaqMax: 0.916353 +/- 3.33084e-5
+plaqMapped:    -0.404015 +/- 0.000127363
+plaqMappedMin: -0.424688 +/- 0.000214833
+plaqMappedMax: -0.382999 +/- 0.000245502
+beta: 7
+nconf: 1024
+blocksize: 32
+plaq:    0.925543 +/- 1.02643e-5
+plaqMin: 0.922064 +/- 4.21483e-5
+plaqMax: 0.928945 +/- 2.25646e-5
+plaqMapped:    -0.389163 +/- 0.000144548
+plaqMappedMin: -0.410537 +/- 0.000275914
+plaqMappedMax: -0.367521 +/- 0.000275249

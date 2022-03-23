@@ -134,6 +134,7 @@ if __name__ == '__main__':
     import nthmc, ftr, evolve
     conf = nthmc.Conf(nbatch=1, nepoch=2, nstepEpoch=8, trajLength=4.0, stepPerTraj=128)
     nthmc.setup(conf)
+    # tf.config.run_functions_eagerly(True)
     action = SU3d4(tf.random.Generator.from_seed(conf.seed), conf.nbatch,
         transform=ftr.Ident(),
         beta=0.7796, beta0=0.7796, c1=C1DBW2,
@@ -206,7 +207,7 @@ if __name__ == '__main__':
     mcmc = nthmc.Metropolis(conf, mdOM)
     mcmcFun = tf.function(mcmc)    # jit_compile=True is very slow
 
-    for i in range(128):
+    for i in range(16):
         tbegin = tf.timestamp()
         p = action.randomMom()
         xn, pn, x1, p1, v0, t0, v1, t1, dH, acc, arand, ls, f2s, fms, bs = mcmcFun(x, p, action.rng.uniform([x0.shape[0]], dtype=tf.float64))

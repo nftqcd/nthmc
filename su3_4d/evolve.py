@@ -4,6 +4,34 @@ import tensorflow.keras as tk
 import tensorflow.keras.layers as tl
 import numpy
 from numpy import inf
+import sys
+sys.path.append("../lib")
+import group
+
+# tf.function would fail and claim some tensor cannot be accessed, if we use class and functions.
+# so we just use tuple here.
+def newEvolveStat(size):
+    ls = tf.TensorArray(tf.float64, size=size, tensor_array_name='lndet')
+    f2s = tf.TensorArray(tf.float64, size=size, tensor_array_name='fnorm2')
+    fms = tf.TensorArray(tf.float64, size=size, tensor_array_name='fnormInf')
+    bs = tf.TensorArray(tf.float64, size=size, tensor_array_name='coeffs')
+    return (ls,f2s,fms,bs)
+def recordEvolveStat(stat, i, force, lndet, coeffs):
+    (ls,f2s,fms,bs) = stat
+    f2 = group.norm2(force)
+    df = tf.reshape(f2, [f2.shape[0],-1])
+    f2s = f2s.write(i, tf.math.reduce_mean(df, axis=-1))
+    fms = fms.write(i, tf.norm(df, ord=inf, axis=-1))
+    ls = ls.write(i, lndet)
+    bs = bs.write(i, coeffs)
+    return (ls,f2s,fms,bs)
+def collectEvolveStat(stat):
+    (ls,f2s,fms,bs) = stat
+    ls = ls.stack()
+    f2s = f2s.stack()
+    fms = fms.stack()
+    bs = bs.stack()
+    return (ls, f2s, fms, bs)
 
 class LeapFrog(tl.Layer):
     def __init__(self, conf, action, name='LeapFrog', **kwargs):
@@ -14,30 +42,19 @@ class LeapFrog(tl.Layer):
         tf.print(self.name, 'init with dt', self.dt, 'step/traj', self.stepPerTraj, summarize=-1)
     def call(self, x0, p0):
         n = tf.cast(self.stepPerTraj, tf.int32)
+        stat = newEvolveStat(n)
         dt = tf.cast(self.dt, x0.dtype)
         x = self.action.updateGauge(x0, 0.5*dt*p0)
         d, l, b = self.action.derivAction(x)
+        stat = recordEvolveStat(stat,0,d,l,b)
         p = p0 - dt*d
-        df = tf.reshape(d, [d.shape[0],-1])
-        f2s = tf.TensorArray(tf.float64, size=n)
-        fms = tf.TensorArray(tf.float64, size=n)
-        ls = tf.TensorArray(tf.float64, size=n)
-        bs = tf.TensorArray(tf.float64, size=n)
-        f2s = f2s.write(0, tf.math.real(tf.norm(df, ord=2, axis=-1)))
-        fms = fms.write(0, tf.norm(df, ord=inf, axis=-1))
-        ls = ls.write(0, l)
-        bs = bs.write(0, b)
         for i in tf.range(1,n):
             x = self.action.updateGauge(x, dt*p)
             d, l, b = self.action.derivAction(x)
+            stat = recordEvolveStat(stat,i,d,l,b)
             p -= dt*d
-            df = tf.reshape(d, [d.shape[0],-1])
-            f2s = f2s.write(i, tf.math.real(tf.norm(df, ord=2, axis=-1)))
-            fms = fms.write(i, tf.norm(df, ord=inf, axis=-1))
-            ls = ls.write(i, l)
-            bs = bs.write(i, b)
         x = self.action.updateGauge(x, 0.5*dt*p)
-        return (x, -p, ls.stack(), f2s.stack(), fms.stack(), bs.stack())
+        return (x, -p, *collectEvolveStat(stat))
     def changePerEpoch(self, epoch, conf):
         self.action.changePerEpoch(epoch, conf)
 
@@ -52,61 +69,42 @@ class Omelyan2MN(tl.Layer):
         tf.print(self.name, 'init with dt', self.dt, 'step/traj', self.stepPerTraj, summarize=-1)
     def call(self, x0, p0):
         n = tf.cast(2*self.stepPerTraj, tf.int32)
+        stat = newEvolveStat(n)
         dt = self.dt
         m_dt_2 = tf.cast(-0.5*dt, x0.dtype)
         dt_lambda = tf.cast(self.c_lambda*dt, x0.dtype)
         dt_lambda2 = 2.*dt_lambda
         dt_1_lambda2 = tf.cast(dt, x0.dtype)-dt_lambda2
-        f2s = tf.TensorArray(tf.float64, size=n)
-        fms = tf.TensorArray(tf.float64, size=n)
-        ls = tf.TensorArray(tf.float64, size=n)
-        bs = tf.TensorArray(tf.float64, size=n)
 
         x = self.action.updateGauge(x0, dt_lambda*p0)
 
         d, l, b = self.action.derivAction(x)
+        stat = recordEvolveStat(stat,0,d,l,b)
         p = p0 + m_dt_2*d
-        df = tf.reshape(d, [d.shape[0],-1])
-        f2s = f2s.write(0, tf.math.real(tf.norm(df, ord=2, axis=-1)))
-        fms = fms.write(0, tf.norm(df, ord=inf, axis=-1))
-        ls = ls.write(0, l)
-        bs = bs.write(0, b)
 
         x = self.action.updateGauge(x, dt_1_lambda2*p)
 
         d, l, b = self.action.derivAction(x)
+        stat = recordEvolveStat(stat,1,d,l,b)
         p += m_dt_2*d
-        df = tf.reshape(d, [d.shape[0],-1])
-        f2s = f2s.write(1, tf.math.real(tf.norm(df, ord=2, axis=-1)))
-        fms = fms.write(1, tf.norm(df, ord=inf, axis=-1))
-        ls = ls.write(1, l)
-        bs = bs.write(1, b)
 
         for i in tf.range(2, n, 2):
 
             x = self.action.updateGauge(x, dt_lambda2*p)
 
             d, l, b = self.action.derivAction(x)
+            stat = recordEvolveStat(stat,i,d,l,b)
             p += m_dt_2*d
-            df = tf.reshape(d, [d.shape[0],-1])
-            f2s = f2s.write(i, tf.math.real(tf.norm(df, ord=2, axis=-1)))
-            fms = fms.write(i, tf.norm(df, ord=inf, axis=-1))
-            ls = ls.write(i, l)
-            bs = bs.write(i, b)
             i += 1
 
             x = self.action.updateGauge(x, dt_1_lambda2*p)
 
             d, l, b = self.action.derivAction(x)
+            stat = recordEvolveStat(stat,i,d,l,b)
             p += m_dt_2*d
-            df = tf.reshape(d, [d.shape[0],-1])
-            f2s = f2s.write(i, tf.math.real(tf.norm(df, ord=2, axis=-1)))
-            fms = fms.write(i, tf.norm(df, ord=inf, axis=-1))
-            ls = ls.write(i, l)
-            bs = bs.write(i, b)
 
         x = self.action.updateGauge(x, dt_lambda*p)
-        return (x, -p, ls.stack(), f2s.stack(), fms.stack(), bs.stack())
+        return (x, -p, *collectEvolveStat(stat))
     def changePerEpoch(self, epoch, conf):
         self.action.changePerEpoch(epoch, conf)
 
@@ -288,91 +286,3 @@ def saveConfs(x, file):
     t0 = tf.timestamp()
     numpy.save(file, x.numpy(), allow_pickle=False, fix_imports=False)
     tf.print('# save to',file,' time:',tf.timestamp()-t0,'sec',summarize=-1)
-
-if __name__ == '__main__':
-    import nthmc, ftr
-    conf = nthmc.Conf(nbatch=3, nepoch=2, nstepEpoch=8, trajLength=4.0, stepPerTraj=128)
-    nthmc.setup(conf)
-    action = nthmc.SU3d4(tf.random.Generator.from_seed(conf.seed), conf.nbatch,
-        transform=ftr.Ident(),
-        beta=0.7796, beta0=0.7796, c1=nthmc.C1DBW2,
-        size = [8,8,8,8])
-    x0 = action.random()
-    with tf.GradientTape(watch_accessed_variables=False) as tape:
-       tape.watch(x0)
-       a,_,_ = action.action(x0)
-    g = tape.gradient(a, x0)
-    g = action.g.projectTAH(action.g.mul(g,x0,adjoint_r=True))
-    tf.print('g',tf.math.real(g[0,0,0,0,0,0]),tf.math.imag(g[0,0,0,0,0,0]))
-    ge,_ = tf.linalg.eig(g[0,0,0,0,0,0])
-    tf.print('geig',tf.math.real(ge),tf.math.imag(ge))
-    f,_,_ = action.derivActionPlaqManual(x0)
-    tf.print('f',tf.math.real(f[0,0,0,0,0,0]),tf.math.imag(f[0,0,0,0,0,0]))
-    fe,_ = tf.linalg.eig(f[0,0,0,0,0,0])
-    tf.print('feig',tf.math.real(fe),tf.math.imag(fe))
-
-    expf = action.g.exp(f)
-    expfe,_ = tf.linalg.eig(expf[0,0,0,0,0,0])
-    tf.print('expfeig',tf.math.real(expfe),tf.math.imag(expfe))
-
-    tf.print('x0R',tf.math.real(x0[0,0,0,0,0,0]))
-    tf.print('x0I',tf.math.imag(x0[0,0,0,0,0,0]))
-    plaq = action.plaquetteList(x0)
-    for pl in plaq:
-        tf.print(tf.math.real(pl), tf.math.imag(pl), summarize=-1)
-    p0 = action.randomMom()
-    tf.print('p0R',tf.math.real(p0[0,0,0,0,0,0]))
-    tf.print('p0I',tf.math.imag(p0[0,0,0,0,0,0]))
-    v0,_,_ = action.action(x0)
-    t0 = action.momEnergy(p0)
-    tf.print('H0', v0+t0, v0, t0)
-
-    mdLF = LeapFrog(conf, action)
-    tbegin = tf.timestamp()
-    x, p, _, _, _, _ = mdLF(x0,p0)
-    tf.print('# MD time:',tf.timestamp()-tbegin,'sec',summarize=-1)
-
-    tf.print('x1R',tf.math.real(x[0,0,0,0,0,0]))
-    tf.print('x1I',tf.math.imag(x[0,0,0,0,0,0]))
-    plaq = action.plaquetteList(x)
-    for pl in plaq:
-        tf.print(tf.math.real(pl), tf.math.imag(pl), summarize=-1)
-    tf.print('p1R',tf.math.real(p[0,0,0,0,0,0]))
-    tf.print('p1I',tf.math.imag(p[0,0,0,0,0,0]))
-    v1,_,_ = action.action(x)
-    t1 = action.momEnergy(p)
-    tf.print('H1', v1+t1, v1, t1)
-    tf.print('dH', v1+t1-(v0+t0))
-
-    conf.stepPerTraj = 64
-    mdOM = Omelyan2MN(conf, action)
-    tbegin = tf.timestamp()
-    x, p, _, _, _, _ = mdOM(x0,p0)
-    tf.print('# MD time:',tf.timestamp()-tbegin,'sec',summarize=-1)
-
-    tf.print('x1R',tf.math.real(x[0,0,0,0,0,0]))
-    tf.print('x1I',tf.math.imag(x[0,0,0,0,0,0]))
-    plaq = action.plaquetteList(x)
-    for pl in plaq:
-        tf.print(tf.math.real(pl), tf.math.imag(pl), summarize=-1)
-    tf.print('p1R',tf.math.real(p[0,0,0,0,0,0]))
-    tf.print('p1I',tf.math.imag(p[0,0,0,0,0,0]))
-    v1,_,_ = action.action(x)
-    t1 = action.momEnergy(p)
-    tf.print('H1', v1+t1, v1, t1)
-    tf.print('dH', v1+t1-(v0+t0))
-
-    mcmc = nthmc.Metropolis(conf, mdOM)
-    mcmcFun = tf.function(mcmc)    # jit_compile=True is very slow
-
-    for i in range(16):
-        tbegin = tf.timestamp()
-        p = action.randomMom()
-        xn, pn, x1, p1, v0, t0, v1, t1, dH, acc, arand, ls, f2s, fms, bs = mcmcFun(x, p, action.rng.uniform([x0.shape[0]], dtype=tf.float64))
-        tf.print('# mcmc step',i,'time:',tf.timestamp()-tbegin,'sec',summarize=-1)
-        nthmc.printMCMCRes(*nthmc.packMCMCRes(mcmc, xn, pn, x, p, x1, p1, v0, t0, v1, t1, dH, acc, arand, ls, f2s, fms, bs))
-        x, p = xn, pn
-
-    conf.checkReverse=True
-    mcmcChRev = nthmc.Metropolis(conf, mdOM)
-    mcmcChRev(x,p,action.rng.uniform([x0.shape[0]], dtype=tf.float64))

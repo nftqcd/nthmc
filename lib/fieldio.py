@@ -247,12 +247,12 @@ if __name__=='__main__':
         print(f'lattice: {lat}')
         return g,lat
 
-    gauge,lat = test_read(sys.argv[1])
+    gconf,lat = test_read(sys.argv[1])
 
     import tensorflow as tf
     import group
     sys.path.append("../su3_4d")
-    import nthmc
+    import gauge
 
     def check(g,lat):
         g = tf.expand_dims(g, axis=0)
@@ -266,13 +266,17 @@ if __name__=='__main__':
             print(f'[1,0,0,0],{i},[0,0] {g[0,i,1,0,0,0,0,0].numpy()}')
         a,m = group.checkSU(g)
         print(f'checkSU avg: {a[0].numpy()} max: {m[0].numpy()}')
-        act = nthmc.SU3d4(tf.random.Generator.from_seed(1234567), nbatch=1,
-            beta=0.7796, beta0=0.7796, c1=nthmc.C1DBW2, size=lat)
+        act = gauge.SU3d4(tf.random.Generator.from_seed(1234567), nbatch=1,
+            beta=0.7796, beta0=0.7796, c1=gauge.C1DBW2, size=lat)
         ps,_ = act.plaqFieldsWoTrans(g)
         for pl in ps:
             print(f'{pl.shape} first element {pl[0,0,0,0,0].numpy()}')
         for pl in act.plaquetteList(g):
             print(pl[0].numpy())
+        print(f'action {act(g)}')
+        f,_,_ = act.derivAction(g)
+        for i in range(4):
+            print(f'force norm2 dim {i} : {group.norm2(f[0,i],axis=range(6))}')
         print('projectSU')
         g = group.projectSU(g)
         a,m = group.checkSU(g)
@@ -282,11 +286,11 @@ if __name__=='__main__':
             print(pl[0].numpy())
         return g[0].numpy()
 
-    gauge = check(gauge,lat)
+    gconf = check(gconf,lat)
 
     outfn = sys.argv[1]+'.test'
     print(f'writing out: {outfn}')
-    writeLattice(gauge, outfn)
+    writeLattice(gconf, outfn)
 
-    gauge,lat = test_read(outfn)
-    check(gauge,lat)
+    gconf,lat = test_read(outfn)
+    check(gconf,lat)

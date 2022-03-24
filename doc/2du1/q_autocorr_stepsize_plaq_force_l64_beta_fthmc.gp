@@ -62,7 +62,7 @@ set size orig_next-orig,1
 orig=orig_next
 orig_next=orig_next+figw
 
-set xlabel '$\gamma_{\text{FTHMC}}(\delta=16)\Big/\gamma_{\text{HMC}}(\delta=16)$'
+set xlabel '$\gamma_{\text{HMC}}(\delta=16)\Big/\gamma_{\text{FTHMC}}(\delta=16)$'
 set xrange [0.7:7.3]
 set xtics 1
 plot\

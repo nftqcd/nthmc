@@ -46,7 +46,7 @@ set size 0.34,1
 
 set rmargin 4
 
-set xlabel '$\gamma_{\text{NTHMC}}(\delta=16)\Big/\gamma_{\text{HMC}}(\delta=16)$
+set xlabel '$\gamma_{\text{HMC}}(\delta=16)\Big/\gamma_{\text{NTHMC}}(\delta=16)$
 set xrange [1.7:5.3]
 set xtics 1
 plot\

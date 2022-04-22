@@ -70,7 +70,6 @@ def printLimeHeaders(file):
 def readLattice(file):
     """
     Only supports SciDAC and ILDG formats in Lime.
-    SciDAC checksum ignored.
     """
     f = open(file,'rb')
     latsize = -1
@@ -195,7 +194,6 @@ def readLattice(file):
 def writeLattice(gauge, file):
     """
     Only writes in SciDAC format in Lime.
-    No checksum.
     """
     latdatacount = gauge.shape[0]
     latdims = gauge.shape[1:latdatacount+1]

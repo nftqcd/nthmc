@@ -184,7 +184,9 @@ def readLattice(file):
         lat = numpy.frombuffer(latdata,dtype='>c'+str(latprec),count=vol*latdatacount*latnc*latnc)
         if lattype==b'scidac-binary-data' or lattype==b'ildg-binary-data':
             lat = numpy.reshape(lat,latdims[::-1]+[latdatacount,latnc,latnc])
-            lat = numpy.transpose(lat, axes=list(range(ndim,-1,-1))+list(range(ndim+1,ndim+3)))
+            # lat = numpy.transpose(lat, axes=list(range(ndim,-1,-1))+list(range(ndim+1,ndim+3)))
+            # move latdatacount to the front, keep TZYX order
+            lat = numpy.transpose(lat, axes=[ndim]+list(range(ndim))+list(range(ndim+1,ndim+3)))
         else:
             raise ValueError(f'unknown lattice format: {lattype}')
         return lat,latdims
@@ -219,7 +221,9 @@ def writeLattice(gauge, file):
     lattype = b'scidac-binary-data'
 
     ndim = len(latdims)
-    gauge = numpy.transpose(gauge, axes=list(range(ndim,-1,-1))+list(range(ndim+1,ndim+3)))
+    # gauge = numpy.transpose(gauge, axes=list(range(ndim,-1,-1))+list(range(ndim+1,ndim+3)))
+    # move ndim to the back, keep TZYX order
+    gauge = numpy.transpose(gauge, axes=[ndim]+list(range(ndim))+list(range(ndim+1,ndim+3)))
     binary = numpy.ascontiguousarray(gauge, dtype=f'>c{latprec}').tobytes()
     suma,sumb = scidacChecksum(binary, vol, latdatacount*lattypesize)
 

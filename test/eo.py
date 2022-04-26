@@ -78,7 +78,25 @@ class TestEvenOdd(ut.TestCase):
                             latEO = l.evenodd_partition(lat, nd=4, batch_dims=nb)
                             latEOS = l.shift(latEO, d, n, nd=4, isEO=True, batch_dims=nb)
                             latN = l.combine_evenodd(latEOS, nd=4, batch_dims=nb)
-                            self.checkEqv(latN, latS)
+                            with self.subTest(subset='all'):
+                                self.checkEqv(latN, latS)
+                            with self.subTest(subset='even/odd'):
+                                latE = l.get_even(latEO, nb)
+                                latO = l.get_odd(latEO, nb)
+                                latNE = l.get_even(latEOS, nb)
+                                latNO = l.get_odd(latEOS, nb)
+                                latES = l.shift(latE, d, n, nd=4, isEO=False, subset='even', batch_dims=nb)
+                                latOS = l.shift(latO, d, n, nd=4, isEO=False, subset='odd', batch_dims=nb)
+                                with self.subTest(check='even'):
+                                    if n%2==0:
+                                        self.checkEqv(latES, latNE)
+                                    else:
+                                        self.checkEqv(latOS, latNE)
+                                with self.subTest(check='odd'):
+                                    if n%2==0:
+                                        self.checkEqv(latOS, latNO)
+                                    else:
+                                        self.checkEqv(latES, latNO)
 
     def random(self, shape):
         r = self.rng.normal(shape, dtype=tf.float64)

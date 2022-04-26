@@ -62,6 +62,32 @@ def combine_evenodd(lattice, nd=4, batch_dims=0):
     eoflat = tf.reshape(eo, (2,-1)+tuple(site_shape))
     return tf.reshape(tf.dynamic_stitch(cond, eoflat), batch_shape+lat_shape+site_shape)
 
+def get_even(lattice, batch_dims=0):
+    if batch_dims==0:
+        return lattice[0]
+    elif batch_dims==1:
+        return lattice[:,0]
+    elif batch_dims==2:
+        if tf.rank(lattice)>8:
+            return tf.reshape(tf.reshape(lattice, tuple(lattice.shape[:3])+(-1,))[:,:,0], lattice.shape[:2]+lattice.shape[3:])
+        else:
+            return lattice[:,:,0]
+    else:
+        raise ValueError(f'unsupported batch_dims {batch_dims}')
+
+def get_odd(lattice, batch_dims=0):
+    if batch_dims==0:
+        return lattice[1]
+    elif batch_dims==1:
+        return lattice[:,1]
+    elif batch_dims==2:
+        if tf.rank(lattice)>8:
+            return tf.reshape(tf.reshape(lattice, tuple(lattice.shape[:3])+(-1,))[:,:,1], lattice.shape[:2]+lattice.shape[3:])
+        else:
+            return lattice[:,:,1]
+    else:
+        raise ValueError(f'unsupported batch_dims {batch_dims}')
+
 def swap_evenodd(lattice, batch_dims=0):
     """
     Output: even-odd partitioned lattice, shape [batch ...] EO T .. X//2 Site ...
@@ -121,7 +147,7 @@ def tr(lattice):
     """
     return tf.linalg.trace(lattice)
 
-def shift(lattice, direction, length, nd=4, isEO=True, batch_dims=0):
+def shift(lattice, direction, length, nd=4, isEO=True, subset='all', batch_dims=0, cond=None, part=None):
     """
     Output: circular shifted lattice along direction with length
     Input:
@@ -131,6 +157,7 @@ def shift(lattice, direction, length, nd=4, isEO=True, batch_dims=0):
         length: +/- denotes forward/backward direction corresponding to tf.roll with -/+ shifts
         nd: length of the dimension of the lattice
         isEO: whether the first dimension of lattice is EO
+        subset: {'all','even','odd'}, the given lattice only contains the subset
         batch_dims: the first batch_dims dims in lattice.shape belon to batch
     """
     if direction<0:
@@ -141,54 +168,62 @@ def shift(lattice, direction, length, nd=4, isEO=True, batch_dims=0):
     if length==0:
         return lattice
     else:
-        if not isEO:
+        if isEO:
+            if subset!='all':
+                raise ValueError(f'incompatible subset {subset} with EO partitioned data')
+        else:
             axis = axis-1
         if isEO and direction==0:
             batch_shape = lattice.shape[:batch_dims]
             latNoX = lattice.shape[batch_dims+1:batch_dims+nd]
             latX = lattice.shape[batch_dims+nd]
             site = lattice.shape[batch_dims+1+nd:]
-            # to avoid Tensorflow indexing error
-            # tensorflow.python.framework.errors_impl.UnimplementedError: Unhandled input dimensions 9 [Op:StridedSlice] name: strided_slice/
-            latticeR = tf.reshape(lattice, tuple(batch_shape)+(2,-1))
             if batch_dims==0:
                 part = evenodd_mask(latNoX)
-                elat = latticeR[0]
-                olat = latticeR[1]
             elif batch_dims==1:
                 part = evenodd_mask(latNoX,lattice.shape[:1])
-                elat = latticeR[:,0]
-                olat = latticeR[:,1]
             elif batch_dims==2:
                 part = evenodd_mask(latNoX,lattice.shape[:2])
-                elat = latticeR[:,:,0]
-                olat = latticeR[:,:,1]
             else:
                 raise ValueError(f'unsupported batch_dims {batch_dims}')
-            elat = tf.reshape(elat, batch_shape+lattice.shape[batch_dims+1:])
-            olat = tf.reshape(olat, batch_shape+lattice.shape[batch_dims+1:])
             cond = tf.dynamic_partition(tf.range(math.prod(part.shape)), tf.reshape(part, [-1]), 2)
-            # even subset splitted
-            elatEO = [tf.reshape(x, (-1,latX)+tuple(site)) for x in tf.dynamic_partition(elat, part, 2)]
-            elatEO = [tf.roll(elatEO[0], shift=-length//2, axis=1),
-                      tf.roll(elatEO[1], shift=-(length-1)//2, axis=1)]
-            elat = tf.reshape(tf.dynamic_stitch(cond, elatEO), batch_shape+lattice.shape[batch_dims+1:])
-            # odd subset splitted
-            olatEO = [tf.reshape(x, (-1,latX)+tuple(site)) for x in tf.dynamic_partition(olat, part, 2)]
-            olatEO = [tf.roll(olatEO[0], shift=-(length-1)//2, axis=1),
-                      tf.roll(olatEO[1], shift=-length//2, axis=1)]
-            olat = tf.reshape(tf.dynamic_stitch(cond, olatEO), batch_shape+lattice.shape[batch_dims+1:])
+            elat = get_even(lattice, batch_dims)
+            olat = get_odd(lattice, batch_dims)
+            elat = shift(elat, direction, length, nd=nd, isEO=False, subset='even', batch_dims=batch_dims, cond=cond, part=part)
+            olat = shift(olat, direction, length, nd=nd, isEO=False, subset='odd', batch_dims=batch_dims, cond=cond, part=part)
             if length%2==1:
                 v = tf.stack([olat,elat], batch_dims)
             else:
                 v = tf.stack([elat,olat], batch_dims)
+        elif (subset=='even' or subset=='odd') and direction==0:
+            latNoX = lattice.shape[batch_dims:batch_dims+nd-1]
+            if part is None:
+                if batch_dims==0:
+                    part = evenodd_mask(latNoX)
+                elif batch_dims==1:
+                    part = evenodd_mask(latNoX,lattice.shape[:1])
+                elif batch_dims==2:
+                    part = evenodd_mask(latNoX,lattice.shape[:2])
+                else:
+                    raise ValueError(f'unsupported batch_dims {batch_dims}')
+            if cond is None:
+                cond = tf.dynamic_partition(tf.range(math.prod(part.shape)), tf.reshape(part, [-1]), 2)
+            flat_x_site = (-1,) + tuple(lattice.shape[batch_dims+nd-1:])
+            latEO = [tf.reshape(x, flat_x_site) for x in tf.dynamic_partition(lattice, part, 2)]
+            if subset=='even':
+                latEO = [tf.roll(latEO[0], shift=-length//2, axis=1),
+                         tf.roll(latEO[1], shift=-(length-1)//2, axis=1)]
+            else:
+                latEO = [tf.roll(latEO[0], shift=-(length-1)//2, axis=1),
+                         tf.roll(latEO[1], shift=-length//2, axis=1)]
+            v = tf.reshape(tf.dynamic_stitch(cond, latEO), lattice.shape)
         else:
             v = tf.roll(lattice, shift=-length, axis=axis)
             if isEO and length%2==1:
                 v = swap_evenodd(v, batch_dims)
         return v
 
-def transport(lattice, gauge, direction, length, nd, isEO, batch_dims=0):
+def transport(lattice, gauge, direction, length, nd=4, isEO=True, subset='all', batch_dims=0):
     """
     Output: circular shifted lattice along direction with length
     Input:
@@ -202,19 +237,38 @@ def transport(lattice, gauge, direction, length, nd, isEO, batch_dims=0):
     if length==0:
         return lattice
     else:
+        if (subset=='even' or subset=='odd') and not isEO:
+            raise ValueError(f'incompatible subset {subset} without EO partitioned field.')
         v = lattice
         if batch_dims==0:
             U = gauge[direction]
         else:
-            U = tf.transpose(gauge, [batch_dims]+list(range(batch_dims)))[direction]
+            if isEO:
+                U = tf.transpose(gauge, [batch_dims,batch_dims+1]+list(range(batch_dims)))[direction]
+            else:
+                U = tf.transpose(gauge, [batch_dims]+list(range(batch_dims)))[direction]
         if length>0:
             for i in range(length):
-                v = shift(v, direction, 1, nd, isEO, batch_dims)
-                v = mul(U, v, nd, isEO, batch_dims)
+                v = shift(v, direction, 1, nd, isEO=isEO, subset=subset, batch_dims=batch_dims)
+                if subset=='even':
+                    subset = 'odd'
+                    v = mul(U[1], v, nd, isEO, batch_dims)
+                elif subset=='odd':
+                    subset = 'even'
+                    v = mul(U[0], v, nd, isEO, batch_dims)
+                else:
+                    v = mul(U, v, nd, isEO, batch_dims)
         else:
             for i in range(-length):
-                v = mul(U, v, nd, isEO, batch_dims, adjoint_l=True)
-                v = shift(v, direction, -1, nd, isEO, batch_dims)
+                if subset=='even':
+                    v = mul(U[0], v, nd, isEO, batch_dims, adjoint_l=True)
+                    subset = 'odd'
+                elif subset=='odd':
+                    v = mul(U[1], v, nd, isEO, batch_dims, adjoint_l=True)
+                    subset = 'even'
+                else:
+                    v = mul(U, v, nd, isEO, batch_dims, adjoint_l=True)
+                v = shift(v, direction, -1, nd, isEO=isEO, subset=subset, batch_dims=batch_dims)
         return v
 
 def plaqField(gauge, nd, isEO, batch_dims=0):

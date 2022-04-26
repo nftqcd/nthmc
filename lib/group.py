@@ -70,6 +70,9 @@ class SU3(Group):
         p2 = norm2(p) - 8.0
         return 0.5*tf.math.reduce_sum(tf.reshape(p2, [p.shape[0], -1]), axis=1)
 
+def unit(shape):
+    return tf.eye(*shape[-2:], batch_shape=shape[:-2], dtype=tf.complex128)
+
 def eyeOf(m):
     return tf.eye(*m.shape[-2:], batch_shape=[1]*(len(m.shape)-2), dtype=m.dtype)
 

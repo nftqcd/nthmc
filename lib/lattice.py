@@ -217,10 +217,6 @@ def transport(lattice, gauge, direction, length, nd, isEO, batch_dims=0):
                 v = shift(v, direction, -1, nd, isEO, batch_dims)
         return v
 
-## JXY WAS HERE
-## transpose twice one in plaqField, one in transport
-## average plaquette is wrong for spatial plaquette
-
 def plaqField(gauge, nd, isEO, batch_dims=0):
     ps = []
     if batch_dims==0:
@@ -238,6 +234,45 @@ def plaquette(gauge, nd, isEO, batch_dims=0):
     nc = gauge.shape[-1]
     ps = [tf.reduce_mean(tr(P), axis=range(batch_dims,len(P.shape)-2))/nc for P in plaqField(gauge, nd, isEO, batch_dims)]
     return ps
+
+def setBC(gauge, isEO=True, batch_dims=0):
+    """
+    Output: new gauge with antiperiodic BC in T dir for fermions.
+    Input: gauge, shape: [batch] dim [EO] T Z ... X C C
+        dim: [0,1,2,3] ~ [X,Y,Z,T]
+    Only works for batch_dims == 0 or 1
+    """
+    shape = gauge.shape
+    if len(shape)>8:
+        gauge = tf.reshape(gauge, tuple(shape[:7])+(-1,))
+    if batch_dims==0:
+        td = gauge.shape[0]-1
+        if isEO:
+            tb = gauge.shape[2]-1
+            tbgauge = (-1.0) * gauge[td,:,tb]
+            ix = [[td,0,tb],[td,1,tb]]
+            g = tf.tensor_scatter_nd_update(gauge, ix, tbgauge)
+        else:
+            tb = gauge.shape[1]-1
+            tbgauge = (-1.0) * gauge[td,tb]
+            ix = [[td,tb]]
+            g = tf.tensor_scatter_nd_update(gauge, ix, tf.expand_dims(tbgauge,0))
+    elif batch_dims==1:
+        bn = gauge.shape[0]
+        td = gauge.shape[1]-1
+        if isEO:
+            tb = gauge.shape[3]-1
+            tbgauge = (-1.0) * gauge[:,td,:,tb]
+            ix = [[[i,td,0,tb],[i,td,1,tb]] for i in range(bn)]
+            g = tf.tensor_scatter_nd_update(gauge, ix, tbgauge)
+        else:
+            tb = gauge.shape[2]-1
+            tbgauge = (-1.0) * gauge[:,td,tb]
+            ix = [[i,td,tb] for i in range(bn)]
+            g = tf.tensor_scatter_nd_update(gauge, ix, tbgauge)
+    if len(shape)>8:
+        g = tf.reshape(g, shape)
+    return g
 
 if __name__=='__main__':
     import sys

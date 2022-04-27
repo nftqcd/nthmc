@@ -126,11 +126,11 @@ def mul(l, r, nd, isEO, batch_dims=0, adjoint_l=False, adjoint_r=False):
         raise ValueError(f'unrecognized l.shape {l.shape}')
     elif nsr<1 or nsr>2:
         raise ValueError(f'unrecognized r.shape {r.shape}')
-    elif nsr==1 and nsr==1:
+    elif nsl==1 and nsr==1:
         raise ValueError(f'cannot group multiply two shapes {l.shape} {r.shape}')
-    elif nsr==2 and nsr==2:
+    elif nsl==2 and nsr==2:
         return tf.linalg.matmul(l, r, adjoint_a=adjoint_l, adjoint_b=adjoint_r)
-    elif nsr==2 and nsr==1:
+    elif nsl==2 and nsr==1:
         if adjoint_r:
             raise ValueError(f'cannot compute adjoint of tensor with shape {r.shape}')
         return tf.linalg.matvec(l, r, adjoint_a=adjoint_l)
@@ -229,6 +229,7 @@ def transport(lattice, gauge, direction, length, nd=4, isEO=True, subset='all', 
     Input:
         lattice: tensor, shape: [batch ...] Dims... Site ...
             Dims from T to X, with X direction fastest
+        gauge: the gauge field
         direction: 0,1,2,... corresponding to x,y,z,...
         length: +/- denotes forward/backward direction corresponding to tf.roll with -/+ shifts
         nd: length of the dimension of the lattice
@@ -247,28 +248,32 @@ def transport(lattice, gauge, direction, length, nd=4, isEO=True, subset='all', 
                 U = tf.transpose(gauge, [batch_dims,batch_dims+1]+list(range(batch_dims)))[direction]
             else:
                 U = tf.transpose(gauge, [batch_dims]+list(range(batch_dims)))[direction]
+        if subset!='all':
+            isEO = False
         if length>0:
             for i in range(length):
                 v = shift(v, direction, 1, nd, isEO=isEO, subset=subset, batch_dims=batch_dims)
                 if subset=='even':
                     subset = 'odd'
-                    v = mul(U[1], v, nd, isEO, batch_dims)
+                    v = mul(U[1], v, nd, isEO, batch_dims=batch_dims)
                 elif subset=='odd':
                     subset = 'even'
-                    v = mul(U[0], v, nd, isEO, batch_dims)
+                    v = mul(U[0], v, nd, isEO, batch_dims=batch_dims)
                 else:
                     v = mul(U, v, nd, isEO, batch_dims)
         else:
             for i in range(-length):
                 if subset=='even':
-                    v = mul(U[0], v, nd, isEO, batch_dims, adjoint_l=True)
-                    subset = 'odd'
+                    v = mul(U[0], v, nd, isEO, batch_dims=batch_dims, adjoint_l=True)
                 elif subset=='odd':
-                    v = mul(U[1], v, nd, isEO, batch_dims, adjoint_l=True)
-                    subset = 'even'
+                    v = mul(U[1], v, nd, isEO, batch_dims=batch_dims, adjoint_l=True)
                 else:
                     v = mul(U, v, nd, isEO, batch_dims, adjoint_l=True)
                 v = shift(v, direction, -1, nd, isEO=isEO, subset=subset, batch_dims=batch_dims)
+                if subset=='even':
+                    subset = 'odd'
+                elif subset=='odd':
+                    subset = 'even'
         return v
 
 def plaqField(gauge, nd, isEO, batch_dims=0):

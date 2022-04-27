@@ -84,6 +84,14 @@ def norm2(m, axis=[-2,-1]):
     else:
         return tf.math.reduce_sum(n, axis=axis)
 
+def redot(x,y, axis=[-2,-1]):
+    "No reduction if axis is empty."
+    n = tf.math.real(tf.math.conj(x)*y)
+    if len(axis)==0:
+        return n
+    else:
+        return tf.math.reduce_sum(n, axis=axis)
+
 # Converted from qex/src/maths/matrixFunctions.nim
 # Last two dims in a tensor contain matrices.
 # WARNING: below only works for SU3 for now

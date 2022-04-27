@@ -2,6 +2,7 @@ import sys
 sys.path.append("../lib")
 import lattice as l
 import group as g
+import stagD as s
 import tensorflow as tf
 import unittest as ut
 
@@ -39,6 +40,16 @@ class TestEvenOdd(ut.TestCase):
                 latbcEO = l.setBC(latEO, isEO=True, batch_dims=nb)
                 latEObc = l.combine_evenodd(latbcEO, batch_dims=nb+1)
                 self.checkEqv(latbc, latEObc)
+
+    def testPhase(self):
+        for nb,dims in self.test_shapes:
+            with self.subTest(nb=nb,dims=dims):
+                lat = g.unit(dims)
+                latp = s.phase(lat, isEO=False, batch_dims=nb)
+                latEO = l.evenodd_partition(lat, batch_dims=nb+1)
+                latpEO = s.phase(latEO, isEO=True, batch_dims=nb)
+                latEOp = l.combine_evenodd(latpEO, batch_dims=nb+1)
+                self.checkEqv(latp, latEOp)
 
     def checkEqv(self,a,b,tol=1e-13,rtol=1e-13,alwaysPrint=False,printDetail=False):
         d = a-b

@@ -15,7 +15,6 @@ def cg_iter(A,x,p,r,r2,r2o):
     r -= alpha*Ap
     return x,p,r,g.norm2(r, range(tf.rank(r))),r2
 
-@tf.function
 def cg(A, x, b, r2req, maxits):
     dty = b.dtype
     b2 = g.norm2(b, range(tf.rank(b)))
@@ -27,7 +26,7 @@ def cg(A, x, b, r2req, maxits):
     # print(f'r2: {r2}')
     r2stop = r2req * b2
     r2o = tf.constant(1.0, dtype=tf.float64)
-    itn = 0
+    itn = tf.constant(0, dtype=tf.int64)
     # print(f'CG {itn}  {r2/b2}')
     while itn<maxits and r2>r2stop:
         itn += 1
@@ -35,16 +34,14 @@ def cg(A, x, b, r2req, maxits):
         # print(f'CG {itn}  {r2/b2}')
     return x,itn
 
+@tf.function
 def solveEE(gauge, r, x, m, r2req, maxits):
     m2 = m*m
     def op(v):
         return s.D2ee(gauge, v, m2)
-    t0 = tf.timestamp()
     r,iter = cg(op, r, x, r2req, maxits)
-    dt = tf.timestamp()-t0
     flops = (4*4*72+60)*tf.cast(tf.size(x),dtype=tf.float64)*tf.cast(iter,dtype=tf.float64)
-    print(f'solveEE: {iter}  {dt}s  {1e-9*flops/dt}Gf/s  {g.norm2(r, range(tf.rank(r)))}')
-    return r,iter,dt,flops
+    return r,iter,flops
 
 def solve(gauge, x, b, m, r2req, maxits):
     t0 = tf.timestamp()
@@ -57,7 +54,7 @@ def solve(gauge, x, b, m, r2req, maxits):
     de = l.get_even(d)
     d2e = g.norm2(de, range(tf.rank(de)))
     y = tf.zeros(de.shape, dtype=de.dtype)
-    y,iter,_,flops = solveEE(gauge, y, de, m, r2req*b2*m*m/d2e, maxits)
+    y,iter,flops = solveEE(gauge, y, de, tf.constant(m, dtype=tf.complex128), r2req*b2*m*m/d2e, tf.constant(maxits,dtype=tf.int64))
     x += s.eoReconstruct(gauge, 4.0*y, l.get_odd(c), m)
     c = b - s.D(gauge, x, m)
     r2 = g.norm2(c, range(tf.rank(c)))
@@ -101,4 +98,20 @@ if __name__=='__main__':
 
     x = tf.zeros(v1.shape, dtype=v1.dtype)
     x,iter,dt,flops = solve(gaugeEO, x, v1, 0.1, 1e-8, 100)
+    print(f'solve {iter}  x {g.norm2(x, range(tf.rank(x)))}  time {dt} sec  Gf/s {1e-9*flops/dt}')
+
+    x = tf.zeros(v1.shape, dtype=v1.dtype)
+    x,iter,dt,flops = solve(gaugeEO, x, v1, 0.1, 1e-12, 10000)
+    print(f'solve {iter}  x {g.norm2(x, range(tf.rank(x)))}  time {dt} sec  Gf/s {1e-9*flops/dt}')
+
+    x = tf.zeros(v1.shape, dtype=v1.dtype)
+    x,iter,dt,flops = solve(gaugeEO, x, v1, 0.02, 1e-12, 10000)
+    print(f'solve {iter}  x {g.norm2(x, range(tf.rank(x)))}  time {dt} sec  Gf/s {1e-9*flops/dt}')
+
+    x = tf.zeros(v1.shape, dtype=v1.dtype)
+    x,iter,dt,flops = solve(gaugeEO, x, v1, 0.01, 1e-12, 10000)
+    print(f'solve {iter}  x {g.norm2(x, range(tf.rank(x)))}  time {dt} sec  Gf/s {1e-9*flops/dt}')
+
+    x = tf.zeros(v1.shape, dtype=v1.dtype)
+    x,iter,dt,flops = solve(gaugeEO, x, v1, 0.001, 1e-20, 10000)
     print(f'solve {iter}  x {g.norm2(x, range(tf.rank(x)))}  time {dt} sec  Gf/s {1e-9*flops/dt}')

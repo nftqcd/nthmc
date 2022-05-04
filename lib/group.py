@@ -78,7 +78,6 @@ def eyeOf(m):
     return tf.eye(*m.shape[-2:], batch_shape=[1]*(len(m.shape)-2), dtype=m.dtype)
 
 def norm2(m, axis=[-2,-1], allreduce=True, exclude=None):
-    # TODO test using abs
     """
     Axis is ignored if exclude is not None.
     No reduction if axis is empty.
@@ -90,7 +89,9 @@ def norm2(m, axis=[-2,-1], allreduce=True, exclude=None):
             return sum(m2)
         else:
             return parts.HypercubeParts(m2, subset=m.subset)
-    n = tf.math.real(tf.math.conj(m)*m)
+    if m.dtype==tf.complex128 or m.dtype==tf.complex64:
+        m = tf.abs(m)
+    n = tf.math.square(m)
     if exclude is None:
         if len(axis)==0:
             return n

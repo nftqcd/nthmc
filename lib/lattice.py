@@ -302,6 +302,7 @@ def setBC(gauge, batch_dims=0):
     return g
 
 if __name__=='__main__':
+    import group as g
     import sys
 
     lat = (4,4,4,4)

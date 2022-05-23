@@ -94,9 +94,7 @@ class SU3d4(tl.Layer):
             # tf.print('action rect',cr*rsum)
         a = (-1.0/3.0)*a
         return a-l, l, bs
-    def derivActionPlaqManual(self, x0):
-        cp = tf.cast(self.beta/3.0, x0.dtype)
-        x, l, bs = self.transform(x0)
+    def derivActionPlaq(self, x):
         # qex.gauge.staples.makeStaples
         stf = [[None]*4 for _ in range(4)]
         stu = [[None]*4 for _ in range(4)]
@@ -117,8 +115,8 @@ class SU3d4(tl.Layer):
                 f[mu] += stf[mu][nu] + tf.roll(stu[mu][nu], shift=1, axis=nu+1)
                 f[nu] += stf[nu][mu] + tf.roll(stu[nu][mu], shift=1, axis=mu+1)
         for mu in range(4):
-            f[mu] = self.g.projectTAH(cp*self.g.mul(x[:,mu], f[mu], adjoint_r=True))
-        return tf.stack(f, axis=1), l, bs
+            f[mu] = self.g.projectTAH((1.0/3.0)*self.g.mul(x[:,mu], f[mu], adjoint_r=True))
+        return tf.stack(f, axis=1)
     def derivAction(self, x):
         "Returns the derivative of the action, the log Jacobian, and extra info from transform."
         with tf.GradientTape(watch_accessed_variables=False) as tape:
@@ -148,7 +146,7 @@ if __name__ == '__main__':
     tf.print('g',tf.math.real(g[0,0,0,0,0,0]),tf.math.imag(g[0,0,0,0,0,0]))
     ge,_ = tf.linalg.eig(g[0,0,0,0,0,0])
     tf.print('geig',tf.math.real(ge),tf.math.imag(ge))
-    f,_,_ = action.derivActionPlaqManual(x0)
+    f = action.derivActionPlaq(x0)
     tf.print('f',tf.math.real(f[0,0,0,0,0,0]),tf.math.imag(f[0,0,0,0,0,0]))
     fe,_ = tf.linalg.eig(f[0,0,0,0,0,0])
     tf.print('feig',tf.math.real(fe),tf.math.imag(fe))

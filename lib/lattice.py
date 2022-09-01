@@ -1,4 +1,5 @@
 import math
+import group
 import tensorflow as tf
 
 class SubSet:
@@ -160,20 +161,23 @@ def typecast(lat, x):
     else:
         return tf.cast(x, dtype=lat.dtype)
 
+def lattice_map(lat, functor, tfunctor):
+    if isinstance(lat, Lattice):
+        return lat.map(functor)
+    if isinstance(lat, list):
+        return [functor(x) for x in lat]
+    elif isinstance(lat, tuple):
+        return tuple([functor(x) for x in lat])
+    else:
+        return tfunctor(lat)
+
 def trace(lat):
     """
     Output: trace of the site over lattice
     Input:
         lattice: assuming matrix valued sites, and batch_dim never in the matrix
     """
-    if isinstance(lat, Lattice):
-        return lat.trace()
-    elif isinstance(lat, list):
-        return [trace(x) for x in lat]
-    elif isinstance(lat, tuple):
-        return tuple([trace(x) for x in lat])
-    else:
-        return tf.linalg.trace(lat)
+    return lattice_map(lat, trace, tf.linalg.trace)
 
 def det(lat):
     """
@@ -181,17 +185,15 @@ def det(lat):
     Input:
         lattice: assuming matrix valued sites, and batch_dim never in the matrix
     """
-    if isinstance(lat, Lattice):
-        return lat.det()
-    elif isinstance(lat, list):
-        return [det(x) for x in lat]
-    elif isinstance(lat, tuple):
-        return tuple([det(x) for x in lat])
-    else:
-        return tf.linalg.det(lat)
+    return lattice_map(lat, det, tf.linalg.det)
+
+def projectSU(lat):
+    return lattice_map(lat, projectSU, group.projectSU)
 
 def reduce(lat, functor, tfunctor, transform=None, scope='lattice', exclude=None):
-    if isinstance(lat, (tuple, list)):
+    if isinstance(lat, Lattice):
+        return lat.reduce(functor, scope=scope, exclude=exclude)
+    elif isinstance(lat, (tuple, list)):
         if scope=='site':
             if isinstance(lat, tuple):
                 return tuple([functor(x, scope=scope, exclude=exclude) for x in lat])
@@ -209,32 +211,20 @@ def reduce(lat, functor, tfunctor, transform=None, scope='lattice', exclude=None
             return tfunctor(lat, axis=axis)
 
 def reduce_sum(lat, scope='lattice', exclude=None):
-    if isinstance(lat, Lattice):
-        return lat.reduce_sum(scope=scope, exclude=exclude)
-    else:
-        return reduce(lat, reduce_sum, tf.math.reduce_sum, scope=scope, exclude=exclude)
+    return reduce(lat, reduce_sum, tf.math.reduce_sum, scope=scope, exclude=exclude)
 
 def reduce_mean(lat, scope='lattice', exclude=None):
-    if isinstance(lat, Lattice):
-        return lat.reduce_mean(scope=scope, exclude=exclude)
-    else:
-        return reduce(lat, reduce_mean, tf.math.reduce_mean, scope=scope, exclude=exclude)
+    return reduce(lat, reduce_mean, tf.math.reduce_mean, scope=scope, exclude=exclude)
 
 def reduce_max(lat, scope='lattice', exclude=None):
-    if isinstance(lat, Lattice):
-        return lat.reduce_max(scope=scope, exclude=exclude)
-    else:
-        return reduce(lat, reduce_max, tf.math.reduce_max, scope=scope, exclude=exclude)
+    return reduce(lat, reduce_max, tf.math.reduce_max, scope=scope, exclude=exclude)
 
 def norm2(lat, scope='lattice', exclude=None):
-    if isinstance(lat, Lattice):
-        return lat.norm2(scope=scope, exclude=exclude)
-    else:
-        def transform(x):
-            if x.dtype==tf.complex128 or lat.dtype==tf.complex64:
-                x = tf.abs(x)
-            return tf.math.square(x)
-        return reduce(lat, norm2, tf.math.reduce_sum, transform=transform, scope=scope, exclude=exclude)
+    def transform(x):
+        if x.dtype==tf.complex128 or lat.dtype==tf.complex64:
+            x = tf.abs(x)
+        return tf.math.square(x)
+    return reduce(lat, norm2, tf.math.reduce_sum, transform=transform, scope=scope, exclude=exclude)
 
 def redot(x, y, scope='lattice', exclude=None):
     if isinstance(x, Lattice):
@@ -441,10 +431,14 @@ class Lattice:
         return self.wrap(unit(self.unwrap(), site_shape=self.site_shape()), **kwargs)
     def typecast(self, x):
         return typecast(self.unwrap(), x)
+    def map(self, functor):
+        return self.wrap(functor(self.unwrap()))
     def trace(self):
-        return self.wrap(trace(self.unwrap()))
+        return self.map(trace)
     def det(self):
-        return self.wrap(det(self.unwrap()))
+        return self.map(det)
+    def projectSU(self):
+        return self.map(projectSU)
     def reduce(self, functor, scope='lattice', exclude=None):
         if scope=='lattice':
             if exclude is None:

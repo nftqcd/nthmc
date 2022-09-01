@@ -76,11 +76,10 @@ def unit(shape):
 def eyeOf(m):
     return tf.eye(*m.shape[-2:], batch_shape=[1]*(len(m.shape)-2), dtype=m.dtype)
 
-def norm2(m, axis=[-2,-1], allreduce=True, exclude=None):
+def norm2(m, axis=[-2,-1], exclude=None):
     """
     Axis is ignored if exclude is not None.
     No reduction if axis is empty.
-    Sum over all partitions if allreduce.
     """
     if m.dtype==tf.complex128 or m.dtype==tf.complex64:
         m = tf.abs(m)

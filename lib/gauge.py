@@ -97,6 +97,24 @@ class Transporter:
     def adjoint(self):
         "Reverse the direction of the Transporter, does not change tensor data."
         return Transporter(self.lattice, self.path, origin=self.origin, forward=not self.forward)
+    def checkSU_(self):
+        """Returns the average and maximum of the sum of deviations of x^dag x and det(x) from unitarity."""
+        ds = self.adjoint()(self)
+        d = (ds - ds.unit()).unwrap().norm2(scope='site') + (-1 + self.det()).norm2(scope='site')
+        a = d.reduce_mean()
+        b = d.reduce_max()
+        return a,b
+    def checkSU(self):
+        a,b = self.checkSU_()
+        nc = self.nc
+        c = 2*(nc*nc+1)
+        return tf.math.sqrt(a/c),tf.math.sqrt(b/c)
+    def projectSU(self):
+        return self.wrap(self.lattice.projectSU())
+    def unit(self):
+        return self.wrap(self.lattice.unit())
+    def det(self):
+        return self.lattice.det()
     def same_points(self, other):
         if self.forward==other.forward:
             return self.origin==other.origin and self.origin+self.path.deltaX()==other.origin+other.path.deltaX()
@@ -130,46 +148,66 @@ class Transporter:
     def __rtruediv__(self, other):
         return self.if_compatible(other, lambda a,b:b/a, lambda a:other/a)
     def __neg__(self):
-        return self.wrap([-d for d in self.data])
+        return self.wrap(-self.data)
     def __pos__(self):
-        return self.wrap([+d for d in self.data])
+        return self.wrap(+self.data)
 
-class Gauge:
+class Transporters:
     """
-    Gauge is nd Transporters (X,Y,Z,...),
-    each connects a neighboring site in the forward direction of that dimension.
+    A list of Transporters that have the same nc.
     """
     def __init__(self, transporters):
-        nd = len(transporters)
         nc = transporters[0].nc
         for i,t in enumerate(transporters):
             if not isinstance(t, Transporter):
                 raise ValueError(f'lattice must be a Transporter, but got {t.__class__}')
-            if not (t.nc==nc and t.lattice.nd==nd and len(t.path)==1 and t.path[0]==i+1 and t.origin==field.Coord((0,)*nd) and t.forward):
-                raise ValueError(f'incompatible transporters with: {(t.lattice.nd, t.path, t.origin, t.forward)}')
+            if t.nc!=nc:
+                raise ValueError(f'incompatible transporters with: {(t.nc, t.lattice.nd, t.path, t.origin, t.forward)}')
         self.data = transporters
-    def hypercube_partition(self):
-        return Gauge([t.hypercube_partition() for t in self.data])
-    def combine_hypercube(self):
-        return Gauge([t.combine_hypercube() for t in self.data])
+    def __call__(self, field):
+        if isinstance(field, Transporters):
+            if self.data[0].nc!=field.data[0].nc or len(self)!=len(field):
+                raise ValueError(f'mismatched transporters {self.data[0].nc, len(self)} vs. {field.data[0].nc, len(field)}')
+            return field.wrap([a(b) for a,b in zip(self.data,field.data)])
+        elif isinstance(field, Transporter):
+            return Transporters([a(field) for a in self.data])
+        elif isinstance(field, l.Lattice):
+            return Transporters([a(field) for a in self.data])
+        else:
+            raise ValueError(f'unimplemented for field {field.__class__}')
+    def wrap(self, transporters):
+        return self.__class__(transporters)
+    def unwrap(self):
+        return self.data
     def from_tensors(self, tensors):
-        return Gauge([l.from_tensors(t) for l,t in zip(self.data, tensors)])
+        return self.wrap([d.from_tensors(t) for d,t in zip(self.data,tensors)])
     def to_tensors(self):
         return [d.to_tensors() for d in self.data]
-    def checkSU(self):  # TODO
-        """Returns the average and maximum of the sum of deviations of x^dag x and det(x) from unitarity."""
-        return 0
-    def projectSU(self):  # TODO
-        return self
+    def hypercube_partition(self):
+        return self.wrap([d.hypercube_partition() for d in self.data])
+    def combine_hypercube(self):
+        return self.wrap([d.combine_hypercube() for d in self.data])
+    def adjoint(self):
+        return self.wrap([d.adjoint() for d in self.data])
+    def unit(self):
+        return self.wrap([d.unit() for d in self.data])
+    def checkSU(self):
+        a,b = zip(*[d.checkSU_() for d in self.data])
+        a,b = tf.math.reduce_mean(a,axis=0),tf.math.reduce_max(b,axis=0)
+        nc = self.data[0].nc
+        c = 2*(nc*nc+1)
+        return tf.math.sqrt(a/c),tf.math.sqrt(b/c)
+    def projectSU(self):
+        return self.wrap([d.projectSU() for d in self.data])
     def is_compatible(self, other):
         return isinstance(other, self.__class__) and self.__class__==other.__class__
     def if_compatible(self, other, f, e=None):
         if self.is_compatible(other):
-            return Gauge([f(a,b) for a,b in zip(self.data,other.data)])
+            return self.wrap([f(a,b) for a,b in zip(self.data,other.data)])
         elif e is None:
             raise ValueError('operation only possible with Lattice object')
         else:
-            return Gauge([e(a) for a in self.data])
+            return self.wrap([e(a) for a in self.data])
     def __len__(self):
         return len(self.data)
     def __getitem__(self, key):
@@ -191,9 +229,24 @@ class Gauge:
     def __rtruediv__(self, other):
         return self.if_compatible(other, lambda a,b:b/a, lambda a:other/a)
     def __neg__(self):
-        return Gauge([-d for d in self.data])
+        return self.wrap([-d for d in self.data])
     def __pos__(self):
-        return Gauge([+d for d in self.data])
+        return self.wrap([+d for d in self.data])
+
+class Gauge(Transporters):
+    """
+    Gauge is nd Transporters (X,Y,Z,...),
+    each connects a neighboring site in the forward direction of that dimension.
+    """
+    def __init__(self, transporters):
+        nd = len(transporters)
+        nc = transporters[0].nc
+        for i,t in enumerate(transporters):
+            if not isinstance(t, Transporter):
+                raise ValueError(f'lattice must be a Transporter, but got {t.__class__}')
+            if not (t.nc==nc and t.lattice.nd==nd and len(t.path)==1 and t.path[0]==i+1 and t.origin==field.Coord((0,)*nd) and t.forward):
+                raise ValueError(f'incompatible transporters with: {(t.nc, t.lattice.nd, t.path, t.origin, t.forward)}')
+        super(Gauge, self).__init__(transporters)
 
 def from_tensor(tensor, nd=4, batch_dim=-1):
     """
@@ -203,6 +256,14 @@ def from_tensor(tensor, nd=4, batch_dim=-1):
         ts = [Transporter(l.Lattice(tensor[:,i], nd=nd, batch_dim=batch_dim), field.Path(nd, i+1)) for i in range(nd)]
     else:
         ts = [Transporter(l.Lattice(tensor[i], nd=nd, batch_dim=batch_dim), field.Path(nd, i+1)) for i in range(nd)]
+    return Gauge(ts)
+
+def from_tensors(tensors, batch_dim=-1):
+    """
+    Assume a sequence of tensors, each represents one direction, ordered as X,Y,Z,...
+    """
+    nd = len(tensors)
+    ts = [Transporter(l.Lattice(tensor, nd=nd, batch_dim=batch_dim), field.Path(nd, i+1)) for i,tensor in enumerate(tensors)]
     return Gauge(ts)
 
 def from_hypercube_parts(parts, **kwargs):

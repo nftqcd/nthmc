@@ -136,6 +136,21 @@ def zeros(lat, **kwargs):
     else:
         return tf.zeros(lat.shape, dtype=lat.dtype)
 
+def unit(lat, site_shape=None, **kwargs):
+    """Pass kwargs to Lattice.unit, allow Lattice to overwrite site_shape."""
+    if isinstance(lat, Lattice):
+        return lat.unit(**kwargs)
+    elif len(kwargs)>0:
+        raise ValueError(f'unsupported kwargs {kwargs}')
+    elif isinstance(lat, list):
+        return [unit(x, site_shape=site_shape) for x in lat]
+    elif isinstance(lat, tuple):
+        return tuple([unit(x, site_shape=site_shape) for x in lat])
+    else:
+        if site_shape is None:
+            raise ValueError('unknown site_shape')
+        return tf.eye(*site_shape, batch_shape=lat.shape[:-len(site_shape)], dtype=lat.dtype)
+
 def typecast(lat, x):
     """makes x the same dtype as lat"""
     if isinstance(lat, Lattice):
@@ -160,56 +175,66 @@ def trace(lat):
     else:
         return tf.linalg.trace(lat)
 
+def det(lat):
+    """
+    Output: determinant of the site over lattice
+    Input:
+        lattice: assuming matrix valued sites, and batch_dim never in the matrix
+    """
+    if isinstance(lat, Lattice):
+        return lat.det()
+    elif isinstance(lat, list):
+        return [det(x) for x in lat]
+    elif isinstance(lat, tuple):
+        return tuple([det(x) for x in lat])
+    else:
+        return tf.linalg.det(lat)
+
+def reduce(lat, functor, tfunctor, transform=None, scope='lattice', exclude=None):
+    if isinstance(lat, (tuple, list)):
+        if scope=='site':
+            if isinstance(lat, tuple):
+                return tuple([functor(x, scope=scope, exclude=exclude) for x in lat])
+            else:
+                return [functor(x, scope=scope, exclude=exclude) for x in lat]
+        else:
+            return tfunctor([functor(x, scope=scope, exclude=exclude) for x in lat], axis=0)
+    else:
+        if transform is not None:
+            lat = transform(lat)
+        if exclude is None:
+            return tfunctor(lat)
+        else:
+            axis = [i for i in range(len(lat.shape)) if i not in exclude]
+            return tfunctor(lat, axis=axis)
+
 def reduce_sum(lat, scope='lattice', exclude=None):
     if isinstance(lat, Lattice):
         return lat.reduce_sum(scope=scope, exclude=exclude)
-    elif isinstance(lat, (tuple, list)):
-        return sum([reduce_sum(x, scope=scope, exclude=exclude) for x in lat])
     else:
-        if exclude is None:
-            return tf.math.reduce_sum(lat)
-        else:
-            axis = [i for i in range(len(lat.shape)) if i not in exclude]
-            return tf.math.reduce_sum(lat, axis=axis)
+        return reduce(lat, reduce_sum, tf.math.reduce_sum, scope=scope, exclude=exclude)
 
 def reduce_mean(lat, scope='lattice', exclude=None):
     if isinstance(lat, Lattice):
         return lat.reduce_mean(scope=scope, exclude=exclude)
-    elif isinstance(lat, (tuple, list)):
-        return sum([reduce_mean(x, scope=scope, exclude=exclude) for x in lat])/len(lat)
     else:
-        if exclude is None:
-            return tf.math.reduce_mean(lat)
-        else:
-            axis = [i for i in range(len(lat.shape)) if i not in exclude]
-            return tf.math.reduce_mean(lat, axis=axis)
+        return reduce(lat, reduce_mean, tf.math.reduce_mean, scope=scope, exclude=exclude)
 
 def reduce_max(lat, scope='lattice', exclude=None):
     if isinstance(lat, Lattice):
         return lat.reduce_max(scope=scope, exclude=exclude)
-    elif isinstance(lat, (tuple, list)):
-        return max([reduce_max(x, scope=scope, exclude=exclude) for x in lat])
     else:
-        if exclude is None:
-            return tf.math.reduce_max(lat)
-        else:
-            axis = [i for i in range(len(lat.shape)) if i not in exclude]
-            return tf.math.reduce_max(lat, axis=axis)
+        return reduce(lat, reduce_max, tf.math.reduce_max, scope=scope, exclude=exclude)
 
 def norm2(lat, scope='lattice', exclude=None):
     if isinstance(lat, Lattice):
         return lat.norm2(scope=scope, exclude=exclude)
-    elif isinstance(lat, (tuple, list)):
-        return sum([norm2(x, scope=scope, exclude=exclude) for x in lat])
     else:
-        if lat.dtype==tf.complex128 or lat.dtype==tf.complex64:
-            lat = tf.abs(lat)
-        lat = tf.math.square(lat)
-        if exclude is None:
-            return tf.math.reduce_sum(lat)
-        else:
-            axis = [i for i in range(len(lat.shape)) if i not in exclude]
-            return tf.math.reduce_sum(lat, axis=axis)
+        def transform(x):
+            if x.dtype==tf.complex128 or lat.dtype==tf.complex64:
+                x = tf.abs(x)
+            return tf.math.square(x)
+        return reduce(lat, norm2, tf.math.reduce_sum, transform=transform, scope=scope, exclude=exclude)
 
 def redot(x, y, scope='lattice', exclude=None):
     if isinstance(x, Lattice):
@@ -217,11 +242,29 @@ def redot(x, y, scope='lattice', exclude=None):
     elif isinstance(y, Lattice):
         return y.rredot(x, scope=scope, exclude=exclude)
     elif isinstance(x, (tuple, list)) and isinstance(y, (tuple, list)):
-        return sum([redot(a,b, scope=scope, exclude=exclude) for a,b in zip(x,y)])
+        if scope=='site':
+            if isinstance(x,tuple):
+                return tuple([redot(a,b, scope=scope, exclude=exclude) for a,b in zip(x,y)])
+            else:
+                return [redot(a,b, scope=scope, exclude=exclude) for a,b in zip(x,y)]
+        else:
+            return tf.math.reduce_sum([redot(a,b, scope=scope, exclude=exclude) for a,b in zip(x,y)], axis=0)
     elif isinstance(x, (tuple, list)):
-        return sum([redot(a,y, scope=scope, exclude=exclude) for a in x])
+        if scope=='site':
+            if isinstance(x,tuple):
+                return tuple([redot(a,y, scope=scope, exclude=exclude) for a in x])
+            else:
+                return [redot(a,y, scope=scope, exclude=exclude) for a in x]
+        else:
+            return tf.math.reduce_sum([redot(a,y, scope=scope, exclude=exclude) for a in x], axis=0)
     elif isinstance(y, (tuple, list)):
-        return sum([redot(x,b, scope=scope, exclude=exclude) for b in y])
+        if scope=='site':
+            if isinstance(y,tuple):
+                return tuple([redot(x,b, scope=scope, exclude=exclude) for b in y])
+            else:
+                return [redot(x,b, scope=scope, exclude=exclude) for b in y]
+        else:
+            return tf.math.reduce_sum([redot(x,b, scope=scope, exclude=exclude) for b in y], axis=0)
     else:
         lat = tf.math.real(tf.math.conj(x)*y)
         if exclude is None:
@@ -393,10 +436,15 @@ class Lattice:
     def zeros(self, **kwargs):
         "kwargs pass to self.wrap"
         return self.wrap(zeros(self.unwrap()), **kwargs)
+    def unit(self, **kwargs):
+        "kwargs pass to self.wrap"
+        return self.wrap(unit(self.unwrap(), site_shape=self.site_shape()), **kwargs)
     def typecast(self, x):
         return typecast(self.unwrap(), x)
     def trace(self):
         return self.wrap(trace(self.unwrap()))
+    def det(self):
+        return self.wrap(det(self.unwrap()))
     def reduce(self, functor, scope='lattice', exclude=None):
         if scope=='lattice':
             if exclude is None:
@@ -406,7 +454,7 @@ class Lattice:
             if exclude is None:
                 exclude = tuple(range(self.nd))
                 if self.batch_dim in exclude:
-                    exclude += (self.nd+1,)
+                    exclude += (self.nd,)
                 else:
                     exclude += (self.batch_dim,)
             return self.wrap(functor(self.unwrap(), scope=scope, exclude=exclude))
@@ -431,7 +479,7 @@ class Lattice:
             if exclude is None:
                 exclude = tuple(range(self.nd))
                 if self.batch_dim in exclude:
-                    exclude += (self.nd+1,)
+                    exclude += (self.nd,)
                 else:
                     exclude += (self.batch_dim,)
             return self.wrap(redot(self.unwrap(), other, scope=scope, exclude=exclude))
@@ -448,7 +496,7 @@ class Lattice:
             if exclude is None:
                 exclude = tuple(range(self.nd))
                 if self.batch_dim in exclude:
-                    exclude += (self.nd+1,)
+                    exclude += (self.nd,)
                 else:
                     exclude += (self.batch_dim,)
             return self.wrap(redot(other, self.unwrap(), scope=scope, exclude=exclude))

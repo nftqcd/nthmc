@@ -1,6 +1,6 @@
 import sys
 sys.path.append("../lib")
-import parts
+import lattice, gauge
 import group as g
 import tensorflow as tf
 import unittest as ut
@@ -24,12 +24,17 @@ class LatticeTest(ut.TestCase):
             s.split(2)
     """
     def check_eqv(self,a,b,tol=1e-13,rtol=1e-13,alwaysPrint=False,printDetail=False):
-        if isinstance(a, parts.HypercubeParts) and isinstance(b, parts.HypercubeParts) and a.subset==b.subset and len(a)==len(b):
+        if isinstance(a, (lattice.Lattice,gauge.Transporter)) or isinstance(b, (lattice.Lattice,gauge.Transporter)):
+            if a.is_compatible(b):
+                self.check_eqv(a.unwrap(), b.unwrap(), tol,rtol,alwaysPrint,printDetail)
+            else:
+                raise ValueError(f'a and b are not compatible {a.__class__} vs {b.__class__}')
+        elif isinstance(a, (list,tuple,gauge.Gauge)) and isinstance(b, (list,tuple,gauge.Gauge)) and len(a)==len(b):
             for i,x,y in zip(range(len(a)),a,b):
                 with self.subTest(idx=i):
                     self.check_eqv(x,y,tol,rtol,alwaysPrint,printDetail)
-        elif isinstance(a, parts.HypercubeParts) or isinstance(b, parts.HypercubeParts):
-            raise ValueError(f'a and b must both be instance of HypercubeParts')
+        elif isinstance(a, (list,tuple,gauge.Gauge)) or isinstance(b, (list,tuple,gauge.Gauge)):
+            raise ValueError(f'different classes {a.__class__} vs. {b.__class__}')
         else:
             d = a-b
             v = 1

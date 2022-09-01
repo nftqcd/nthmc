@@ -26,62 +26,79 @@ class TestHypercube(tu.LatticeTest):
     def setUp(self):
         self.rng = tf.random.Generator.from_seed(7654321)
         self.test_shapes = [
-            (0, [16,8,8,8,3]),
-            (0, [16,8,8,8,3,3]),
-            (0, [16,8,8,8,1]),
-            (1, [4,16,8,8,8,3,3]),
-            (0, [16,8,8,6,3]),
-            (0, [16,8,8,6,3]),
-            (0, [16,8,6,8,3]),
-            (0, [16,6,8,8,3]),
-            (0, [14,8,8,8,3]),
-            (1, [3,16,8,8,6,3]),
-            (1, [3,16,8,8,6,3]),
-            (1, [3,16,8,6,8,3]),
-            (1, [3,16,6,8,8,3]),
-            (1, [3,14,8,8,8,3]),
-            (1, [3,16,6,8,6,3]),
-            (1, [3,16,8,6,6,3]),
-            (1, [3,16,8,6,8,3]),
-            (1, [3,16,6,6,8,3]),
-            (1, [3,14,8,8,6,3]),
-            (2, [3,4,16,8,8,8,3,3]),
+            (-1, [16,8,8,8,3]),
+            (-1, [16,8,8,8,3,3]),
+            (-1, [16,8,8,8,1]),
+            ( 0, [4,16,8,8,8,3,3]),
+            (-1, [16,8,8,6,3]),
+            (-1, [16,8,8,6,3]),
+            (-1, [16,8,6,8,3]),
+            (-1, [16,6,8,8,3]),
+            (-1, [14,8,8,8,3]),
+            ( 0, [3,16,8,8,6,3]),
+            ( 0, [3,16,8,8,6,3]),
+            ( 0, [3,16,8,6,8,3]),
+            ( 0, [3,16,6,8,8,3]),
+            ( 0, [3,14,8,8,8,3]),
+            ( 0, [3,16,6,8,6,3]),
+            ( 0, [3,16,8,6,6,3]),
+            ( 0, [3,16,8,6,8,3]),
+            ( 0, [3,16,6,6,8,3]),
+            ( 0, [3,14,8,8,6,3]),
         ]
 
     def test_ident(self):
-        for nb,dims in self.test_shapes:
-            with self.subTest(nb=nb,dims=dims):
+        for bd,dims in self.test_shapes:
+            with self.subTest(bd=bd,dims=dims):
                 lat = self.random(dims)
-                latP = l.hypercube_partition(lat, nd=4, batch_dims=nb)
-                latN = l.combine_hypercube(latP, nd=4, batch_dims=nb)
-                self.check_eqv(latN, lat)
-                if nb==0:
+                latC = l.Lattice(lat, nd=4, batch_dim=bd)
+                latP = latC.hypercube_partition()
+                latN = latP.combine_hypercube()
+                self.check_eqv(latN, latC)
+                if bd<0:
                     with self.subTest(extra='batch of 1'):
-                        latE = tf.expand_dims(lat, 0)
-                        latNP = l.hypercube_partition(latE, nd=4, batch_dims=1)
-                        latNN = l.combine_hypercube(latNP, nd=4, batch_dims=1)
+                        latE = l.Lattice(tf.expand_dims(lat, 0), nd=4, batch_dim=0)
+                        latNP = latE.hypercube_partition()
+                        latNN = latNP.combine_hypercube()
                         self.check_eqv(latNN, latE)
 
-    def test_shift(self):
-        for nb,dims in self.test_shapes:
-            with self.subTest(nb=nb,dims=dims):
+    def test_tensor_conv(self):
+        for bd,dims in self.test_shapes:
+            with self.subTest(bd=bd,dims=dims):
                 lat = self.random(dims)
+                latC = l.Lattice(lat, nd=4, batch_dim=bd)
+                latP = latC.hypercube_partition()
+                Z = latP.zeros()
+                latN = Z.from_tensors(latP.to_tensors())
+                self.check_eqv(latN, latP)
+                if bd<0:
+                    with self.subTest(extra='batch of 1'):
+                        latE = l.Lattice(tf.expand_dims(lat, 0), nd=4, batch_dim=0)
+                        latNP = latE.hypercube_partition()
+                        Z = latNP.zeros()
+                        latNN = Z.from_tensors(latNP.to_tensors())
+                        self.check_eqv(latNN, latNP)
+
+    def test_shift(self):
+        for bd,dims in self.test_shapes:
+            with self.subTest(bd=bd,dims=dims):
+                latC = l.Lattice(self.random(dims), nd=4, batch_dim=bd)
                 for d in range(4):
                     for n in range(-4,5):
                         with self.subTest(dir=d,len=n):
-                            latS = l.shift(lat, d, n, nd=4, batch_dims=nb)
-                            latP = l.hypercube_partition(lat, nd=4, batch_dims=nb)
-                            latPS = l.shift(latP, d, n, nd=4, batch_dims=nb)
-                            latN = l.combine_hypercube(latPS, nd=4, batch_dims=nb)
+                            latS = latC.shift(d, n)
+                            latP = latC.hypercube_partition()
+                            latPS = latP.shift(d, n)
+                            latN = latPS.combine_hypercube()
                             with self.subTest(subset='all'):
                                 self.check_eqv(latN, latS)
                             with self.subTest(subset='even/odd'):
-                                latE = l.get_even(latP)
-                                latO = l.get_odd(latP)
-                                latNE = l.get_even(latPS)
-                                latNO = l.get_odd(latPS)
-                                latES = l.shift(latE, d, n, nd=4, batch_dims=nb)
-                                latOS = l.shift(latO, d, n, nd=4, batch_dims=nb)
+                                latE = latP.get_subset(l.SubSetEven)
+                                latO = latP.get_subset(l.SubSetOdd)
+                                latNE = latPS.get_subset(l.SubSetEven)
+                                latNO = latPS.get_subset(l.SubSetOdd)
+                                latES = latE.shift(d, n)
+                                latOS = latO.shift(d, n)
                                 with self.subTest(check='even'):
                                     if n%2==0:
                                         self.check_eqv(latES, latNE)

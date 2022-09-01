@@ -18,6 +18,10 @@ class Coord:
         return f'Coord{self.x}'
     def __repr__(self):
         return f'Coord#{id(self)}{self.x}'
+    def __len__(self):
+        return len(self.x)
+    def __getitem__(self, key):
+        return self.x[key]
     def __add__(self, y):
         nx = self.nd()
         ny = y.nd()
@@ -78,6 +82,36 @@ def coordAtPathWithDir(path, linkDir, dim=0):
         if -dir==theDir:
             xs.append(x)
     return xs
+
+class Path:
+    def __init__(self, nd, *dirs):
+        "dirs: [+/-d] for d = 1,2,3,... corresponding to x,y,z,..."
+        for d in dirs:
+            if d==0 or abs(d)>nd:
+                raise ValueError(f'invalid dir, got {d}')
+        self.dirs = dirs
+        self.nd = nd
+    def adjoint(self):
+        return Path(self.nd, *[-d for d in reversed(self.dirs)])
+    def deltaX(self):
+        "Return the difference from the end to the start of the path."
+        x = self.nd * [0]
+        for d in self.dirs:
+            if d>0:
+                x[d-1] +=  1
+            else:
+                x[-d-1] -=  1
+        return Coord(x)
+    def __len__(self):
+        return len(self.dirs)
+    def __getitem__(self, key):
+        return self.dirs[key]
+    def __add__(self, o):
+        if not isinstance(o, Path):
+            raise ValueError(f'must be Path, but got {o}')
+        if self.nd!=o.nd:
+            raise ValueError(f'different nd: {self.nd} vs. {o.nd}')
+        return Path(self.nd, *self.dirs+o.dirs)
 
 class OrdPathInt:
     def __init__(self, path):

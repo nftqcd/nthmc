@@ -1,5 +1,4 @@
 import tensorflow as tf
-import parts
 import math
 
 class Group:
@@ -83,12 +82,6 @@ def norm2(m, axis=[-2,-1], allreduce=True, exclude=None):
     No reduction if axis is empty.
     Sum over all partitions if allreduce.
     """
-    if isinstance(m, parts.HypercubeParts):
-        m2 = [norm2(x, axis=axis, allreduce=allreduce, exclude=exclude) for x in m]
-        if allreduce:
-            return sum(m2)
-        else:
-            return parts.HypercubeParts(m2, subset=m.subset)
     if m.dtype==tf.complex128 or m.dtype==tf.complex64:
         m = tf.abs(m)
     n = tf.math.square(m)
@@ -101,13 +94,8 @@ def norm2(m, axis=[-2,-1], allreduce=True, exclude=None):
         return tf.math.reduce_sum(n, axis=[i for i in range(len(n.shape)) if i not in exclude])
 
 def redot(x,y):
-    if isinstance(x, parts.HypercubeParts) and isinstance(y, parts.HypercubeParts) and x.subset==y.subset:
-        return sum([redot(a,b) for a,b in zip(x,y)])
-    elif isinstance(x, parts.HypercubeParts) or isinstance(y, parts.HypercubeParts):
-        raise ValueError(f'incompatible types x and y')
-    else:
-        n = tf.math.real(tf.math.conj(x)*y)
-        return tf.math.reduce_sum(n, axis=range(tf.rank(n)))
+    n = tf.math.real(tf.math.conj(x)*y)
+    return tf.math.reduce_sum(n, axis=range(tf.rank(n)))
 
 # Converted from qex/src/maths/matrixFunctions.nim
 # Last two dims in a tensor contain matrices.

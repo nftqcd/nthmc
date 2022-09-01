@@ -126,7 +126,11 @@ def readLattice(file):
                 else:
                     raise ValueError(f'unknown precision {precision}')
                 latnc = int(xmlFind(data,'colors'))
-                latns = int(xmlFind(data,'spins'))
+                try:
+                    latns = int(xmlFind(data,'spins'))
+                except ValueError as err:
+                    print(f'Ignore exceptions in finding "spins" in xml: {err}')
+                    latns = 1
                 lattypesize = int(xmlFind(data,'typesize'))
                 latdatacount = int(xmlFind(data,'datacount'))
             elif type==b'scidac-record-xml':

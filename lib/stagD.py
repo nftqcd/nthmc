@@ -1,116 +1,124 @@
 ## Staggered Dslash in 4D
 
 import tensorflow as tf
-import lattice as l
-import parts
+from lattice import SubSetAll, SubSetEven, SubSetOdd, Lattice, combine_subsets
+from gauge import Gauge
 
-def phase(gauge, batch_dims=0):
+def phase(gauge):
     """
-    Input: gauge, shape: dim [batch] T Z Y X ... site
+    Input: Gauge
     phase(mu,N) = (-)^(sum_i N_i | i<mu) with N = {t,x,y,z}
     """
-    if isinstance(gauge, parts.HypercubeParts):
-        sh = (4,)+(len(gauge[0].shape)-1)*(1,)
-        def ph(i):
-            # index bits: TZYX
-            px = 1 if i&8==0 else -1
-            py = 1 if ((i&8)>>3)^(i&1)==0 else -1
-            pz = 1 if ((i&8)>>3)^(i&1)^((i&2)>>1)==0 else -1
-            return tf.reshape(tf.constant([px,py,pz,1], dtype=gauge[0].dtype), sh)
-        pg = parts.HypercubeParts([ph(i)*gauge[i] for i in range(len(gauge))], subset=gauge.subset)
+    if isinstance(gauge, Gauge) and len(gauge)==4:
+        return Gauge([t.wrap(phase_dir(i, t.unwrap())) for i,t in enumerate(gauge)])
     else:
-        shape = gauge.shape
-        dims = shape[batch_dims+1:batch_dims+5]    # 4D
+        raise ValueError(f'phase only works with 4D gauge, but got {gauge}')
 
-        ld = batch_dims * (1,)    # excluding the 'dim' axis
-        site = (len(shape)-batch_dims-5) * (1,)
-
-        px = tf.reshape(tf.tile(tf.constant([1,-1],dtype=tf.complex128), [dims[0]//2]), ld+(dims[0],1,1,1)+site)
-        py = tf.reshape(tf.tile(tf.constant([[1,-1],[-1,1]],dtype=tf.complex128), [dims[0]//2,dims[3]//2]), ld+(dims[0],1,1,dims[3])+site)
-        pz = tf.reshape(tf.tile(tf.constant([[[1,-1],[-1,1]],[[-1,1],[1,-1]]],dtype=tf.complex128), [dims[0]//2,dims[2]//2,dims[3]//2]), ld+(dims[0],1,dims[2],dims[3])+site)
-        gx = gauge[0]
-        gy = gauge[1]
-        gz = gauge[2]
-        gt = gauge[3]
-        pg = tf.stack([px*gx, py*gy, pz*gz, gt], axis=0)
-    return pg
-
-def D2(gauge, x, batch_dims=0):
-    if isinstance(gauge, parts.HypercubeParts):
-        if x.subset=='all':
-            ss = 'all'
-        elif x.subset=='even':
-            ss = 'odd'
-        elif x.subset=='odd':
-            ss = 'even'
+def phase_dir(dir, lattice, batch_dim=None):
+    if dir==3:  # T dir
+        return lattice
+    if isinstance(lattice, Lattice):
+        corners = lattice.subset.to_corner_indices()
+        if len(corners)>1:
+            pl = phase_dir(dir, lattice.unwrap(), lattice.batch_dim)
+            return lattice.wrap(pl)
         else:
-            raise ValueError(f'unsupported subset {subset}')
-        r = parts.HypercubeParts(len(x)*[0], subset=ss)
+            # index bits: TZYX
+            i = corners[0]
+            if (dir==0 and i&8==0) or (dir==1 and ((i&8)>>3)^(i&1)==0) or (dir==2 and ((i&8)>>3)^(i&1)^((i&2)>>1)==0):
+                return lattice
+            else:
+                return -lattice
+    elif isinstance(lattice, list):
+        return [phase_dir(dir, l, batch_dim=batch_dim) for l in lattice]
+    elif isinstance(lattice, tuple):
+        return tuple([phase_dir(dir, l, batch_dim=batch_dim) for l in lattice])
     else:
-        r = 0
+        if batch_dim is None:
+            raise ValueError(f'unknown batch_dim for dir {dir} with lattice {lattice}')
+        shape = lattice.shape
+        if batch_dim==0:
+            bd = (1,)
+            dims = shape[1:5]    # 4D
+            site = (len(shape)-5)*(1,)
+        else:
+            bd = ()
+            dims = shape[0:4]
+            site = (len(shape)-4)*(1,)
+        dt = lattice.dtype
+        if dir==0:
+            p = tf.reshape(tf.tile(tf.constant([1,-1],dtype=dt), [dims[0]//2]), bd+(dims[0],1,1,1)+site)
+        elif dir==1:
+            p = tf.reshape(tf.tile(tf.constant([[1,-1],[-1,1]],dtype=dt), [dims[0]//2,dims[3]//2]), bd+(dims[0],1,1,dims[3])+site)
+        else:  # dir==2
+            p = tf.reshape(tf.tile(tf.constant([[[1,-1],[-1,1]],[[-1,1],[1,-1]]],dtype=dt), [dims[0]//2,dims[2]//2,dims[3]//2]), bd+(dims[0],1,dims[2],dims[3])+site)
+        return p*lattice
+
+def D2(gauge, x):
+    if x.subset==SubSetAll:
+        ss = SubSetAll
+    elif x.subset==SubSetEven:
+        ss = SubSetOdd
+    elif x.subset==SubSetOdd:
+        ss = SubSetEven
+    else:
+        raise ValueError(f'unsupported subset {x.subset}')
+    r = 0
     for mu in range(4):
-        f = l.transport(x, gauge, mu, 1, 4, batch_dims=batch_dims)
-        b = l.transport(x, gauge, mu, -1, 4, batch_dims=batch_dims)
+        f = gauge[mu](x)
+        b = gauge[mu].adjoint()(x)
         r += f-b
     return r
 
-def D(gauge, x, m, batch_dims=0, s=0.5):
-    D2x = D2(gauge, x, batch_dims=batch_dims)
+def D(gauge, x, m, s=0.5):
+    D2x = D2(gauge, x)
     return m*x + s*D2x
 
-def Ddag(gauge, x, m, batch_dims=0):
-    return D(gauge, x, m, batch_dims=batch_dims, s=-0.5)
+def Ddag(gauge, x, m):
+    return D(gauge, x, m, s=-0.5)
 
-def D2ee(gauge, x, m2, batch_dims=0):
-    Dx = D2(gauge, x, batch_dims=batch_dims)
-    DDx = D2(gauge, Dx, batch_dims=batch_dims)
+def D2ee(gauge, x, m2):
+    Dx = D2(gauge, x)
+    DDx = D2(gauge, Dx)
     return 4.0*m2*x - DDx
 
-def eoReconstruct(gauge, r, b, m, batch_dims=0):
+def eoReconstruct(gauge, r, b, m):
     """
     Output: full field
     Input:
         r: even
         b: odd
     """
-    D2r = D2(gauge, r, batch_dims=batch_dims)
+    D2r = D2(gauge, r)
     ro = (1.0/m) * (b - 0.5*D2r)
-    return l.mix_evenodd(r, ro)
+    return combine_subsets(r, ro)
 
 if __name__=='__main__':
     import sys
-    import fieldio
-    import group
+    import gauge
+    from lattice import norm2, Lattice, SubSetEven
 
-    gconf,lat = fieldio.readLattice(sys.argv[1])
-    nd = len(lat)
-    print(gconf.shape)
-    print(lat)
-
+    gconf = gauge.readGauge(sys.argv[1])
+    nd = len(gconf)
     print('Plaq:')
-    for p in l.plaquette(gconf, nd):
+    for p in gauge.plaquette(gconf):
         print(p)
 
-    gaugeEO = l.hypercube_partition(gconf, nd, batch_dims=1)    # Count dim axis as batch
-    print(gaugeEO[0].shape)
+    gaugeEO = gconf.hypercube_partition()
+    print(gaugeEO[0].lattice[0].unwrap().shape)
     print('Plaq from EO:')
-    for p in l.plaquette(gaugeEO, nd):
+    for p in gauge.plaquette(gaugeEO):
         print(p)
 
-    gaugeEO = l.setBC(gaugeEO, batch_dims=0)
-    gaugeEO = phase(gaugeEO, batch_dims=0)
+    gaugeEO = gauge.setBC(gaugeEO)
+    gaugeEO = phase(gaugeEO)
 
-    def norm2(v):
-        if isinstance(v, parts.HypercubeParts):
-            return group.norm2(v, range(tf.rank(v[0])), allreduce=True)
-        else:
-            return group.norm2(v, range(tf.rank(v)))
-
-    v1 = tf.zeros(lat[::-1]+[3], dtype=tf.complex128)
+    v1 = tf.zeros(gconf[0].lattice.unwrap().shape[:nd]+(3,), dtype=tf.complex128)
     v1 = tf.tensor_scatter_nd_update(v1, [[0,0,0,0,0]], [1])
     v1 = tf.tensor_scatter_nd_update(v1, [[0,0,0,2,0]], [0.5])
     print(f'v {norm2(v1)}')
-    v1 = l.hypercube_partition(v1)
+    v1 = Lattice(v1).hypercube_partition()
+    print(f'v {norm2(v1)}')
 
     m = 0.1
     m2 = tf.constant(m*m, dtype=tf.complex128)
@@ -127,7 +135,7 @@ if __name__=='__main__':
         print(f'Dv2 {norm2(v2)}')
 
     print('D2ee:')
-    v1e = l.get_even(v1)
+    v1e = v1.get_subset(SubSetEven)
     print(f've {norm2(v1e)}')
     v2e = v1e
     for i in range(3):
@@ -163,21 +171,27 @@ if __name__=='__main__':
 
     # NOTE: tf.function hates custom objects.
     def D2ee_eager(gt, vt, m):
-        g = parts.HypercubeParts(gt,subset='all')
-        v = parts.HypercubeParts(vt,subset='even')
+        g = gaugeEO.from_tensors(gt)
+        v = v2e.from_tensors(vt)
         y = D2ee(g, v, m)
-        return y.parts
+        return y.to_tensors()
+
+    print(f've {norm2(v1e)}')
+    v2e = v1e
+    for i in range(3):
+        v2e = v2e.from_tensors(D2ee_eager(gaugeEO.to_tensors(), v2e.to_tensors(), m2))
+        print(f'D2ee_eager {norm2(v2e)}')
+
     f_fun = tf.function(D2ee_eager)
     f_jit = tf.function(D2ee_eager,jit_compile=True)
 
-    D2ee_fun = time('fun get concrete',lambda:f_fun.get_concrete_function(gaugeEO.parts, v2e.parts, m2))
-    D2ee_jit = time('jit get concrete',lambda:f_jit.get_concrete_function(gaugeEO.parts, v2e.parts, m2))
+    D2ee_fun = time('fun get concrete',lambda:f_fun.get_concrete_function(gaugeEO.to_tensors(), v2e.to_tensors(), m2))
+    D2ee_jit = time('jit get concrete',lambda:f_jit.get_concrete_function(gaugeEO.to_tensors(), v2e.to_tensors(), m2))
 
     def run_fun(f):
         global v2e
-        v2e = parts.HypercubeParts(f(gaugeEO.parts,v2e.parts,m2),subset='even')
+        v2e = v2e.from_tensors(f(gaugeEO.to_tensors(), v2e.to_tensors(), m2))
         return v2e
-
     print('Benchmark eager')
     v2e = v1e
     v2e = time('D2ee eager',lambda:run_fun(D2ee_eager),n=3)

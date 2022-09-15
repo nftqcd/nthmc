@@ -238,7 +238,7 @@ def su3vec(x):
         # r3*tf.math.imag(x[...,2,2])
     ], axis=-1)
 
-def su3fromvec(v):
+def su3fromvec_direct(v):
     """
     X = X^a T^a
     tr{X T^b} = X^a tr{T^a T^b} = X^a (-1/2) δ^ab = -1/2 X^b
@@ -258,6 +258,49 @@ def su3fromvec(v):
         tf.stack([x01,                tf.dtypes.complex(zero,x1i), -tf.math.conj(x12)], axis=-1),
         tf.stack([x02,                x12,                tf.dtypes.complex(zero,x2i)], axis=-1),
     ], axis=-1)
+
+def su3fromvec_mat(v):
+    """
+    X = X^a T^a
+    tr{X T^b} = X^a tr{T^a T^b} = X^a (-1/2) δ^ab = -1/2 X^b
+    X^a = -2 X_ij T^a_ji
+    This implements a matvec converter.
+    real:            0          c*v1     c*v4    # signs are different from above tf.stack
+                 -c*v1             0     c*v6    # because tf.stack collumn order
+                 -c*v4         -c*v6        0
+    imag: c*(s3*v7+v2)          c*v0     c*v3
+                  c*v0  c*(s3*v7-v2)     c*v5
+                  c*v3          c*v5    s3*v7
+    """
+    s3 = 0.57735026918962576451    # sqrt(1/3)
+    c = -0.5
+    dt = v.dtype
+    shmat = v.shape[:-1]+(3,3)
+    shconv = (1,)*(len(v.shape)-1)+(9,8)
+    # 9x8 matrix for real and imag
+    convR = tf.reshape(tf.constant([
+        0,0,0,0,0,0,0,0,
+        0, c,0,0,0,0,0,0,
+        0,0,0,0, c,0,0,0,
+        0,-c,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0, c,0,
+        0,0,0,0,-c,0,0,0,
+        0,0,0,0,0,0,-c,0,
+        0,0,0,0,0,0,0,0], dtype=dt), shconv)
+    convI = tf.reshape(tf.constant([
+        0,0, c,0,0,0,0,c*s3,
+        c,0,0,0,0,0,0,0,
+        0,0,0,c,0,0,0,0,
+        c,0,0,0,0,0,0,0,
+        0,0,-c,0,0,0,0,c*s3,
+        0,0,0,0,0,c,0,0,
+        0,0,0,c,0,0,0,0,
+        0,0,0,0,0,c,0,0,
+        0,0,0,0,0,0,0,s3], dtype=dt), shconv)
+    return tf.reshape(tf.dtypes.complex(tf.linalg.matvec(convR, v), tf.linalg.matvec(convI, v)), shmat)
+
+su3fromvec = su3fromvec_mat
 
 def su3fabc(v):
     """

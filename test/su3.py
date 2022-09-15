@@ -63,6 +63,17 @@ class TestSU3(ut.TestCase):
                     else:
                         self.checkEqv(t, 0)
 
+    def test_su3fromvec(self):
+        for a in range(8):
+            with self.subTest(a=a):
+                v = g.su3vec(T[a])
+                self.checkEqv(g.su3fromvec_mat(v), g.su3fromvec_direct(v))
+
+    def test_su3conv(self):
+        for a in range(8):
+            with self.subTest(a=a):
+                self.checkEqv(T[a], g.su3fromvec(g.su3vec(T[a])))
+
     def test_projectTAH(self):
         """
         projectTAH(M)

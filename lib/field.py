@@ -7,9 +7,22 @@ class Coord:
     def __init__(self, x = []):
         "x: [int, ...] or (int, ...)"
         self.x = tuple(x)
-    def __eq__(self, x):
-        if isinstance(x, Coord):
-            return self.x == x.x
+    def __eq__(self, y):
+        if isinstance(y, Coord):
+            nx = self.nd()
+            ny = y.nd()
+            n = max(nx, ny)
+            m = min(nx, ny)
+            for i in range(m):
+                if self.x[i]!=y.x[i]:
+                    return False
+            for i in range(m, nx):
+                if self.x[i]!=0:
+                    return False
+            for i in range(m, ny):
+                if y.x[i]!=0:
+                    return False
+            return True
         else:
             return False
     def __hash__(self):
@@ -84,34 +97,46 @@ def coordAtPathWithDir(path, linkDir, dim=0):
     return xs
 
 class Path:
-    def __init__(self, nd, *dirs):
-        "dirs: [+/-d] for d = 1,2,3,... corresponding to x,y,z,..."
+    def __init__(self, *dirs):
+        """
+        dirs: a list of either
+            [+/-d] for d = 1,2,3,..., corresponding to one step in direction x,y,z,...
+            Coord, corresponding to one step from origin to Coord([x,y,z,...])
+        """
         for d in dirs:
-            if d==0 or abs(d)>nd:
+            if not (isinstance(d, Coord) or (isinstance(d, int) and d!=0)):
                 raise ValueError(f'invalid dir, got {d}')
-        self.dirs = dirs
-        self.nd = nd
+        self.dirs = tuple(dirs)
     def adjoint(self):
-        return Path(self.nd, *[-d for d in reversed(self.dirs)])
+        return Path(*[-d for d in reversed(self.dirs)])
     def deltaX(self):
         "Return the difference from the end to the start of the path."
-        x = self.nd * [0]
+        x = Coord()
         for d in self.dirs:
-            if d>0:
-                x[d-1] +=  1
+            if isinstance(d, Coord):
+                x += d
             else:
-                x[-d-1] -=  1
-        return Coord(x)
+                if d>0:
+                    c = [0]*d
+                    c[d-1] = 1
+                else:
+                    c = [0]*(-d)
+                    c[-d-1] = -1
+                x += Coord(c)
+        return x
     def __len__(self):
         return len(self.dirs)
     def __getitem__(self, key):
         return self.dirs[key]
+    def __eq__(self, x):
+        if isinstance(x, Path):
+            return self.dirs==x.dirs
+        else:
+            return False
     def __add__(self, o):
         if not isinstance(o, Path):
             raise ValueError(f'must be Path, but got {o}')
-        if self.nd!=o.nd:
-            raise ValueError(f'different nd: {self.nd} vs. {o.nd}')
-        return Path(self.nd, *self.dirs+o.dirs)
+        return Path(*self.dirs+o.dirs)
 
 class OrdPathInt:
     def __init__(self, path):

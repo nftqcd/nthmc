@@ -84,6 +84,12 @@ class SubSet:
         return subset.s == subset.s&self.s
     def from_corner_index(i):
         return SubSet(1<<i)
+    def from_coord(xs):
+        "xs: [X,Y,Z,...]"
+        ix = 0
+        for i,n in enumerate(xs):
+            ix |= (n%2)<<i
+        return SubSet(1<<ix)
     is_even_index = lambda x: (1<<x) & SubSet.even_set != 0
     even_set = sum([1<<i for i in (0b0, 0b11, 0b101, 0b110, 0b1001, 0b1010, 0b1100, 0b1111)])
     odd_set = sum([1<<i for i in (0b1, 0b10, 0b100, 0b111, 0b1000, 0b1011, 0b1101, 0b1110)])
@@ -124,33 +130,42 @@ def shift(lat, direction, length, subset=SubSetAll, axis=None):
         else:
             return tf.roll(lat, shift=-(length-1)//2, axis=axis)
 
-def zeros(lat, **kwargs):
-    """Pass kwargs to Lattice.zeros"""
+def zeros(lat, new_site_shape=None, site_shape_len=None, dtype=None, **kwargs):
+    """Pass kwargs to Lattice.zeros, allow Lattice to overwrite site_shape_len."""
     if isinstance(lat, Lattice):
-        return lat.zeros(**kwargs)
+        return lat.zeros(new_site_shape=new_site_shape, **kwargs)
     elif len(kwargs)>0:
         raise ValueError(f'unsupported kwargs {kwargs}')
     elif isinstance(lat, list):
-        return [zeros(x) for x in lat]
+        return [zeros(x, new_site_shape=new_site_shape, site_shape_len=site_shape_len) for x in lat]
     elif isinstance(lat, tuple):
-        return tuple([zeros(x) for x in lat])
+        return tuple([zeros(x, new_site_shape=new_site_shape, site_shape_len=site_shape_len) for x in lat])
     else:
-        return tf.zeros(lat.shape, dtype=lat.dtype)
+        if dtype is None:
+            dtype = lat.dtype
+        if new_site_shape is None:
+            return tf.zeros(lat.shape, dtype=dtype)
+        elif site_shape_len is None:
+            raise ValueError(f'unknown site_shape_len, required for new_site_shape={new_site_shape}')
+        else:
+            return tf.zeros(lat.shape[:-site_shape_len]+tuple(new_site_shape), dtype=dtype)
 
-def unit(lat, site_shape=None, **kwargs):
-    """Pass kwargs to Lattice.unit, allow Lattice to overwrite site_shape."""
+def unit(lat, site_shape_len=None, **kwargs):
+    """Pass kwargs to Lattice.unit, allow Lattice to overwrite site_shape_len."""
     if isinstance(lat, Lattice):
         return lat.unit(**kwargs)
     elif len(kwargs)>0:
         raise ValueError(f'unsupported kwargs {kwargs}')
     elif isinstance(lat, list):
-        return [unit(x, site_shape=site_shape) for x in lat]
+        return [unit(x, site_shape_len=site_shape_len) for x in lat]
     elif isinstance(lat, tuple):
-        return tuple([unit(x, site_shape=site_shape) for x in lat])
+        return tuple([unit(x, site_shape_len=site_shape_len) for x in lat])
     else:
-        if site_shape is None:
-            raise ValueError('unknown site_shape')
-        return tf.eye(*site_shape, batch_shape=lat.shape[:-len(site_shape)], dtype=lat.dtype)
+        if site_shape_len is None:
+            raise ValueError('unknown site_shape_len')
+        if site_shape_len!=2:
+            raise ValueError(f'unimplemented for site shape {lat.shape[-site_shape_len:]}')
+        return tf.eye(*lat.shape[-site_shape_len:], batch_shape=lat.shape[:-site_shape_len], dtype=lat.dtype)
 
 def typecast(lat, x):
     """makes x the same dtype as lat"""
@@ -161,15 +176,21 @@ def typecast(lat, x):
     else:
         return tf.cast(x, dtype=lat.dtype)
 
-def lattice_map(lat, functor, tfunctor):
+def lattice_map(lat, functor, tfunctor, *args, **kwargs):
     if isinstance(lat, Lattice):
-        return lat.map(functor)
+        return lat.map(functor, *args, **kwargs)
     if isinstance(lat, list):
-        return [functor(x) for x in lat]
+        return [functor(x, *args, **kwargs) for x in lat]
     elif isinstance(lat, tuple):
-        return tuple([functor(x) for x in lat])
+        return tuple([functor(x, *args, **kwargs) for x in lat])
     else:
-        return tfunctor(lat)
+        return tfunctor(lat, *args, **kwargs)
+
+def real(lat):
+    return lattice_map(lat, real, tf.math.real)
+
+def imag(lat):
+    return lattice_map(lat, imag, tf.math.imag)
 
 def trace(lat):
     """
@@ -187,8 +208,41 @@ def det(lat):
     """
     return lattice_map(lat, det, tf.linalg.det)
 
+def exp(lat):
+    return lattice_map(lat, exp, group.exp)
+
 def projectSU(lat):
     return lattice_map(lat, projectSU, group.projectSU)
+
+def projectTangent(lat):
+    return lattice_map(lat, projectTangent, group.projectTAH)
+
+def randomTangent_(lat, rng):
+    if lat.shape[-1]!=3:
+        raise ValueError(f'unimplemented for nc={lat.shape[-1]}')
+    return group.randTAH3(lat.shape[:-2], rng)
+
+def randomTangent(lat, rng):
+    return lattice_map(lat, randomTangent, randomTangent_, rng)
+
+def randomNormal_(lat, rng, new_site_shape=None, site_shape_len=None, dtype=None, **kwargs):
+    if dtype is None:
+        dtype = lat.dtype
+    if new_site_shape is None:
+        return rng.normal(lat.shape, dtype=dtype, **kwargs)
+    elif site_shape_len is None:
+        raise ValueError(f'unknown site_shape_len, required for new_site_shape={new_site_shape}')
+    else:
+        return rng.normal(lat.shape[:-site_shape_len]+tuple(new_site_shape), dtype=dtype, **kwargs)
+
+def randomNormal(lat, rng, new_site_shape=None, dtype=None, **kwargs):
+    return lattice_map(lat, randomNormal, randomNormal_, rng, new_site_shape=new_site_shape, dtype=dtype, **kwargs)
+
+def to_su3matrix(lat):
+    return lattice_map(lat, to_su3matrix, group.su3fromvec)
+
+def to_su3vector(lat):
+    return lattice_map(lat, to_su3vector, group.su3vec)
 
 def reduce(lat, functor, tfunctor, transform=None, scope='lattice', exclude=None):
     if isinstance(lat, Lattice):
@@ -339,8 +393,14 @@ class Lattice:
         self.nd = nd
         self.batch_dim = batch_dim
         self.subset = subset
-    def size(self):
-        return tf.size(self.data)
+    def full_volume(self):
+        shape = self.data.shape
+        nd = self.nd
+        if self.batch_dim==0:
+            lat = shape[1:nd+1]
+        else:  # self.batch_dim<0 or self.batch_dim>=nd:
+            lat = shape[:nd]
+        return math.prod(lat)*SubSet.NP/len(self.subset.to_corner_indices())
     def site_shape(self):
         shape = self.data.shape
         nd = self.nd
@@ -350,6 +410,46 @@ class Lattice:
             return shape[nd+1:]
         else:
             raise ValueError(f'got shape {shape} with nd {nd} and batch_dim {self.batch_dim}')
+    def get_site(self, *xs):
+        "xs: X,Y,Z,..."
+        ss = SubSet.from_coord(xs)
+        if ss not in self.subset:
+            raise ValueError(f'coord {xs} not in subset {self.subset}')
+        nd = self.nd
+        if len(xs)>nd:
+            raise ValueError(f'index {xs} longer than nd')
+        ix = [x//2 for x in xs]
+        begin = [0]*nd
+        size = [-1]*nd
+        axis = []
+        for i,x in enumerate(ix):
+            a = nd-1-i
+            begin[a] = x
+            size[a] = 1
+            axis.append(a)
+        if self.batch_dim==0:
+            begin = [0]+begin
+            size = [-1]+size
+            axis = [a+1 for a in axis]
+        l = len(self.data.shape)-len(begin)
+        begin = begin+[0]*l
+        size = size+[-1]*l
+        return tf.squeeze(tf.slice(self.data, begin=begin, size=size), axis=axis)
+    def get_batch(self, b):
+        if self.batch_dim<0:
+            return self
+        elif self.batch_dim==0:
+            return self.wrap(self.data[b], batch_dim=-1)
+        elif self.batch_dim==4:
+            return self.wrap(self.data[:,:,:,:,b], batch_dim=-1)
+        else:
+            raise ValueError(f'unimplemented for batch_dim {self.batch_dim}')
+    def batch_update(self, cond, other):
+        if self.batch_dim<0:
+            return self.wrap(tf.cond(cond, lambda:other.data, lambda:self.data))
+        else:
+            c = tf.reshape(cond, (1,)*d + cond.shape + (1,)*(len(self.data.shape)-1-d))
+            return self.wrap(tf.where(c, other.data, self.data))
     def if_compatible(self, other, f, e=None):
         if self.is_compatible(other):
             return self.wrap(f(self.data,other.data))
@@ -415,6 +515,7 @@ class Lattice:
     # generic methods recurse call generic functions
 
     def shift(self, direction, length, subset=SubSetAll):  # no axis param here, we decide axis
+        # print(f'shift dir {direction} len {length}')
         axis = self.nd-direction-1
         if self.batch_dim==0:
             axis = axis+1
@@ -423,22 +524,39 @@ class Lattice:
             return self.wrap(shift(self.unwrap(), direction, length, subset=self.subset, axis=axis), subset=shiftedsubset)
         else:
             raise ValueError(f'subset mismatch in shift: {self.subset} is not in the requested {subset}')
-    def zeros(self, **kwargs):
+    def zeros(self, new_site_shape=None, dtype=None, site_shape_len=None, **kwargs):
         "kwargs pass to self.wrap"
-        return self.wrap(zeros(self.unwrap()), **kwargs)
+        return self.wrap(zeros(self.unwrap(), new_site_shape=new_site_shape, site_shape_len=len(self.site_shape()), dtype=dtype), **kwargs)
     def unit(self, **kwargs):
         "kwargs pass to self.wrap"
-        return self.wrap(unit(self.unwrap(), site_shape=self.site_shape()), **kwargs)
+        return self.wrap(unit(self.unwrap(), site_shape_len=len(self.site_shape())), **kwargs)
     def typecast(self, x):
         return typecast(self.unwrap(), x)
-    def map(self, functor):
-        return self.wrap(functor(self.unwrap()))
+    def map(self, functor, *args, **kwargs):
+        "args/kwargs are extra argument to functor"
+        return self.wrap(functor(self.unwrap(), *args, **kwargs))
+    def real(self):
+        return self.map(real)
+    def imag(self):
+        return self.map(imag)
     def trace(self):
         return self.map(trace)
     def det(self):
         return self.map(det)
+    def exp(self):
+        return self.map(exp)
     def projectSU(self):
         return self.map(projectSU)
+    def projectTangent(self):
+        return self.map(projectTangent)
+    def randomTangent(self, rng):
+        return self.map(randomTangent, rng)
+    def randomNormal(self, rng, new_site_shape=None, dtype=None, site_shape_len=None, **kwargs):
+        return self.map(randomNormal, rng, new_site_shape=new_site_shape, dtype=dtype, site_shape_len=len(self.site_shape()), **kwargs)
+    def to_su3matrix(self):
+        return self.map(to_su3matrix)
+    def to_su3vector(self):
+        return self.map(to_su3vector)
     def reduce(self, functor, scope='lattice', exclude=None):
         if scope=='lattice':
             if exclude is None:
@@ -500,14 +618,16 @@ class Lattice:
         if self.is_compatible(mat):
             if self.subset==mat.subset:
                 return self.wrap(matmul(self.unwrap(), mat.unwrap(), adjoint_l=adjoint_l, adjoint_r=adjoint_r))
-            elif (s:=self.subset) in mat.subset:
-                return self.wrap(matmul(self.unwrap(), mat.get_subset(s).unwrap(), adjoint_l=adjoint_l, adjoint_r=adjoint_r))
-            elif (s:=mat.subset) in self.subset:
-                return mat.wrap(matmul(self.get_subset(s).unwrap(), mat.unwrap(), adjoint_l=adjoint_l, adjoint_r=adjoint_r))
-            elif not (s:=self.subset.intersection(mat.subset)).is_empty():
-                return self.wrap(matmul(self.get_subset(s).unwrap(), mat.get_subset(s).unwrap(), adjoint_l=adjoint_l, adjoint_r=adjoint_r), subset=s)
+            elif self.subset in mat.subset:
+                return self.wrap(matmul(self.unwrap(), mat.get_subset(self.subset).unwrap(), adjoint_l=adjoint_l, adjoint_r=adjoint_r))
+            elif mat.subset in self.subset:
+                return mat.wrap(matmul(self.get_subset(mat.subset).unwrap(), mat.unwrap(), adjoint_l=adjoint_l, adjoint_r=adjoint_r))
             else:
-                raise ValueError(f'subsets have no intersection {self.subset} and {mat.subset}')
+                ss = self.subset.intersection(mat.subset)
+                if not ss.is_empty():
+                    return self.wrap(matmul(self.get_subset(ss).unwrap(), mat.get_subset(ss).unwrap(), adjoint_l=adjoint_l, adjoint_r=adjoint_r), subset=ss)
+                else:
+                    raise ValueError(f'subsets have no intersection {self.subset} and {mat.subset}')
         else:
             raise ValueError(f'incompatible lattice {self.__class__} and {mat.__class__}')
     def matvec(self, vec, adjoint=False):
@@ -554,23 +674,39 @@ class Lattice:
     def __pos__(self):
         return self.wrap(+self.data)
 
-class LatticeHypercubeParts(Lattice):
-    """
-    Same as Lattice with the lattice data represented as 2^nd tensors, each from one corner of the 2^nd hypercube.
-    """
-    def __init__(self, hypercube_parts, **kwargs):
+class LatticeList(Lattice):
+    "A list of Lattice"
+    def __init__(self, list, **kwargs):
         subset = SubSet()
-        for lat in hypercube_parts:
+        vol = list[0].full_volume()
+        for lat in list:
             if not isinstance(lat, Lattice):
                 raise ValueError(f'lat ({lat.__class__}) is not a Lattice')
+            if vol!=lat.full_volume():
+                raise ValueError(f'incompatible volume {lat.full_volume()}, expected {vol}')
             subset = subset.union(lat.subset)
-        super(LatticeHypercubeParts, self).__init__(sorted(hypercube_parts,key=lambda x:x.subset), **kwargs)
+        super(LatticeList, self).__init__(sorted(list,key=lambda x:x.subset), **kwargs)
         if self.subset!=subset:
             raise ValueError(f'initialized subset {self.subset} and subset from parts {subset} mismatch')
-    def size(self):
-        return sum([l.size() for l in self.data])
+    def full_volume(self):
+        return self.data[0].full_volume()
     def site_shape(self):
         return self.data[0].site_shape()
+    def get_site(self, *xs):
+        ss = SubSet.from_coord(xs)
+        if ss not in self.subset:
+            raise ValueError(f'coord {xs} not in subset {self.subset}')
+        ls = [lat for lat in self.data if ss in lat.subset]
+        if len(ls)!=1:
+            raise ValueError(f'coord {xs} found in {len(ls)} sub-lattice')
+        return ls[0].get_site(*xs)
+    def get_batch(self, b):
+        if self.batch_dim<0:
+            return self
+        else:
+            return self.wrap([lat.get_batch(b) for lat in self.data])
+    def batch_update(self, cond, other):
+        return self.wrap([lat.batch_update(cond, o) for lat,o in zip(self.data,other.data)])
     def if_compatible(self, other, f, e=None):
         if self.is_compatible(other):
             return self.wrap([f(a,b) for a,b in zip(self.data,other.data)])
@@ -578,6 +714,17 @@ class LatticeHypercubeParts(Lattice):
             raise ValueError('operation only possible with Lattice object')
         else:
             return self.wrap([e(a) for a in self.data])
+    def get_subset(self, subset):
+        return self.wrap([l for l in self.unwrap() if l.subset in subset], subset=subset)
+    def __neg__(self):
+        return self.wrap([-l for l in self.data])
+    def __pos__(self):
+        return self.wrap([+l for l in self.data])
+
+class LatticeHypercubeParts(LatticeList):
+    """
+    Same as Lattice with the lattice data represented as 2^nd tensors, each from one corner of the 2^nd hypercube.
+    """
     def combine_hypercube(self):
         if self.subset!=SubSetAll:
             raise ValueError(f'subset {self.subset} is not SubSetAll')
@@ -602,8 +749,6 @@ class LatticeHypercubeParts(Lattice):
             nd = nd,
             batch_dim = batch_dim,
             subset = self.subset)
-    def get_subset(self, subset):
-        return self.wrap([l for l in self.unwrap() if l.subset in subset], subset=subset)
 
 def from_hypercube_parts(parts, **kwargs):
     """pass kwargs to LatticeHypercubeParts"""

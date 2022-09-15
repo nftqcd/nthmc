@@ -58,7 +58,7 @@ def TFsolveEE(gaugeT, rT, xT, m, r2req, maxits):
     def op(v):
         return s.D2ee(gauge, v, m2)
     result,iter = cg(op, r, x, r2req, maxits)
-    flops = (4*4*72+60)*tf.cast(x.size(),dtype=tf.float64)*tf.cast(iter,dtype=tf.float64)
+    flops = (4*4*72+60)*x.full_volume()/2*tf.cast(iter,dtype=tf.float64)
     return result.to_tensors(),iter,flops
 
 def solveEE(gauge, r, x, m, r2req, maxits):
@@ -82,7 +82,7 @@ def solve(gauge, x, b, m, r2req, maxits):
     c = b - s.D(gauge, x, m)
     r2 = norm2(c)
     dt = tf.timestamp()-t0
-    flops += (4*4*72+24)*x.size()/2
+    flops += (4*4*72+24)*x.full_volume()/2
     return x,iter,dt,flops
 
 if __name__=='__main__':

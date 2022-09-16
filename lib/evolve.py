@@ -29,12 +29,21 @@ def collectEvolveStat(stat):
     bs = bs.stack()
     return (ls, f2s, fms, bs)
 
-class LeapFrog(tl.Layer):
-    def __init__(self, conf, dynamics, name='LeapFrog', **kwargs):
-        super(LeapFrog, self).__init__(autocast=False, name=name, **kwargs)
+class GeneratorBase(tl.Layer):
+    def __init__(self, conf, dynamics, name='GeneratorBase', **kwargs):
+        super(GeneratorBase, self).__init__(autocast=False, name=name, **kwargs)
+        self.trajLength = self.add_weight(initializer=tk.initializers.Constant(conf.trajLength), dtype=tf.float64, trainable=False)
         self.dt = self.add_weight(initializer=tk.initializers.Constant(conf.initDt), dtype=tf.float64, trainable=conf.trainDt)
         self.stepPerTraj = self.add_weight(initializer=tk.initializers.Constant(conf.stepPerTraj), dtype=tf.int64, trainable=False)    # TF error with int32, https://github.com/tensorflow/tensorflow/issues/53192
         self.dynamics = dynamics
+    def setStepPerTraj(self, stepPerTraj):
+        self.stepPerTraj.assign(stepPerTraj)
+        self.dt.assign(self.trajLength/tf.cast(stepPerTraj, tf.float64))
+        tf.print(self.name, 'set with dt', self.dt, 'step/traj', self.stepPerTraj, summarize=-1)
+
+class LeapFrog(GeneratorBase):
+    def __init__(self, conf, dynamics, name='LeapFrog', **kwargs):
+        super(LeapFrog, self).__init__(conf=conf, dynamics=dynamics, name=name, **kwargs)
         tf.print(self.name, 'init with dt', self.dt, 'step/traj', self.stepPerTraj, summarize=-1)
     def call(self, x0, p0):
         n = tf.cast(self.stepPerTraj, tf.int32)
@@ -64,14 +73,11 @@ class LeapFrog(tl.Layer):
         x = self.dynamics.stepX(0.5*dt, x, p)
         return (x, -p, *collectEvolveStat(stat))
 
-class Omelyan2MN(tl.Layer):
+class Omelyan2MN(GeneratorBase):
     def __init__(self, conf, dynamics, c_lambda=0.1931833275037836, name='Omelyan2MN', **kwargs):
         # Omelyan et. al. (2003), equation (31)
-        super(Omelyan2MN, self).__init__(autocast=False, name=name, **kwargs)
-        self.dt = self.add_weight(initializer=tk.initializers.Constant(conf.initDt), dtype=tf.float64, trainable=conf.trainDt)
-        self.stepPerTraj = self.add_weight(initializer=tk.initializers.Constant(conf.stepPerTraj), dtype=tf.int64, trainable=False)    # TF error with int32, https://github.com/tensorflow/tensorflow/issues/53192
+        super(Omelyan2MN, self).__init__(conf=conf, dynamics=dynamics, name=name, **kwargs)
         self.c_lambda = self.add_weight(initializer=tk.initializers.Constant(c_lambda), dtype=tf.float64, trainable=False)
-        self.dynamics = dynamics
         tf.print(self.name, 'init with dt', self.dt, 'step/traj', self.stepPerTraj, summarize=-1)
     def call(self, x0, p0):
         n = tf.cast(2*self.stepPerTraj, tf.int32)

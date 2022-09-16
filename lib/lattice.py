@@ -229,11 +229,30 @@ def randomNormal_(lat, rng, new_site_shape=None, site_shape_len=None, dtype=None
     if dtype is None:
         dtype = lat.dtype
     if new_site_shape is None:
-        return rng.normal(lat.shape, dtype=dtype, **kwargs)
+        if dtype==tf.complex128:
+            return tf.dtypes.complex(
+                rng.normal(lat.shape, dtype=tf.float64, **kwargs),
+                rng.normal(lat.shape, dtype=tf.float64, **kwargs))
+        elif dtype==tf.complex64:
+            return tf.dtypes.complex(
+                rng.normal(lat.shape, dtype=tf.float32, **kwargs),
+                rng.normal(lat.shape, dtype=tf.float32, **kwargs))
+        else:
+            return rng.normal(lat.shape, dtype=dtype, **kwargs)
     elif site_shape_len is None:
         raise ValueError(f'unknown site_shape_len, required for new_site_shape={new_site_shape}')
     else:
-        return rng.normal(lat.shape[:-site_shape_len]+tuple(new_site_shape), dtype=dtype, **kwargs)
+        sp = lat.shape[:-site_shape_len]+tuple(new_site_shape)
+        if dtype==tf.complex128:
+            return tf.dtypes.complex(
+                rng.normal(sp, dtype=tf.float64, **kwargs),
+                rng.normal(sp, dtype=tf.float64, **kwargs))
+        elif dtype==tf.complex64:
+            return tf.dtypes.complex(
+                rng.normal(sp, dtype=tf.float32, **kwargs),
+                rng.normal(sp, dtype=tf.float32, **kwargs))
+        else:
+            return rng.normal(sp, dtype=dtype, **kwargs)
 
 def randomNormal(lat, rng, new_site_shape=None, dtype=None, **kwargs):
     return lattice_map(lat, randomNormal, randomNormal_, rng, new_site_shape=new_site_shape, dtype=dtype, **kwargs)

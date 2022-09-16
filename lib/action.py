@@ -129,16 +129,16 @@ if __name__ == '__main__':
     conf = nthmc.Conf(nbatch=1, nepoch=2, nstepEpoch=8, trajLength=4.0, stepPerTraj=128)
     nthmc.setup(conf)
     mom = QuadraticMomentum()
-    # act = SU3d4(beta=0.7796, c1=C1DBW2)
-    act = SU3d4(beta=6.0, c1=0)
-    tact = TransformedActionVectorFromMatrixBase(transform=transform.Ident(), action=act)
+    act = SU3d4(beta=0.7796, c1=C1DBW2)
+    # act = SU3d4(beta=6.0, c1=0)
+    tact = TransformedActionVectorBase(transform=transform.Ident(), action=act)
     rng = tf.random.Generator.from_seed(conf.seed)
 
     if len(sys.argv)>1 and os.path.exists(sys.argv[1]):
         x0 = gauge.readGauge(sys.argv[1])
     else:
         x0 = gauge.random(rng, [8,8,8,16])
-    x0 = x0.hypercube_partition()
+    # x0 = x0.hypercube_partition()
 
     for pl in gauge.plaquette(x0):
         tf.print(tf.math.real(pl), tf.math.imag(pl), summarize=-1)

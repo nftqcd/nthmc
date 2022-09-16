@@ -133,13 +133,13 @@ def shift(lat, direction, length, subset=SubSetAll, axis=None):
 def zeros(lat, new_site_shape=None, site_shape_len=None, dtype=None, **kwargs):
     """Pass kwargs to Lattice.zeros, allow Lattice to overwrite site_shape_len."""
     if isinstance(lat, Lattice):
-        return lat.zeros(new_site_shape=new_site_shape, **kwargs)
+        return lat.zeros(new_site_shape=new_site_shape, dtype=dtype, **kwargs)
     elif len(kwargs)>0:
         raise ValueError(f'unsupported kwargs {kwargs}')
     elif isinstance(lat, list):
-        return [zeros(x, new_site_shape=new_site_shape, site_shape_len=site_shape_len) for x in lat]
+        return [zeros(x, new_site_shape=new_site_shape, site_shape_len=site_shape_len, dtype=dtype) for x in lat]
     elif isinstance(lat, tuple):
-        return tuple([zeros(x, new_site_shape=new_site_shape, site_shape_len=site_shape_len) for x in lat])
+        return tuple([zeros(x, new_site_shape=new_site_shape, site_shape_len=site_shape_len, dtype=dtype) for x in lat])
     else:
         if dtype is None:
             dtype = lat.dtype

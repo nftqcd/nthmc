@@ -1,0 +1,11 @@
+MKSHELL=$PLAN9/bin/rc
+
+gps=`{echo *.gp}
+pdfs=${gps:%.gp=%.pdf}
+
+all:V:	$pdfs
+
+%.pdf:	%.gp
+	size=SIZE_$stem
+	if(~ $#$size 0) gpctx $prereq
+	if not gpctx -s $$size $prereq

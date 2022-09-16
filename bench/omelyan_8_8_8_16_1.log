@@ -1,0 +1,283 @@
+2022-09-16 15:14:13.300820: I tensorflow/core/platform/cpu_feature_guard.cc:193] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 FMA
+To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.
+2022-09-16 15:14:21.162699: W tensorflow/compiler/xla/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libnvinfer.so.7'; dlerror: libnvinfer.so.7: cannot open shared object file: No such file or directory; LD_LIBRARY_PATH: /soft/libraries/cudnn/cudnn-11.2-v8.1.0.77/lib64:/soft/libraries/mpi/openmpi/4.1.1/lib:/soft/compilers/gcc/12.1.0/x86_64-suse-linux/lib64:/soft/compilers/cuda/cuda-11.6.2/lib64
+2022-09-16 15:14:21.162769: W tensorflow/compiler/xla/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libnvinfer_plugin.so.7'; dlerror: libnvinfer_plugin.so.7: cannot open shared object file: No such file or directory; LD_LIBRARY_PATH: /soft/libraries/cudnn/cudnn-11.2-v8.1.0.77/lib64:/soft/libraries/mpi/openmpi/4.1.1/lib:/soft/compilers/gcc/12.1.0/x86_64-suse-linux/lib64:/soft/compilers/cuda/cuda-11.6.2/lib64
+2022-09-16 15:14:21.162775: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Cannot dlopen some TensorRT libraries. If you would like to use Nvidia GPU with TensorRT, please make sure the missing libraries mentioned above are installed properly.
+2022-09-16 15:14:30.525894: I tensorflow/compiler/xla/stream_executor/cuda/cuda_gpu_executor.cc:981] successful NUMA node read from SysFS had negative value (-1), but there must be at least one NUMA node, so returning NUMA node zero
+2022-09-16 15:14:30.563555: I tensorflow/compiler/xla/stream_executor/cuda/cuda_gpu_executor.cc:981] successful NUMA node read from SysFS had negative value (-1), but there must be at least one NUMA node, so returning NUMA node zero
+2022-09-16 15:14:30.565541: I tensorflow/compiler/xla/stream_executor/cuda/cuda_gpu_executor.cc:981] successful NUMA node read from SysFS had negative value (-1), but there must be at least one NUMA node, so returning NUMA node zero
+2022-09-16 15:14:30.567845: I tensorflow/core/platform/cpu_feature_guard.cc:193] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 FMA
+To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.
+2022-09-16 15:14:30.568193: I tensorflow/compiler/xla/stream_executor/cuda/cuda_gpu_executor.cc:981] successful NUMA node read from SysFS had negative value (-1), but there must be at least one NUMA node, so returning NUMA node zero
+2022-09-16 15:14:30.570138: I tensorflow/compiler/xla/stream_executor/cuda/cuda_gpu_executor.cc:981] successful NUMA node read from SysFS had negative value (-1), but there must be at least one NUMA node, so returning NUMA node zero
+2022-09-16 15:14:30.572059: I tensorflow/compiler/xla/stream_executor/cuda/cuda_gpu_executor.cc:981] successful NUMA node read from SysFS had negative value (-1), but there must be at least one NUMA node, so returning NUMA node zero
+2022-09-16 15:14:31.091485: I tensorflow/compiler/xla/stream_executor/cuda/cuda_gpu_executor.cc:981] successful NUMA node read from SysFS had negative value (-1), but there must be at least one NUMA node, so returning NUMA node zero
+2022-09-16 15:14:31.093422: I tensorflow/compiler/xla/stream_executor/cuda/cuda_gpu_executor.cc:981] successful NUMA node read from SysFS had negative value (-1), but there must be at least one NUMA node, so returning NUMA node zero
+2022-09-16 15:14:31.095095: I tensorflow/compiler/xla/stream_executor/cuda/cuda_gpu_executor.cc:981] successful NUMA node read from SysFS had negative value (-1), but there must be at least one NUMA node, so returning NUMA node zero
+2022-09-16 15:14:31.096764: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1616] Created device /job:localhost/replica:0/task:0/device:GPU:0 with 38220 MB memory:  -> device: 0, name: NVIDIA A100-PCIE-40GB, pci bus id: 0000:43:00.0, compute capability: 8.0
+NTHMC 2022-09-16 15:14:30.372005
+Python 3.10.6 (main, Sep  1 2022, 19:58:04) [GCC 12.2.0]
+TensorFlow 2.11.0-dev20220912 v1.12.1-81213-g53844b49ea4 9.3.1 20200408
+Device PhysicalDevice(name='/physical_device:CPU:0', device_type='CPU') PhysicalDevice(name='/physical_device:GPU:0', device_type='GPU')
+RandomSeed 9876543211
+SU3d4 init with beta 0.7796 coeff (9.56600384, -1.09830048)
+2022-09-16 15:14:32.034566: I tensorflow/core/util/cuda_solvers.cc:179] Creating GpuSolver handles for stream 0xb18c3e0
+### lat [8, 8, 8, 16] nbatch 1
+1. Mat Mom
+Omelyan2MN init with dt 0.05 step/traj 4
+H0 [-766.31486276217515] [-431.38631754953491] [-334.9285452126403]
+tf.function: Time 0.0001838207244873047 sec
+tf.func:jit: Time 9.918212890625e-05 sec
+fun concrete: Time 14.9234139919281 sec
+jit concrete: Time 9.866405010223389 sec
+egr run 0: Time 0.9399559497833252 sec
+egr run 1: Time 0.8925411701202393 sec
+egr run 2: Time 0.8909430503845215 sec
+egr run 0: Time 0.8899009227752686 sec
+egr run 1: Time 0.8901050090789795 sec
+egr run 2: Time 0.8925650119781494 sec
+H1 [-789.52087303633016] [-50743.812834971061] [49954.29196193473]
+dH [-23.206010274154949]
+fun run 0: Time 3.1343679428100586 sec
+fun run 1: Time 0.17322015762329102 sec
+fun run 2: Time 0.1707460880279541 sec
+fun run 0: Time 0.5104360580444336 sec / 3 = 0.17014535268147787 sec
+fun run 1: Time 0.510321855545044 sec / 3 = 0.1701072851816813 sec
+fun run 2: Time 0.5092980861663818 sec / 3 = 0.1697660287221273 sec
+H1 [-789.52087303633016] [-50743.812834971061] [49954.29196193473]
+dH [-23.206010274154949]
+2022-09-16 15:15:07.670073: I tensorflow/compiler/xla/service/service.cc:173] XLA service 0x6b164000 initialized for platform CUDA (this does not guarantee that XLA will be used). Devices:
+2022-09-16 15:15:07.670104: I tensorflow/compiler/xla/service/service.cc:181]   StreamExecutor device (0): NVIDIA A100-PCIE-40GB, Compute Capability 8.0
+2022-09-16 15:15:07.952819: I tensorflow/compiler/mlir/tensorflow/utils/dump_mlir_util.cc:268] disabling MLIR crash reproducer, set env var `MLIR_CRASH_REPRODUCER_DIRECTORY` to enable.
+2022-09-16 15:15:25.438018: I tensorflow/compiler/jit/xla_compilation_cache.cc:476] Compiled cluster using XLA!  This line is logged at most once for the lifetime of the process.
+jit run 0: Time 18.067759037017822 sec
+jit run 1: Time 0.14298486709594727 sec
+jit run 2: Time 0.11861896514892578 sec
+jit run 0: Time 0.5925960540771484 sec / 5 = 0.11851921081542968 sec
+jit run 1: Time 0.5926840305328369 sec / 5 = 0.11853680610656739 sec
+jit run 2: Time 0.5926458835601807 sec / 5 = 0.11852917671203614 sec
+H1 [-789.52087303633016] [-50743.812834971061] [49954.29196193473]
+dH [-23.206010274154949]
+2. Vec Mom
+Omelyan2MN init with dt 0.05 step/traj 4
+H0 [-206.12830030932764] [-431.38631754953491] [225.25801724020727]
+tf.function: Time 0.00014710426330566406 sec
+tf.func:jit: Time 0.000102996826171875 sec
+fun concrete: Time 13.162405967712402 sec
+jit concrete: Time 11.79798698425293 sec
+egr run 0: Time 1.6263740062713623 sec
+egr run 1: Time 1.6131389141082764 sec
+egr run 2: Time 1.613584041595459 sec
+egr run 0: Time 1.6102278232574463 sec
+egr run 1: Time 1.6108551025390625 sec
+egr run 2: Time 1.6127541065216064 sec
+H1 [-211.9142598978251] [-26700.357126540581] [26488.442866642756]
+dH [-5.7859595884974624]
+fun run 0: Time 4.778787136077881 sec
+fun run 1: Time 0.2843809127807617 sec
+fun run 2: Time 0.284743070602417 sec
+fun run 0: Time 0.5732150077819824 sec / 2 = 0.2866075038909912 sec
+fun run 1: Time 0.5765070915222168 sec / 2 = 0.2882535457611084 sec
+fun run 2: Time 0.5764198303222656 sec / 2 = 0.2882099151611328 sec
+H1 [-211.91425989782874] [-26700.357126540577] [26488.442866642748]
+dH [-5.7859595885011]
+jit run 0: Time 20.37947678565979 sec
+jit run 1: Time 0.20656490325927734 sec
+jit run 2: Time 0.2064189910888672 sec
+jit run 0: Time 0.6185050010681152 sec / 3 = 0.20616833368937174 sec
+jit run 1: Time 0.618812084197998 sec / 3 = 0.20627069473266602 sec
+jit run 2: Time 0.618427038192749 sec / 3 = 0.20614234606424967 sec
+H1 [-211.91425989782874] [-26700.357126540577] [26488.442866642748]
+dH [-5.7859595885011]
+3. Vec Mom from Mat
+Omelyan2MN init with dt 0.05 step/traj 4
+H0 [-507.89211678332566] [-431.38631754953491] [-76.505799233790739]
+tf.function: Time 0.00014781951904296875 sec
+tf.func:jit: Time 0.0001049041748046875 sec
+fun concrete: Time 11.61840009689331 sec
+jit concrete: Time 10.740483045578003 sec
+egr run 0: Time 1.1008708477020264 sec
+egr run 1: Time 1.1192991733551025 sec
+egr run 2: Time 1.1235880851745605 sec
+egr run 0: Time 1.122464895248413 sec
+egr run 1: Time 1.1290290355682373 sec
+egr run 2: Time 1.1221950054168701 sec
+H1 [-513.53251859229931] [-26294.571382380826] [25781.038863788526]
+dH [-5.6404018089736638]
+fun run 0: Time 3.6615259647369385 sec
+fun run 1: Time 0.17863821983337402 sec
+fun run 2: Time 0.1771838665008545 sec
+fun run 0: Time 0.5316369533538818 sec / 3 = 0.1772123177846273 sec
+fun run 1: Time 0.531123161315918 sec / 3 = 0.17704105377197266 sec
+fun run 2: Time 0.5315508842468262 sec / 3 = 0.1771836280822754 sec
+H1 [-513.53251859229931] [-26294.571382380826] [25781.038863788526]
+dH [-5.6404018089736638]
+2022-09-16 15:17:42.366375: I tensorflow/compiler/xla/stream_executor/gpu/asm_compiler.cc:327] ptxas warning : Registers are spilled to local memory in function 'fusion_177', 32 bytes spill stores, 32 bytes spill loads
+
+jit run 0: Time 35.4613299369812 sec
+jit run 1: Time 0.14160704612731934 sec
+jit run 2: Time 0.12003684043884277 sec
+jit run 0: Time 0.5983121395111084 sec / 5 = 0.11966242790222167 sec
+jit run 1: Time 0.5986099243164062 sec / 5 = 0.11972198486328126 sec
+jit run 2: Time 0.5985040664672852 sec / 5 = 0.11970081329345703 sec
+H1 [-513.53251859229931] [-26294.571382380826] [25781.038863788526]
+dH [-5.6404018089736638]
+4. Part Mat Mom
+Omelyan2MN init with dt 0.05 step/traj 4
+H0 [58.3513567746798] [-431.38631754953462] [489.73767432421442]
+tf.function: Time 0.0001990795135498047 sec
+tf.func:jit: Time 0.00010180473327636719 sec
+fun concrete: Time 107.15296912193298 sec
+jit concrete: Time 108.24957489967346 sec
+egr run 0: Time 13.321012020111084 sec
+egr run 1: Time 13.248388051986694 sec
+egr run 2: Time 13.224586963653564 sec
+egr run 0: Time 13.388236999511719 sec
+egr run 1: Time 14.706844806671143 sec
+egr run 2: Time 13.493714094161987 sec
+H1 [35.046091062293272] [-50778.681241476865] [50813.727332539158]
+dH [-23.305265712386529]
+fun run 0: Time 28.799758911132812 sec
+fun run 1: Time 1.1686639785766602 sec
+fun run 2: Time 1.1898248195648193 sec
+fun run 0: Time 1.1867129802703857 sec
+fun run 1: Time 1.1839659214019775 sec
+fun run 2: Time 1.2353060245513916 sec
+H1 [35.046091062293272] [-50778.681241476865] [50813.727332539158]
+dH [-23.305265712386529]
+2022-09-16 15:28:18.650231: E tensorflow/compiler/xla/service/slow_operation_alarm.cc:65] 
+********************************
+[Compiling module a_inference_mdfun__554363__XlaMustCompile_true_config_proto_9055505835036088825_executor_type_11160318154034397263_.199690] Very slow compile?  If you want to file a bug, run with envvar XLA_FLAGS=--xla_dump_to=/tmp/foo and attach the results.
+********************************
+2022-09-16 15:31:30.880620: I tensorflow/compiler/xla/stream_executor/gpu/asm_compiler.cc:327] ptxas warning : Registers are spilled to local memory in function 'fusion_1707', 4 bytes spill stores, 4 bytes spill loads
+ptxas warning : Registers are spilled to local memory in function 'fusion_1341', 16 bytes spill stores, 16 bytes spill loads
+ptxas warning : Registers are spilled to local memory in function 'fusion_1725', 4 bytes spill stores, 4 bytes spill loads
+ptxas warning : Registers are spilled to local memory in function 'fusion_2049', 8 bytes spill stores, 8 bytes spill loads
+ptxas warning : Registers are spilled to local memory in function 'fusion_2983', 144 bytes spill stores, 200 bytes spill loads
+ptxas warning : Registers are spilled to local memory in function 'fusion_8110', 16 bytes spill stores, 24 bytes spill loads
+ptxas warning : Registers are spilled to local memory in function 'fusion_8120', 4 bytes spill stores, 4 bytes spill loads
+ptxas warning : Registers are spilled to local memory in function 'fusion_2727', 8 bytes spill stores, 8 bytes spill loads
+ptxas warning : Registers are spilled to local memory in function 'fusion_4462', 24 bytes spill stores, 24 bytes spill loads
+ptxas warning : Registers are spilled to local memory in function 'fusion_6439', 380 bytes spill stores, 624 bytes spill loads
+
+2022-09-16 15:31:31.439378: E tensorflow/compiler/xla/service/slow_operation_alarm.cc:133] The operation took 5m12.789262538s
+
+********************************
+[Compiling module a_inference_mdfun__554363__XlaMustCompile_true_config_proto_9055505835036088825_executor_type_11160318154034397263_.199690] Very slow compile?  If you want to file a bug, run with envvar XLA_FLAGS=--xla_dump_to=/tmp/foo and attach the results.
+********************************
+jit run 0: Time 494.35869908332825 sec
+jit run 1: Time 0.43235301971435547 sec
+jit run 2: Time 0.4321150779724121 sec
+jit run 0: Time 0.8641350269317627 sec / 2 = 0.43206751346588135 sec
+jit run 1: Time 0.8644089698791504 sec / 2 = 0.4322044849395752 sec
+jit run 2: Time 0.8642020225524902 sec / 2 = 0.4321010112762451 sec
+H1 [35.046091062285996] [-50778.681241476865] [50813.727332539151]
+dH [-23.305265712393805]
+5. Part Vec Mom
+Omelyan2MN init with dt 0.05 step/traj 4
+H0 [-340.1240560191585] [-431.38631754953462] [91.2622615303761]
+tf.function: Time 0.00019407272338867188 sec
+tf.func:jit: Time 0.00010395050048828125 sec
+fun concrete: Time 147.4728488922119 sec
+jit concrete: Time 141.9539179801941 sec
+egr run 0: Time 27.236063957214355 sec
+egr run 1: Time 24.836294174194336 sec
+egr run 2: Time 24.682069063186646 sec
+egr run 0: Time 25.336116075515747 sec
+egr run 1: Time 25.26614499092102 sec
+egr run 2: Time 24.794793128967285 sec
+H1 [-345.97598153465151] [-27196.442009437193] [26850.466027902541]
+dH [-5.8519255154929795]
+fun run 0: Time 56.597193002700806 sec
+fun run 1: Time 2.145143985748291 sec
+fun run 2: Time 2.2320899963378906 sec
+fun run 0: Time 2.2414438724517822 sec
+fun run 1: Time 2.1815810203552246 sec
+fun run 2: Time 2.205725908279419 sec
+H1 [-345.97598153465151] [-27196.442009437193] [26850.466027902541]
+dH [-5.8519255154929795]
+2022-09-16 15:50:19.008831: I tensorflow/compiler/xla/stream_executor/gpu/asm_compiler.cc:327] ptxas warning : Registers are spilled to local memory in function 'fusion_2663', 16 bytes spill stores, 16 bytes spill loads
+ptxas warning : Registers are spilled to local memory in function 'fusion_2007', 168 bytes spill stores, 256 bytes spill loads
+ptxas warning : Registers are spilled to local memory in function 'fusion_2715', 552 bytes spill stores, 832 bytes spill loads
+ptxas warning : Registers are spilled to local memory in function 'fusion_3359', 24 bytes spill stores, 40 bytes spill loads
+ptxas warning : Registers are spilled to local memory in function 'fusion_4085', 16 bytes spill stores, 16 bytes spill loads
+ptxas warning : Registers are spilled to local memory in function 'fusion_3447', 120 bytes spill stores, 152 bytes spill loads
+ptxas warning : Registers are spilled to local memory in function 'fusion_4051', 112 bytes spill stores, 120 bytes spill loads
+ptxas warning : Registers are spilled to local memory in function 'fusion_4576', 4 bytes spill stores, 4 bytes spill loads
+ptxas warning : Registers are spilled to local memory in function 'fusion_4134', 372 bytes spill stores, 620 bytes spill loads
+ptxas warning : Registers are spilled to local memory in function 'fusion_4546', 128 bytes spill stores, 184 bytes spill loads
+ptxas warning : Registers are spilled to local memory in function 'fusion_4940', 56 bytes spill stores, 56 bytes spill loads
+ptxas warning : Registers are spilled to local memory in function 'fusion_4967', 8 bytes spill stores, 8 bytes spill loads
+ptxas warning : Registers are spilled to local memory in function 'fusion_5698', 104 bytes spill stores, 184 bytes spill loads
+ptxas warning : Registers are spilled to local memory in function 'fusion_5822', 56 bytes spill stores, 56 bytes spill loads
+ptxas warning : Registers are spilled to local memory in function 'fusion_6498', 56 bytes spill stores, 88 bytes spill loads
+ptxas warning : Registers are spilled to local memory in function 'fusion_6873', 40 bytes spill stores, 64 bytes spill loads
+ptxas warning : Registers are spilled to local memory in function 'fusion_7249', 16 bytes spill stores, 16 bytes spill loads
+ptxas warning : Registers are spilled to local memory in function 'fusion_7816', 128 bytes spill stores, 240 bytes spill loads
+ptxas warning : Registers are spilled to local memory in function 'fusion_7470', 144 bytes spill stores, 192 bytes spill loads
+
+2022-09-16 15:50:19.583699: E tensorflow/compiler/xla/service/slow_operation_alarm.cc:133] The operation took 6m8.648688185s
+
+********************************
+[Compiling module a_inference_mdfun__2035412__XlaMustCompile_true_config_proto_9055505835036088825_executor_type_11160318154034397263_.311119] Very slow compile?  If you want to file a bug, run with envvar XLA_FLAGS=--xla_dump_to=/tmp/foo and attach the results.
+********************************
+jit run 0: Time 614.1518468856812 sec
+jit run 1: Time 0.7527921199798584 sec
+jit run 2: Time 0.7520980834960938 sec
+jit run 0: Time 0.7520289421081543 sec
+jit run 1: Time 0.7528200149536133 sec
+jit run 2: Time 0.7526371479034424 sec
+H1 [-345.97598153465151] [-27196.442009437193] [26850.466027902541]
+dH [-5.8519255154929795]
+6. Part Vec Mom from Mat
+Omelyan2MN init with dt 0.05 step/traj 4
+H0 [-440.42684394679787] [-431.38631754953462] [-9.04052639726325]
+tf.function: Time 0.00019598007202148438 sec
+tf.func:jit: Time 0.00010609626770019531 sec
+fun concrete: Time 139.397794008255 sec
+jit concrete: Time 125.27612495422363 sec
+egr run 0: Time 16.415515899658203 sec
+egr run 1: Time 16.88878297805786 sec
+egr run 2: Time 18.95276379585266 sec
+egr run 0: Time 16.606795072555542 sec
+egr run 1: Time 16.86217999458313 sec
+egr run 2: Time 16.88638687133789 sec
+H1 [-446.20019957904515] [-26873.545841223826] [26427.345641644781]
+dH [-5.7733556322472737]
+fun run 0: Time 38.23649787902832 sec
+fun run 1: Time 1.2097570896148682 sec
+fun run 2: Time 1.208662986755371 sec
+fun run 0: Time 1.21067214012146 sec
+fun run 1: Time 1.209946870803833 sec
+fun run 2: Time 1.2779500484466553 sec
+H1 [-446.20019957904515] [-26873.545841223826] [26427.345641644781]
+dH [-5.7733556322472737]
+2022-09-16 16:10:52.264988: I tensorflow/compiler/xla/stream_executor/gpu/asm_compiler.cc:327] ptxas warning : Registers are spilled to local memory in function 'fusion_1412', 16 bytes spill stores, 48 bytes spill loads
+ptxas warning : Registers are spilled to local memory in function 'fusion_1294', 56 bytes spill stores, 160 bytes spill loads
+ptxas warning : Registers are spilled to local memory in function 'fusion_1828', 16 bytes spill stores, 16 bytes spill loads
+ptxas warning : Registers are spilled to local memory in function 'fusion_1359', 96 bytes spill stores, 160 bytes spill loads
+ptxas warning : Registers are spilled to local memory in function 'fusion_1643', 16 bytes spill stores, 16 bytes spill loads
+ptxas warning : Registers are spilled to local memory in function 'fusion_2821', 24 bytes spill stores, 40 bytes spill loads
+ptxas warning : Registers are spilled to local memory in function 'fusion_2784', 96 bytes spill stores, 96 bytes spill loads
+ptxas warning : Registers are spilled to local memory in function 'fusion_3453', 8 bytes spill stores, 8 bytes spill loads
+ptxas warning : Registers are spilled to local memory in function 'fusion_6437', 8 bytes spill stores, 8 bytes spill loads
+ptxas warning : Registers are spilled to local memory in function 'fusion_6296', 8 bytes spill stores, 8 bytes spill loads
+ptxas warning : Registers are spilled to local memory in function 'fusion_8402', 4 bytes spill stores, 4 bytes spill loads
+ptxas warning : Registers are spilled to local memory in function 'fusion_6803', 4 bytes spill stores, 4 bytes spill loads
+ptxas warning : Registers are spilled to local memory in function 'fusion_7048', 4 bytes spill stores, 4 bytes spill loads
+ptxas warning : Registers are spilled to local memory in function 'fusion_8386', 40 bytes spill stores, 40 bytes spill loads
+ptxas warning : Registers are spilled to local memory in function 'fusion_8360', 32 bytes spill stores, 32 bytes spill loads
+
+2022-09-16 16:10:52.975454: E tensorflow/compiler/xla/service/slow_operation_alarm.cc:133] The operation took 9m0.74231019s
+
+********************************
+[Compiling module a_inference_mdfun__4663861__XlaMustCompile_true_config_proto_9055505835036088825_executor_type_11160318154034397263_.239943] Very slow compile?  If you want to file a bug, run with envvar XLA_FLAGS=--xla_dump_to=/tmp/foo and attach the results.
+********************************
+jit run 0: Time 814.506343126297 sec
+jit run 1: Time 0.4296259880065918 sec
+jit run 2: Time 0.4295351505279541 sec
+jit run 0: Time 0.8591399192810059 sec / 2 = 0.42956995964050293 sec
+jit run 1: Time 0.8585119247436523 sec / 2 = 0.42925596237182617 sec
+jit run 2: Time 0.8600590229034424 sec / 2 = 0.4300295114517212 sec
+H1 [-446.20019957904879] [-26873.545841223826] [26427.345641644777]
+dH [-5.7733556322509116]

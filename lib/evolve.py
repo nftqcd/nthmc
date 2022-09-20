@@ -46,26 +46,24 @@ class LeapFrog(GeneratorBase):
         if isinstance(x0, Gauge):
             x_ = x0.to_tensors()
             p_ = p0.to_tensors()
-            for i in tf.range(0,n+1):  # loop must only update TF tensors
+            for i in tf.range(0,n):  # loop must only update TF tensors
                 xp = x0.from_tensors(x_)
                 pp = p0.from_tensors(p_)
-                dtx = 0.5*dt if i==0 or i==n else dt
+                dtx = dt*(1.0-0.5*tf.cast(i==0,dt.dtype))
                 xp = self.dynamics.stepX(dtx, xp, pp)
+                pp, d, l, b = self.dynamics.stepP(dt, xp, pp)
+                stat = recordEvolveStat(stat,i,d,l,b)
                 x_ = xp.to_tensors()
                 p_ = pp.to_tensors()
-                if i<n:
-                    ppp, d, l, b = self.dynamics.stepP(dt, xp, pp)
-                    stat = recordEvolveStat(stat,i,d,l,b)
-                    p_ = ppp.to_tensors()
             x = x0.from_tensors(x_)
             p = p0.from_tensors(p_)
         else:
-            for i in tf.range(0,n+1):
-                dtx = 0.5*dt if i==0 or i==n else dt
+            for i in tf.range(0,n):
+                dtx = dt*(1.0-0.5*tf.cast(i==0,dt.dtype))
                 x = self.dynamics.stepX(dtx, x, p)
-                if i<n:
-                    p, d, l, b = self.dynamics.stepP(dt, x, p)
-                    stat = recordEvolveStat(stat,i,d,l,b)
+                p, d, l, b = self.dynamics.stepP(dt, x, p)
+                stat = recordEvolveStat(stat,i,d,l,b)
+        x = self.dynamics.stepX(0.5*dt, x, p)
         return (x, -p, *stat)
 
 class Omelyan2MN(GeneratorBase):
@@ -77,43 +75,36 @@ class Omelyan2MN(GeneratorBase):
     def call(self, x0, p0):
         n = tf.cast(2*self.stepPerTraj, tf.int32)
         stat = newEvolveStat(n)
-        dt = self.dt
-        dt_2 = p0.typecast(0.5*dt)
-        dt_lambda = p0.typecast(self.c_lambda*dt)
-        dt_lambda2 = 2.*dt_lambda
-        dt_1_lambda2 = p0.typecast(dt)-dt_lambda2
+        dt = p0.typecast(self.dt)
+        c_lambda = p0.typecast(self.c_lambda)
+        dt_2 = 0.5*dt
+        dt_lambda = dt*c_lambda
 
         if isinstance(x0, Gauge):
             x_ = x0.to_tensors()
             p_ = p0.to_tensors()
-            for i in tf.range(0,n+1):  # loop must only update TF tensors
+            for i in tf.range(0,n):  # loop must only update TF tensors
                 xp = x0.from_tensors(x_)
                 pp = p0.from_tensors(p_)
-                if i==0 or i==n:
-                    dtx = dt_lambda
-                else:
-                    ieo = tf.cast(i%2, dt_lambda2.dtype)
-                    dtx = (1.0-ieo)*dt_lambda2 + ieo*dt_1_lambda2
+                i0 = tf.cast(i!=0, dt.dtype)
+                ieo = tf.cast(i%2, dt.dtype)
+                dtx = dt*((1.0+i0)*(1.0-2.0*ieo)*c_lambda+ieo*i0)
                 xp = self.dynamics.stepX(dtx, xp, pp)
+                pp, d, l, b = self.dynamics.stepP(dt_2, xp, pp)
+                stat = recordEvolveStat(stat,i,d,l,b)
                 x_ = xp.to_tensors()
                 p_ = pp.to_tensors()
-                if i<n:
-                    ppp, d, l, b = self.dynamics.stepP(dt_2, xp, pp)
-                    stat = recordEvolveStat(stat,i,d,l,b)
-                    p_ = ppp.to_tensors()
             x = x0.from_tensors(x_)
             p = p0.from_tensors(p_)
         else:
-            for i in tf.range(0,n+1):
-                if i==0:
-                    dtx = dt_lambda
-                else:
-                    ieo = tf.cast(i%2, dt_lambda2.dtype)
-                    dtx = (1.0-ieo)*dt_lambda2 + ieo*dt_1_lambda2
+            for i in tf.range(0,n):
+                i0 = tf.cast(i!=0, dt.dtype)
+                ieo = tf.cast(i%2, dt.dtype)
+                dtx = dt*((1.0+i0)*(1.0-2.0*ieo)*c_lambda+ieo*i0)
                 x = self.dynamics.stepX(dtx, x, p)
-                if i<n:
-                    p, d, l, b = self.dynamics.stepP(dt_2, x, p)
-                    stat = recordEvolveStat(stat,i,d,l,b)
+                p, d, l, b = self.dynamics.stepP(dt_2, x, p)
+                stat = recordEvolveStat(stat,i,d,l,b)
+        x = self.dynamics.stepX(dt_lambda, x, p)
         return (x, -p, *stat)
 
 @tf.function(jit_compile=True)

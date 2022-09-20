@@ -220,7 +220,7 @@ def checkSU(x):
     c = 2*(nc*nc+1)
     return tf.math.sqrt(a/c),tf.math.sqrt(b/c)
 
-def su3vec(x):
+def su3vec_direct(x):
     """
     Only for x in 3x3 anti-Hermitian.  Return 8 real numbers, X^a T^a = X - 1/3 tr(X).
     Convention: tr{T^a T^a} = -1/2
@@ -237,6 +237,42 @@ def su3vec(x):
         s3*(2*tf.math.imag(x[...,2,2])-tf.math.imag(x[...,1,1])-tf.math.imag(x[...,0,0]))
         # r3*tf.math.imag(x[...,2,2])
     ], axis=-1)
+
+def su3vec_mat(x):
+    """
+    Only for x in 3x3 anti-Hermitian.  Return 8 real numbers, X^a T^a = X - 1/3 tr(X).
+    Convention: tr{T^a T^a} = -1/2
+    X^a = - 2 tr[T^a X]
+    This implements a matvec converter.
+    c*x01.im, c*x01.re, x11.im-x00.im, c*x02.im, c*x02.re, c*x12.im, c*x12.re, s3*(2*x22.im-x11.im-x00.im)
+    """
+    s3 = 0.57735026918962576451    # sqrt(1/3)
+    c = -2
+    dt = tf.float64 if x.dtype==tf.complex128 else tf.float32
+    shmat = x.shape[:-2]+(9,)
+    shconv = (1,)*(len(x.shape)-2)+(8,9)
+    # 8x9 matrix
+    convR = tf.reshape(tf.constant([
+        0,0,0,0,0,0,0,0,0,
+        0,c,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,
+        0,0,c,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,c,0,0,0,
+        0,0,0,0,0,0,0,0,0], dtype=dt), shconv)
+    convI = tf.reshape(tf.constant([  # the extra negative sign from imag*imag
+        0,-c,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,
+        1,0,0,0,-1,0,0,0,0,
+        0,0,-c,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,-c,0,0,0,
+        0,0,0,0,0,0,0,0,0,
+        s3,0,0,0,s3,0,0,0,-2*s3], dtype=dt), shconv)
+    return tf.math.real(tf.linalg.matvec(tf.dtypes.complex(convR,convI), tf.reshape(x, shmat)))
+
+su3vec = su3vec_mat
 
 def su3fromvec_direct(v):
     """

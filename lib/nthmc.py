@@ -58,8 +58,8 @@ class Metropolis(tk.Model):
         if self.checkReverse:
             self.revCheck(x0, p0, x1, p1)
         v1, l1, b1 = self.generate.dynamics.V(x1)
-        ls = tf.concat([tf.expand_dims(l0, 0), ls, tf.expand_dims(l1, 0)], 0)
-        bs = tf.concat([tf.expand_dims(b0, 0), bs, tf.expand_dims(b1, 0)], 0)
+        ls = tf.stack([l0, ls, l1], 0)
+        bs = tf.stack([b0, bs, b1], 0)
         t1 = self.generate.dynamics.T(p1)
         dH = (v1+t1) - (v0+t0)
         exp_mdH = tf.exp(-dH)

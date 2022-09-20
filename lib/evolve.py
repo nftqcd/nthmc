@@ -8,26 +8,20 @@ from gauge import Gauge
 # tf.function would fail and claim some tensor cannot be accessed, if we use class and functions.
 # so we just use tuple here.
 def newEvolveStat(size):
-    ls = tf.TensorArray(tf.float64, size=size, tensor_array_name='lndet')
-    f2s = tf.TensorArray(tf.float64, size=size, tensor_array_name='fnorm2')
-    fms = tf.TensorArray(tf.float64, size=size, tensor_array_name='fnormInf')
-    bs = tf.TensorArray(tf.float64, size=size, tensor_array_name='coeffs')
+    ls = tf.constant(0.0, tf.float64)  # lndet
+    f2s = tf.constant(0.0, tf.float64)  # fnorm2
+    fms = tf.constant(0.0, tf.float64)  # fnormInf
+    bs = tf.constant(0.0, tf.float64)  # coeffs
     return (ls,f2s,fms,bs)
 def recordEvolveStat(stat, i, force, lndet, coeffs):
     (ls,f2s,fms,bs) = stat
+    n_inv = tf.constant(1.0, tf.float64)/tf.cast(i+1, tf.float64)
     f2 = force.norm2(scope='site')
-    f2s = f2s.write(i, f2.reduce_mean())
-    fms = fms.write(i, f2.reduce_max())
-    ls = ls.write(i, lndet)
-    bs = bs.write(i, coeffs)
+    f2s += n_inv*(f2.reduce_mean() - f2s)
+    fms = tf.reduce_max([fms,f2.reduce_max()], axis=0)
+    ls += n_inv*(lndet-ls)
+    bs += n_inv*(coeffs-bs)
     return (ls,f2s,fms,bs)
-def collectEvolveStat(stat):
-    (ls,f2s,fms,bs) = stat
-    ls = ls.stack()
-    f2s = f2s.stack()
-    fms = fms.stack()
-    bs = bs.stack()
-    return (ls, f2s, fms, bs)
 
 class GeneratorBase(tl.Layer):
     def __init__(self, conf, dynamics, name='GeneratorBase', **kwargs):
@@ -49,29 +43,30 @@ class LeapFrog(GeneratorBase):
         n = tf.cast(self.stepPerTraj, tf.int32)
         stat = newEvolveStat(n)
         dt = p0.typecast(self.dt)
-        x = self.dynamics.stepX(0.5*dt, x0, p0)
-        p, d, l, b = self.dynamics.stepP(dt, x, p0)
-        stat = recordEvolveStat(stat,0,d,l,b)
-        if isinstance(x, Gauge):
-            def cond(i_,x_,p_,stat_):
-                return i_<n
-            def body(i_,x_,p_,stat_):
-                xp = x.from_tensors(x_)
-                pp = p.from_tensors(p_)
-                xp = self.dynamics.stepX(dt, xp, pp)
-                pp, d, l, b = self.dynamics.stepP(dt, xp, pp)
-                stat_ = recordEvolveStat(stat_,i_,d,l,b)
-                return i_+1,xp.to_tensors(),pp.to_tensors(),stat_
-            _,x_,p_,stat = tf.while_loop(cond, body, [1, x.to_tensors(), p.to_tensors(), stat])
-            x = x.from_tensors(x_)
-            p = p.from_tensors(p_)
+        if isinstance(x0, Gauge):
+            x_ = x0.to_tensors()
+            p_ = p0.to_tensors()
+            for i in tf.range(0,n+1):  # loop must only update TF tensors
+                xp = x0.from_tensors(x_)
+                pp = p0.from_tensors(p_)
+                dtx = 0.5*dt if i==0 or i==n else dt
+                xp = self.dynamics.stepX(dtx, xp, pp)
+                x_ = xp.to_tensors()
+                p_ = pp.to_tensors()
+                if i<n:
+                    ppp, d, l, b = self.dynamics.stepP(dt, xp, pp)
+                    stat = recordEvolveStat(stat,i,d,l,b)
+                    p_ = ppp.to_tensors()
+            x = x0.from_tensors(x_)
+            p = p0.from_tensors(p_)
         else:
-            for i in tf.range(1,n):
-                x = self.dynamics.stepX(dt, x, p)
-                p, d, l, b = self.dynamics.stepP(dt, x, p)
-                stat = recordEvolveStat(stat,i,d,l,b)
-        x = self.dynamics.stepX(0.5*dt, x, p)
-        return (x, -p, *collectEvolveStat(stat))
+            for i in tf.range(0,n+1):
+                dtx = 0.5*dt if i==0 or i==n else dt
+                x = self.dynamics.stepX(dtx, x, p)
+                if i<n:
+                    p, d, l, b = self.dynamics.stepP(dt, x, p)
+                    stat = recordEvolveStat(stat,i,d,l,b)
+        return (x, -p, *stat)
 
 class Omelyan2MN(GeneratorBase):
     def __init__(self, conf, dynamics, c_lambda=0.1931833275037836, name='Omelyan2MN', **kwargs):
@@ -88,50 +83,38 @@ class Omelyan2MN(GeneratorBase):
         dt_lambda2 = 2.*dt_lambda
         dt_1_lambda2 = p0.typecast(dt)-dt_lambda2
 
-        x = self.dynamics.stepX(dt_lambda, x0, p0)
-
-        p, d, l, b = self.dynamics.stepP(dt_2, x, p0)
-        stat = recordEvolveStat(stat,0,d,l,b)
-
-        x = self.dynamics.stepX(dt_1_lambda2, x, p)
-
-        p, d, l, b = self.dynamics.stepP(dt_2, x, p)
-        stat = recordEvolveStat(stat,1,d,l,b)
-
-        if isinstance(x, Gauge):
-            def cond(i_,x_,p_,stat_):
-                return i_<n
-            def body(i_,x_,p_,stat_):
-                xp = x.from_tensors(x_)
-                pp = p.from_tensors(p_)
-                xp = self.dynamics.stepX(dt_lambda2, xp, pp)
-                pp, d, l, b = self.dynamics.stepP(dt_2, xp, pp)
-                stat_ = recordEvolveStat(stat_,i_,d,l,b)
-                i_ += 1
-                xp = self.dynamics.stepX(dt_1_lambda2, xp, pp)
-                pp, d, l, b = self.dynamics.stepP(dt_2, xp, pp)
-                stat_ = recordEvolveStat(stat_,i_,d,l,b)
-                i_ += 1
-                return i_,xp.to_tensors(),pp.to_tensors(),stat_
-            _,x_,p_,stat = tf.while_loop(cond, body, [2, x.to_tensors(), p.to_tensors(), stat])
-            x = x.from_tensors(x_)
-            p = p.from_tensors(p_)
+        if isinstance(x0, Gauge):
+            x_ = x0.to_tensors()
+            p_ = p0.to_tensors()
+            for i in tf.range(0,n+1):  # loop must only update TF tensors
+                xp = x0.from_tensors(x_)
+                pp = p0.from_tensors(p_)
+                if i==0 or i==n:
+                    dtx = dt_lambda
+                else:
+                    ieo = tf.cast(i%2, dt_lambda2.dtype)
+                    dtx = (1.0-ieo)*dt_lambda2 + ieo*dt_1_lambda2
+                xp = self.dynamics.stepX(dtx, xp, pp)
+                x_ = xp.to_tensors()
+                p_ = pp.to_tensors()
+                if i<n:
+                    ppp, d, l, b = self.dynamics.stepP(dt_2, xp, pp)
+                    stat = recordEvolveStat(stat,i,d,l,b)
+                    p_ = ppp.to_tensors()
+            x = x0.from_tensors(x_)
+            p = p0.from_tensors(p_)
         else:
-            for i in tf.range(2, n, 2):
-
-                x = self.dynamics.stepX(dt_lambda2, x, p)
-
-                p, d, l, b = self.dynamics.stepP(dt_2, x, p)
-                stat = recordEvolveStat(stat,i,d,l,b)
-                i += 1
-
-                x = self.dynamics.stepX(dt_1_lambda2, x, p)
-
-                p, d, l, b = self.dynamics.stepP(dt_2, x, p)
-                stat = recordEvolveStat(stat,i,d,l,b)
-
-        x = self.dynamics.stepX(dt_lambda, x, p)
-        return (x, -p, *collectEvolveStat(stat))
+            for i in tf.range(0,n+1):
+                if i==0:
+                    dtx = dt_lambda
+                else:
+                    ieo = tf.cast(i%2, dt_lambda2.dtype)
+                    dtx = (1.0-ieo)*dt_lambda2 + ieo*dt_1_lambda2
+                x = self.dynamics.stepX(dtx, x, p)
+                if i<n:
+                    p, d, l, b = self.dynamics.stepP(dt_2, x, p)
+                    stat = recordEvolveStat(stat,i,d,l,b)
+        return (x, -p, *stat)
 
 @tf.function(jit_compile=True)
 def tuneStep_func(mcmc, x0, p0, accrand, detail, forceAccept):

@@ -28,6 +28,12 @@ else:
 
 gconfP = gconf.hypercube_partition()
 
+def mem(s=''):
+    if tf.config.list_physical_devices('GPU'):
+        s = 'mem' if s=='' else s+' mem'
+        tf.print(s,tf.config.experimental.get_memory_info('GPU:0'))
+        tf.config.experimental.reset_memory_stats('GPU:0')
+
 def run(x0, act):
     if isinstance(act, (TransformedActionVectorBase,TransformedActionVectorFromMatrixBase)):
         p0 = x0.randomTangentVector(rng)
@@ -50,6 +56,7 @@ def run(x0, act):
     fjit_,_ = time('tf.func:jit',lambda:tf.function(mdfun_,jit_compile=True))
     ffun,_ = time('fun concrete',lambda:ffun_.get_concrete_function(x.to_tensors(),p.to_tensors()))
     fjit,_ = time('jit concrete',lambda:fjit_.get_concrete_function(x.to_tensors(),p.to_tensors()))
+    mem('before')
 
     x,p = x0,p0
     (x,p),_ = bench('egr',lambda:mdfun(mdfun_,x,p))
@@ -57,6 +64,7 @@ def run(x0, act):
     t1 = md.dynamics.T(p)
     tf.print('H1',v1+t1,v1,t1)
     tf.print('dH',v1+t1-v0-t0)
+    mem('egr')
 
     x,p = x0,p0
     (x,p),_ = bench('fun',lambda:mdfun(ffun,x,p))
@@ -64,6 +72,7 @@ def run(x0, act):
     t1 = md.dynamics.T(p)
     tf.print('H1',v1+t1,v1,t1)
     tf.print('dH',v1+t1-v0-t0)
+    mem('fun')
 
     x,p = x0,p0
     (x,p),_ = bench('jit',lambda:mdfun(fjit,x,p))
@@ -71,6 +80,7 @@ def run(x0, act):
     t1 = md.dynamics.T(p)
     tf.print('H1',v1+t1,v1,t1)
     tf.print('dH',v1+t1-v0-t0)
+    mem('jit')
 
 tf.print('1. Mat Mom')
 run(gconf, TransformedActionMatrixBase(transform=Ident(), action=act))

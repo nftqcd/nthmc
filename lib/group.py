@@ -101,13 +101,14 @@ def redot(x,y):
 # WARNING: below only works for SU3 for now
 
 def randTAH3(shape, s):
-    s2 = 0.70710678118654752440    # sqrt(1/2)
-    s3 = 0.57735026918962576450    # sqrt(1/3)
+    z = tf.constant(0.0,tf.float64)
+    s2 = tf.constant(0.70710678118654752440,tf.float64)    # sqrt(1/2)
+    s3 = tf.constant(0.57735026918962576450,tf.float64)    # sqrt(1/3)
     r3 = s2 * s.normal(shape, dtype=tf.float64)
     r8 = s2 * s3 * s.normal(shape, dtype=tf.float64)
-    m00 = tf.dtypes.complex(tf.cast(0.0,tf.float64), r8+r3)
-    m11 = tf.dtypes.complex(tf.cast(0.0,tf.float64), r8-r3)
-    m22 = tf.dtypes.complex(tf.cast(0.0,tf.float64), -2*r8)
+    m00 = tf.dtypes.complex(z, r8+r3)
+    m11 = tf.dtypes.complex(z, r8-r3)
+    m22 = tf.dtypes.complex(z, -2*r8)
     r01 = s2 * s.normal(shape, dtype=tf.float64)
     r02 = s2 * s.normal(shape, dtype=tf.float64)
     r12 = s2 * s.normal(shape, dtype=tf.float64)
@@ -186,7 +187,8 @@ def projectSU(x):
     nc = x.shape[-1]
     m = projectU(x)
     d = tf.linalg.det(m)    # after projectU: 1=|d
-    p = (1.0/(-nc)) * tf.math.atan2(tf.math.imag(d), tf.math.real(d))
+    p = tf.math.atan2(tf.math.imag(d), tf.math.real(d))
+    p *= tf.constant(1.0/(-nc),p.dtype)
     return tf.reshape(tf.dtypes.complex(tf.math.cos(p), tf.math.sin(p)),p.shape+[1,1]) * m
 
 def projectTAH(x):
@@ -195,9 +197,9 @@ def projectTAH(x):
     R = - T^a tr[T^a (X - X†)]
       = T^a ∂_a (- tr[X + X†])
     """
-    nc = x.shape[-1]
-    r = 0.5*(x - tf.linalg.adjoint(x))
-    d = tf.linalg.trace(r) / nc
+    nc_1 = tf.constant(1.0/x.shape[-1], dtype=x.dtype)
+    r = tf.constant(0.5, dtype=x.dtype)*(x - tf.linalg.adjoint(x))
+    d = nc_1 * tf.linalg.trace(r)
     r -= tf.reshape(d,d.shape+[1,1])*eyeOf(x)
     return r
 
@@ -207,7 +209,7 @@ def checkU(x):
     d = norm2(tf.linalg.matmul(x,x,adjoint_a=True) - eyeOf(x))
     a = tf.math.reduce_mean(d, axis=range(1,len(d.shape)))
     b = tf.math.reduce_max(d, axis=range(1,len(d.shape)))
-    c = 2*(nc*nc+1)
+    c = tf.constant(2*(nc*nc+1),a.dtype)
     return tf.math.sqrt(a/c),tf.math.sqrt(b/c)
 
 def checkSU(x):
@@ -217,7 +219,7 @@ def checkSU(x):
     d += norm2(-1 + tf.linalg.det(x), axis=[])
     a = tf.math.reduce_mean(d, axis=range(1,len(d.shape)))
     b = tf.math.reduce_max(d, axis=range(1,len(d.shape)))
-    c = 2*(nc*nc+1)
+    c = tf.constant(2*(nc*nc+1),a.dtype)
     return tf.math.sqrt(a/c),tf.math.sqrt(b/c)
 
 def su3vec_direct(x):
@@ -226,7 +228,8 @@ def su3vec_direct(x):
     Convention: tr{T^a T^a} = -1/2
     X^a = - 2 tr[T^a X]
     """
-    s3 = 0.57735026918962576451    # sqrt(1/3)
+    dt = tf.float64 if x.dtype==tf.complex128 else tf.float32
+    s3 = tf.constant(0.57735026918962576451,dt)    # sqrt(1/3)
     # r3 = 1.7320508075688772935    # sqrt(3)
     c = -2
     return tf.stack([
@@ -280,9 +283,9 @@ def su3fromvec_direct(v):
     tr{X T^b} = X^a tr{T^a T^b} = X^a (-1/2) δ^ab = -1/2 X^b
     X^a = -2 X_ij T^a_ji
     """
-    s3 = 0.57735026918962576451    # sqrt(1/3)
+    s3 = tf.constant(0.57735026918962576451,v.dtype)    # sqrt(1/3)
     c = -0.5
-    zero = tf.zeros(v[...,0].shape, dtype=v[...,0].dtype)
+    zero = tf.zeros(v[...,0].shape, dtype=v.dtype)
     x01 = c*tf.dtypes.complex(v[...,1], v[...,0])
     x02 = c*tf.dtypes.complex(v[...,4], v[...,3])
     x12 = c*tf.dtypes.complex(v[...,6], v[...,5])
@@ -343,15 +346,15 @@ def su3fabc(v):
     returns f^{abc} v[...,c]
     [T^a, T^b] = f^abc T^c
     """
-    f012 = 1.0
-    f036 = 0.5
-    f045 = -0.5
-    f135 = 0.5
-    f146 = 0.5
-    f234 = 0.5
-    f256 = -0.5
-    f347 = 0.86602540378443864676    # sqrt(3/4)
-    f567 = 0.86602540378443864676
+    f012 = tf.constant(1.0,v.dtype)
+    f036 = tf.constant(0.5,v.dtype)
+    f045 = -f036
+    f135 = f036
+    f146 = f036
+    f234 = f036
+    f256 = f045
+    f347 = tf.constant(0.86602540378443864676,v.dtype)    # sqrt(3/4)
+    f567 = f347
     a01 =   f012 *v[...,2]
     a02 = (-f012)*v[...,1]
     a03 =   f036 *v[...,6]
@@ -377,7 +380,7 @@ def su3fabc(v):
     a56 =   f567 *v[...,7] + f256 *v[...,2]
     a57 = (-f567)*v[...,6]
     a67 =   f567 *v[...,5]
-    zero = tf.zeros(v[...,0].shape, dtype=v[...,0].dtype)
+    zero = tf.zeros(v[...,0].shape, dtype=v.dtype)
     return tf.stack([
         tf.stack([zero,-a01,-a02,-a03,-a04,-a05,-a06,zero], axis=-1),
         tf.stack([ a01,zero,-a12,-a13,-a14,-a15,-a16,zero], axis=-1),
@@ -395,22 +398,22 @@ def su3dabc(v):
     {T^a,T^b} = -1/3δ^ab + i d^abc T^c
     """
     # NOTE: negative sign of what's on wikipedia
-    d007 = -0.57735026918962576451    # -sqrt(1/3)
-    d035 = -0.5
-    d046 = -0.5
-    d117 = -0.57735026918962576451
-    d136 = 0.5
-    d145 = -0.5
-    d227 = -0.57735026918962576451
-    d233 = -0.5
-    d244 = -0.5
-    d255 = 0.5
-    d266 = 0.5
-    d337 = 0.28867513459481288225    # sqrt(1/3)/2
-    d447 = 0.28867513459481288225
-    d557 = 0.28867513459481288225
-    d667 = 0.28867513459481288225
-    d777 = 0.57735026918962576451
+    d007 = tf.constant(-0.57735026918962576451,v.dtype)    # -sqrt(1/3)
+    d035 = tf.constant(-0.5,v.dtype)
+    d046 = d035
+    d117 = d007
+    d136 = -d035
+    d145 = d035
+    d227 = d007
+    d233 = d035
+    d244 = d035
+    d255 = d136
+    d266 = d136
+    d337 = tf.constant(0.28867513459481288225,v.dtype)    # sqrt(1/3)/2
+    d447 = d337
+    d557 = d337
+    d667 = d337
+    d777 = -d007
     a00 = d007*v[...,7]
     a03 = d035*v[...,5]
     a04 = d046*v[...,6]
@@ -479,7 +482,7 @@ def su3adapply(adx, y):
     return su3fromvec(tf.linalg.matvec(adx, su3vec(y)))
 
 def gellMann():
-    s3 = 0.57735026918962576451    # sqrt(1/3)
+    s3 = tf.constant(0.57735026918962576451,tf.complex128)    # sqrt(1/3)
     zero3 = tf.zeros([3,3], dtype=tf.float64)
     return tf.stack([
         tf.dtypes.complex(tf.reshape(tf.constant([0,1,0,1,0,0,0,0,0],dtype=tf.float64),[3,3]), zero3),
@@ -530,6 +533,24 @@ def diffprojectTAH(m, p = None):
     trMs = tf.math.real(tf.linalg.trace(Ms))/6.0
     I = tf.dtypes.complex(tf.constant(0,dtype=tf.float64), tf.constant(1,dtype=tf.float64))
     return su3dabc(0.25*su3vec(I*Ms)) + tf.reshape(trMs,trMs.shape+[1,1])*eyeOf(mhalfadP) + mhalfadP
+
+def smearIndepLogDetJacobian(X, Y):
+    """
+    return T^b ∂_b tr[X Y† + Y X†], and log det(∂Z/∂X)
+    assuming X and Y are independent.
+    Z = exp(T^b ∂_b tr[X Y† + Y X†]) X,  for X in G, and ∂_b X = T_b X
+    """
+    M = tf.linalg.matmul(X, Y, adjoint_b=True)
+    F = -projectTAH(M)
+    adF = su3ad(F)
+    dF = diffprojectTAH(-M,F)
+    j = eyeOf(adF) + tf.linalg.matmul(diffexp(adF), dF)
+    # xla can't tf.linalg.det
+    # D = tf.math.log(tf.linalg.det(j))
+    # 2 options: svd, or logdet
+    D = 0.5*tf.linalg.logdet(tf.linalg.matmul(j,j,adjoint_b=True))  # logdet for HPD only
+    # D = tf.reduce_sum(tf.math.log(tf.linalg.svd(j)[0]), axis=-1)  # require all + sv
+    return F,D
 
 def diffprojectTAHCross(m, x = None, Adx = None, p = None):
     """

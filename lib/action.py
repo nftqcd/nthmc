@@ -52,14 +52,14 @@ class SU3d4:
             for nu in range(0,mu):
                 f[mu] += stf[mu][nu] + stu[mu][nu].shift(nu, -1)
                 f[nu] += stf[nu][mu] + stu[nu][mu].shift(mu, -1)
-        cp, _ = self.action.coeffs()
+        cp, _ = self.coeffs()
         for mu in range(4):
             f[mu] = ((cp/3.0)*x[mu](f[mu].adjoint())).projectTangent()
         return gauge.Tangent(f)
 
-class TransformedActionMatrixBase(tl.Layer):
-    def __init__(self, transform, action, name='TransformedActionMatrixBase', **kwargs):
-        super(TransformedActionMatrixBase, self).__init__(autocast=False, name=name, **kwargs)
+class TransformedActionBase(tl.Layer):
+    def __init__(self, transform, action, name='TransformedActionBase', **kwargs):
+        super(TransformedActionBase, self).__init__(autocast=False, name=name, **kwargs)
         self.action = action
         self.transform = transform
     def call(self, x):
@@ -68,13 +68,22 @@ class TransformedActionMatrixBase(tl.Layer):
         a = self.action(y)
         return a-l, l, bs
     def gradient(self, x):
+        raise ValueError('unimplemented for base class')
+
+class TransformedActionMatrixBase(TransformedActionBase):
+    def __init__(self, name='TransformedActionMatrixBase', **kwargs):
+        super(TransformedActionMatrixBase, self).__init__(name=name, **kwargs)
+    def gradient(self, x):
         with tf.GradientTape(watch_accessed_variables=False) as tape:
             tape.watch(x.to_tensors())
             v, l, b = self(x)
         d = x.from_tensors(tape.gradient(v, x.to_tensors()))(x.adjoint()).projectTangent()
         return d, l, b
 
-class TransformedActionVectorBase(TransformedActionMatrixBase):
+class TransformedActionVectorBase(TransformedActionBase):
+    """
+    This has an extra exp inside GradientTape, and will be slower than the other two.
+    """
     def __init__(self, name='TransformedActionVectorBase', **kwargs):
         super(TransformedActionVectorBase, self).__init__(name=name, **kwargs)
     def gradient(self, x):
@@ -85,7 +94,7 @@ class TransformedActionVectorBase(TransformedActionMatrixBase):
         d = sv.from_tensors(tape.gradient(v, sv.to_tensors()))
         return d, l, b
 
-class TransformedActionVectorFromMatrixBase(TransformedActionMatrixBase):
+class TransformedActionVectorFromMatrixBase(TransformedActionBase):
     def __init__(self, name='TransformedActionVectorFromMatrixBase', **kwargs):
         super(TransformedActionVectorFromMatrixBase, self).__init__(name=name, **kwargs)
     def gradient(self, x):
@@ -126,7 +135,7 @@ class Dynamics:
 if __name__ == '__main__':
     import sys, os
     import nthmc, evolve, transform
-    conf = nthmc.Conf(nbatch=1, nepoch=2, nstepEpoch=8, trajLength=4.0, stepPerTraj=128)
+    conf = nthmc.Conf(nbatch=1, nepoch=2, nstepEpoch=8, trajLength=4.0, stepPerTraj=128, softPlace = False)
     nthmc.setup(conf)
     mom = QuadraticMomentum()
     act = SU3d4(beta=0.7796, c1=C1DBW2)

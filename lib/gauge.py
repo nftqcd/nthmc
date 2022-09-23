@@ -23,10 +23,14 @@ class LatticeWrapper:
         return self.lattice.site_shape()
     def get_site(self, *xs):
         return self.lattice.get_site(*xs)
+    def batch_size(self):
+        return self.lattice.batch_size()
     def get_batch(self, b):
         return self.wrap(self.lattice.get_batch(b))
     def batch_update(self, cond, other):
         return self.wrap(self.lattice.batch_update(cond, other.lattice))
+    def get_subset(self, subset):
+        return self.wrap(self.lattice.get_subset(subset))
     def wrap(self, lattice, **kwargs):
         return self.__class__(lattice, **kwargs)
     def unwrap(self):
@@ -52,6 +56,10 @@ class LatticeWrapper:
             raise ValueError('operation only possible with Lattice object')
         else:
             return self.wrap(e(self.lattice))
+    def __str__(self):
+        return f'{self.__class__.__name__}{self.lattice}'
+    def __repr__(self):
+        return f'{self.__class__.__name__}#{hex(id(self))}{self.lattice}'
     def __add__(self, other):
         return self.if_compatible(other, lambda a,b:a+b, lambda a:a+other)
     def __radd__(self, other):
@@ -94,6 +102,10 @@ class Transporter(LatticeWrapper):
         self.path = path
         self.origin = field.Coord((0,)*lattice.nd) if origin is None else origin # where the path starts relative to the residing site
         self.forward = forward
+    def __str__(self):
+        return f'{self.__class__.__name__}{(self.nc,self.path,self.origin,self.forward,self.lattice)}'
+    def __repr__(self):
+        return f'{self.__class__.__name__}#{hex(id(self))}{(self.nc,self.path,self.origin,self.forward,self.lattice)}'
     def __call__(self, field):
         """
         Returns the transported field, optionally shift it.
@@ -116,7 +128,7 @@ class Transporter(LatticeWrapper):
 
         if isinstance(field, Transporter):
             if not self.lattice.is_compatible(field.lattice):
-                raise ValueError(f'incompatible lattices')
+                raise ValueError(f'incompatible lattices {self} vs {field}')
             field_path_start = field.origin
             field_path_end = field.origin + field.path.deltaX()
             # change the shifts according to the transporters
@@ -171,12 +183,15 @@ class Transporter(LatticeWrapper):
     def projectSU(self):
         return self.wrap(self.lattice.projectSU())
     def projectTangent(self):
-        return self.wrap(self.lattice.projectTangent())
+        zeroCoord = field.Coord((0,)*self.lattice.nd)
+        if self.path.deltaX() != zeroCoord or self.origin != zeroCoord or not self.forward:
+            raise ValueError(f'unimplemented for path {self.path} deltaX {self.path.deltaX()} origin {self.origin} forward {self.forward}')
+        return TangentMatrix(self.lattice.projectTangent())
     def zeroTangentVector(self):
         c = self.nc
         return TangentVector(self.lattice.zeros(new_site_shape=[c*c-1], dtype=tf.float64))
     def randomTangent(self, rng):
-        return self.wrap(self.lattice.randomTangent(rng), path=field.Path(), origin=field.Coord((0,)*self.lattice.nd))
+        return TangentMatrix(self.lattice.randomTangent(rng))
     def randomTangentVector(self, rng):
         c = self.nc
         return TangentVector(self.lattice.randomNormal(rng, new_site_shape=[c*c-1], dtype=tf.float64))
@@ -184,13 +199,30 @@ class Transporter(LatticeWrapper):
         return self.wrap(self.lattice.unit())
     def det(self):
         return self.lattice.det()
+    def smearIndepLogDetJacobian(self, X):
+        """
+        X is the link to be smeared by us.
+        returns F and log det(∂Z/∂X)
+        F is the SU(3) matrix to smear X, such that Z = F X
+        """
+        if not (self.is_compatible(X) and self.forward and X.forward):
+            raise ValueError(f'incompatible transporters: {self} vs {other}')
+        xs = X.to_tensors()
+        ys = self.to_tensors()
+        if isinstance(xs,(list,tuple)) and isinstance(ys,(list,tuple)):
+            fs,ds = zip(*[group.smearIndepLogDetJacobian(x, y) for x,y in zip(xs,ys)])
+        else:
+            fs,ds = group.smearIndepLogDetJacobian(xs,ys)
+        fexp = self.lattice.from_tensors(fs).exp()
+        logdet = self.lattice.from_tensors(ds).reduce_sum()
+        return self.wrap(fexp,path=field.Path()), logdet
     def same_points(self, other):
         if self.forward==other.forward:
             return self.origin==other.origin and self.origin+self.path.deltaX()==other.origin+other.path.deltaX()
         else:
             return self.origin==other.origin+other.path.deltaX() and self.origin+self.path.deltaX()==other.origin
     def is_compatible(self, other):
-        return isinstance(other, self.__class__) and self.__class__==other.__class__ and self.nc==other.nc and self.same_points(other)
+        return isinstance(other, self.__class__) and self.__class__==other.__class__ and (self.nc==other.nc or self.nc==1 or other.nc==1) and self.same_points(other)
     def if_compatible(self, other, f, e=None):
         if self.is_compatible(other):
             if self.forward!=other.forward:
@@ -201,7 +233,7 @@ class Transporter(LatticeWrapper):
                 newp = field.Path(self.path.deltaX())
             return self.wrap(f(self.lattice,other.lattice), path=newp)
         elif isinstance(other, self.__class__) and self.__class__==other.__class__:
-            raise ValueError(f'incompatible transporters: {(self.path, self.origin, self.forward)} vs {(other.path, other.origin, other.forward)}')
+            raise ValueError(f'incompatible transporters: {self} vs {other}')
         elif e is None:
             raise ValueError('operation only possible with Lattice object')
         else:
@@ -238,6 +270,8 @@ class Transporters:
         return self.data[0].site_shape()
     def get_site(self, *xs):
         return [t.get_site(*xs) for t in self.data]
+    def batch_size(self):
+        return self.data[0].batch_size()
     def get_batch(self, b):
         return self.wrap([t.get_batch(b) for t in self.data])
     def batch_update(self, cond, other):
@@ -288,6 +322,10 @@ class Transporters:
             raise ValueError('operation only possible with Lattice object')
         else:
             return self.wrap([e(a) for a in self.data])
+    def __str__(self):
+        return f'{self.__class__.__name__}{self.data}'
+    def __repr__(self):
+        return f'{self.__class__.__name__}#{hex(id(self))}{self.data}'
     def __len__(self):
         return len(self.data)
     def __getitem__(self, key):
@@ -332,29 +370,45 @@ class Gauge(Transporters):
     def randomTangentVector(self, rng):
         return TangentVectors([t.randomTangentVector(rng) for t in self.data])
 
+class TangentMatrix(Transporter):
+    """
+    Lie algebra in fundamental representations.
+    We represent it as zero-distance path transporter,
+    corresponding to the tangent space of the gauge
+    links in the forward direction of that dimension.
+    """
+    def __init__(self, lattice, path=field.Path(), **kwargs):
+        super(TangentMatrix, self).__init__(lattice=lattice, path=path, **kwargs)
+    def zeros(self, new_site_shape=None, dtype=None):
+        return self.wrap(self.unwrap().zeros(new_site_shape=new_site_shape, dtype=dtype))
+    def exp(self):
+        return Transporter(self.unwrap().exp(), path=self.path, origin=self.origin, forward=self.forward)
+    def to_tangentVector(self):
+        return TangentVector(self.unwrap().to_su3vector())
+
 class Tangent(Transporters):
     """
     Tangent bundle is represented as nd Transporters (X,Y,Z,...),
-    each has a zero-distance path corresponding to the tangent space of the gauge
+    each, a TangentMatrix, has a zero-distance path corresponding to the tangent space of the gauge
     links in the forward direction of that dimension.
     """
-    def __init__(self, transporters):
-        nd = len(transporters)
-        nc = transporters[0].nc
+    def __init__(self, tangentMatrices):
+        nd = len(tangentMatrices)
+        nc = tangentMatrices[0].nc
         zeroCoord = field.Coord((0,)*nd)
-        for i,t in enumerate(transporters):
-            if not isinstance(t, Transporter):
-                raise ValueError(f'lattice must be a Transporter, but got {t.__class__}')
+        for i,t in enumerate(tangentMatrices):
+            if not isinstance(t, TangentMatrix):
+                raise ValueError(f'lattice must be a TangentMatrix, but got {t.__class__}')
             if not (t.nc==nc and t.lattice.nd==nd and t.path.deltaX()==zeroCoord and t.origin==zeroCoord and t.forward):
-                raise ValueError(f'incompatible transporters with: {(t.nc, t.lattice.nd, t.path, t.origin, t.forward)}')
-        super(Tangent, self).__init__([t.wrap(t.unwrap(), path=field.Path()) for t in transporters])
+                raise ValueError(f'incompatible tangent matrices with: {(t.nc, t.lattice.nd, t.path, t.origin, t.forward)}')
+        super(Tangent, self).__init__(tangentMatrices)
     def energy(self):
         nc = self.data[0].nc
         ts = [t.norm2(scope='site') for t in self.data]
         c = ts[0].typecast(nc*nc-1)
         return 0.5*l.reduce_sum([t-c for t in ts])
     def exp(self):
-        return Transporters([t.wrap(t.unwrap().exp()) for t in self.data])
+        return Transporters([t.exp() for t in self.data])
     def to_tangentVector(self):
         return TangentVectors([TangentVector(t.unwrap().to_su3vector()) for t in self.data])
 
@@ -364,13 +418,14 @@ class TangentVector(LatticeWrapper):
         site = lattice.site_shape()
         if len(site)!=1:
             raise ValueError(f'lattice sites are not vectors, got shape {site}')
-        # The value of lattice is always the transporter from the start of the path to the end.
-        # forward means the effect of the application of the transporter, transport the applicant
-        # from the end of the path to the start.  Not forward means the reverse.
         self.group_dim = site[0]
-    def to_transporter(self):
+    def __str__(self):
+        return f'{self.__class__.__name__}{(self.group_dim,self.lattice)}'
+    def __repr__(self):
+        return f'{self.__class__.__name__}#{hex(id(self))}{(self.group_dim,self.lattice)}'
+    def to_tangentMatrix(self):
         if self.group_dim==8:
-            return Transporter(self.lattice.to_su3matrix(), field.Path())
+            return TangentMatrix(self.lattice.to_su3matrix())
         else:
             raise ValueError(f'unimplemented for group_dim {self.group_dim}')
 
@@ -386,6 +441,8 @@ class TangentVectors:
         return self.data[0].site_shape()
     def get_site(self, *xs):
         return [t.get_site(*xs) for t in self.data]
+    def batch_size(self):
+        return self.data[0].batch_size()
     def get_batch(self, b):
         return self.wrap([t.get_batch(b) for t in self.data])
     def batch_update(self, cond, other):
@@ -417,7 +474,9 @@ class TangentVectors:
         c = ts[0].typecast(nd)
         return 0.5*l.reduce_sum([t-c for t in ts])
     def exp(self):
-        return Tangent([t.to_transporter() for t in self.data]).exp()
+        return self.to_tangent().exp()
+    def to_tangent(self):
+        return Tangent([t.to_tangentMatrix() for t in self.data])
     def is_compatible(self, other):
         return isinstance(other, self.__class__) and self.__class__==other.__class__
     def if_compatible(self, other, f, e=None):
@@ -427,6 +486,10 @@ class TangentVectors:
             raise ValueError('operation only possible with Lattice object')
         else:
             return self.wrap([e(a) for a in self.data])
+    def __str__(self):
+        return f'{self.__class__.__name__}{self.data}'
+    def __repr__(self):
+        return f'{self.__class__.__name__}#{hex(id(self))}{self.data}'
     def __len__(self):
         return len(self.data)
     def __getitem__(self, key):

@@ -24,6 +24,7 @@ class TestOrderedPaths(ut.TestCase):
             s.split(2)
     """
     def setUp(self):
+        super().setUp()
         self.x = tf.reshape(tf.linspace(0, 1, 3*2*4*4), [3,2,4,4])
         p = f.OrdPaths(
             f.topath(((1,2,-1,-2), (1,-2,-1,2),

@@ -124,6 +124,10 @@ class Path:
                     c[-d-1] = -1
                 x += Coord(c)
         return x
+    def __str__(self):
+        return f'Path{self.dirs}'
+    def __repr__(self):
+        return f'Path#{id(self)}{self.dirs}'
     def __len__(self):
         return len(self.dirs)
     def __getitem__(self, key):

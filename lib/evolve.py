@@ -8,10 +8,10 @@ from gauge import Gauge
 # tf.function would fail and claim some tensor cannot be accessed, if we use class and functions.
 # so we just use tuple here.
 def newEvolveStat(size):
-    ls = tf.constant(0.0, tf.float64)  # lndet
-    f2s = tf.constant(0.0, tf.float64)  # fnorm2
-    fms = tf.constant(0.0, tf.float64)  # fnormInf
-    bs = tf.constant(0.0, tf.float64)  # coeffs
+    ls = tf.zeros([size], tf.float64)  # lndet
+    f2s = tf.zeros([size], tf.float64)  # fnorm2
+    fms = tf.zeros([size], tf.float64)  # fnormInf
+    bs = tf.zeros([size], tf.float64)  # coeffs
     return (ls,f2s,fms,bs)
 def recordEvolveStat(stat, i, force, lndet, coeffs):
     (ls,f2s,fms,bs) = stat
@@ -41,7 +41,7 @@ class LeapFrog(GeneratorBase):
         tf.print(self.name, 'init with dt', self.dt, 'step/traj', self.stepPerTraj, summarize=-1)
     def call(self, x0, p0):
         n = tf.cast(self.stepPerTraj, tf.int32)
-        stat = newEvolveStat(n)
+        stat = newEvolveStat(x0.batch_size())
         dt = p0.typecast(self.dt)
         if isinstance(x0, Gauge):
             x_ = x0.to_tensors()
@@ -74,7 +74,7 @@ class Omelyan2MN(GeneratorBase):
         tf.print(self.name, 'init with dt', self.dt, 'step/traj', self.stepPerTraj, summarize=-1)
     def call(self, x0, p0):
         n = tf.cast(2*self.stepPerTraj, tf.int32)
-        stat = newEvolveStat(n)
+        stat = newEvolveStat(x0.batch_size())
         dt = p0.typecast(self.dt)
         c_lambda = p0.typecast(self.c_lambda)
         dt_2 = 0.5*dt
@@ -169,7 +169,7 @@ class RegressStepTuner:
         aa = tf.where(exp_mdH>1., tf.constant(1., dtype=tf.float64), exp_mdH)
         a = tf.reduce_mean(aa)
         aa -= a
-        ae = tf.constant(0., dtype=tf.float64) if n==1 else tf.math.sqrt(tf.reduce_sum(aa*aa)/tf.cast(n*(n-1), tf.float64))
+        ae = tf.constant(0., dtype=tf.float64) if n==1 else tf.math.sqrt(tf.reduce_sum(aa*aa)/tf.constant(n*(n-1), tf.float64))
         m = tf.equal(self.savedStepPerTraj, mcmc.generate.stepPerTraj)
         def combineWith(sn,s,se):
             se2 = se*se

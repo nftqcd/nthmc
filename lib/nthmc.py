@@ -23,7 +23,7 @@ class Conf:
             nthrIop = 1,
             softPlace = True,
             xlaCluster = False,
-            seed = 9876543211):
+            seed = 876543211):
         if initDt is None and trajLength is None:
             raise ValueError('missing argument: initDt or trajLength')
         self.nbatch = nbatch
@@ -127,7 +127,7 @@ def printMCMCRes(v0,t0,v1,t1,dp2,f2s,fms,bs,ls,dH,expmdH,arand,acc,plaqWoT,plaq)
     tf.print('plaq:', *plaq, summarize=-1)
 
 def setup(conf):
-    tf.random.set_seed(conf.seed)
+    tk.utils.set_random_seed(conf.seed)
     tk.backend.set_floatx('float64')
     tf.config.set_soft_device_placement(conf.softPlace)
     if conf.xlaCluster:

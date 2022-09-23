@@ -2,7 +2,7 @@ import tensorflow as tf
 import os, sys
 from benchutil import bench, time
 sys.path.append("../lib")
-from transform import Ident
+from transform import TransformChain, StoutSmearSlice
 from gauge import readGauge, random
 from action import C1DBW2, SU3d4, Dynamics, TransformedActionMatrixBase, TransformedActionVectorFromMatrixBase
 from evolve import Omelyan2MN
@@ -86,11 +86,15 @@ def run(x0, act):
     tf.print('dH',v1+t1-v0-t0)
     mem('jit')
 
+mktrf = lambda:TransformChain(
+    [StoutSmearSlice(coeff=[0.025], dir=i, is_odd=eo)
+     for eo in {False,True} for i in range(4)])
+
 tf.print('1. Mat Mom')
-run(gconf, TransformedActionMatrixBase(transform=Ident(), action=act))
+run(gconf, TransformedActionMatrixBase(transform=mktrf(), action=act))
 tf.print('2. Vec Mom from Mat')
-run(gconf, TransformedActionVectorFromMatrixBase(transform=Ident(), action=act))
+run(gconf, TransformedActionVectorFromMatrixBase(transform=mktrf(), action=act))
 tf.print('3. Part Mat Mom')
-run(gconfP, TransformedActionMatrixBase(transform=Ident(), action=act))
+run(gconfP, TransformedActionMatrixBase(transform=mktrf(), action=act))
 tf.print('4. Part Vec Mom from Mat')
-run(gconfP, TransformedActionVectorFromMatrixBase(transform=Ident(), action=act))
+run(gconfP, TransformedActionVectorFromMatrixBase(transform=mktrf(), action=act))

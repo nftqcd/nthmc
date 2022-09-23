@@ -24,6 +24,7 @@ class TestGauge(tu.LatticeTest):
             s.split(2)
     """
     def setUp(self):
+        super().setUp()
         self.rng = tf.random.Generator.from_seed(7654321)
         self.test_shapes = [
             (0, [8,8,8,16], 3),

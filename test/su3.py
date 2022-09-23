@@ -8,6 +8,7 @@ mul = tf.linalg.matmul
 mulv = tf.linalg.matvec
 tr = tf.linalg.trace
 det = tf.linalg.det
+logdet = lambda m:0.5*tf.linalg.logdet(mul(m,m,adjoint_b=True))
 re = tf.math.real
 im = tf.math.imag
 adj = tf.linalg.adjoint
@@ -418,13 +419,21 @@ class TestSU3(ut.TestCase):
                 self.checkEqv(j, tj)
         dF = g.diffprojectTAH(-M,F)
         j = g.exp(adF) + mul(g.diffexp(-adF), dF)
+        detj = det(j)
+        logdetj = logdet(j)
+        with self.subTest(check='TF op logdet'):
+            self.checkEqv(tf.math.log(detj), logdetj)
         with self.subTest(equation='chain rule'):
             with self.subTest(target='det'):
-                self.checkEqv(det(j), det(tj))
+                self.checkEqv(detj, det(tj))
             with self.subTest(target='mat'):
                 self.checkEqv(j, tj)
         with self.subTest(equation='det simplified'):
-            self.checkEqv(det(g.eyeOf(adF) + mul(g.diffexp(adF), dF)), det(j))
+            self.checkEqv(detj, det(g.eyeOf(adF) + mul(g.diffexp(adF), dF)))
+        with self.subTest(equation='func det simplified'):
+            fj,dj = g.smearIndepLogDetJacobian(X,ep*Y)
+            self.checkEqv(F, fj)
+            self.checkEqv(logdetj, dj)
 
     def test_difflndetexpfmuluDiag(self):
         """
@@ -467,7 +476,7 @@ class TestSU3(ut.TestCase):
             dF = g.diffprojectTAH(-M, F)
             JF = g.diffexp(adF)
             m = g.eyeOf(adF) + mul(JF, dF)
-            j = tf.math.log(det(m))
+            j = logdet(m)
         fx = 0.5*g.projectTAH(mul(t.gradient(j,X), X, adjoint_b=True))    # Factor of 0.5
         ndF = len(dF.shape)
         d2F = g.diffprojectTAH(-mul(T,tf.expand_dims(M,-3)))    # []_dcb = ∇_d ∂_c F^b
@@ -538,7 +547,7 @@ class TestSU3(ut.TestCase):
             dF = g.diffprojectTAH(-M, F)    # ∂_c F^b
             JF = g.diffexp(adF)
             m = g.eyeOf(adF) + mul(JF, dF)
-            j = tf.math.log(det(m))
+            j = logdet(m)
         fx = 0.5*g.projectTAH(mul(t.gradient(j,Y), Y, adjoint_b=True))    # Factor of 0.5
         Adxy = g.SU3Ad(mul(X,Y,adjoint_b=True))
         dydF = g.diffprojectTAHCross(M, p=-F, Adx=Adxy)    # ∇_d F^g

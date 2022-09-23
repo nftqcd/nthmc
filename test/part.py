@@ -24,6 +24,7 @@ class TestHypercube(tu.LatticeTest):
             s.split(2)
     """
     def setUp(self):
+        super().setUp()
         self.rng = tf.random.Generator.from_seed(7654321)
         self.test_shapes = [
             (-1, [16,8,8,8,3]),

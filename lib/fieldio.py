@@ -1,5 +1,5 @@
 import numpy
-import datetime,os,re,struct,sys,zlib
+import datetime,os,re,struct,sys,time,zlib
 
 limeMagic = 0x456789ab
 
@@ -71,6 +71,7 @@ def readLattice(file):
     """
     Only supports SciDAC and ILDG formats in Lime.
     """
+    time0 = time.clock_gettime_ns(time.CLOCK_MONOTONIC_RAW)
     f = open(file,'rb')
     latsize = -1
     lattypesize = -1
@@ -166,6 +167,7 @@ def readLattice(file):
         # print(f'next: {next}')
         f.seek(next,os.SEEK_CUR)
     f.close()
+    time1 = time.clock_gettime_ns(time.CLOCK_MONOTONIC_RAW)
     if latsize<=0 or lattypesize<=0 or latdatacount<=0 or len(latdims)==0 or latnc<0 or latns<0 or latprec<0 or lattype==b'Unknown':
         raise ValueError(f'unsupported file: {file}')
     vol = 1
@@ -193,9 +195,11 @@ def readLattice(file):
             lat = numpy.transpose(lat, axes=[ndim]+list(range(ndim))+list(range(ndim+1,ndim+3)))
         else:
             raise ValueError(f'unknown lattice format: {lattype}')
-        return lat,latdims
     else:
         raise ValueError(f'unsupported contents in file: {file}')
+    time2 = time.clock_gettime_ns(time.CLOCK_MONOTONIC_RAW)
+    print(f'read time: io {(time1-time0)*1e-6} ms, proc {(time2-time1)*1e-6} ms')
+    return lat,latdims
 
 def writeLattice(gauge, file):
     """

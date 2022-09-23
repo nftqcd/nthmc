@@ -80,8 +80,16 @@ class SubSet:
             return False
     def __contains__(self, subset):
         if not isinstance(subset, SubSet):
-            raise ValueError(f'subset ({subset.__class__}) is not a SubSet')
+            raise ValueError(f'subset {subset} is not a SubSet')
         return subset.s == subset.s&self.s
+    def __add__(self, x):
+        if not isinstance(x, SubSet):
+            raise ValueError(f'operand {x} is not a SubSet')
+        return self.union(x)
+    def __sub__(self, x):
+        if not isinstance(x, SubSet):
+            raise ValueError(f'operand {x} is not a SubSet')
+        return Subset(self.s - (self.s & x.s))
     def from_corner_index(i):
         return SubSet(1<<i)
     def from_coord(xs):
@@ -174,7 +182,10 @@ def typecast(lat, x):
     elif isinstance(lat, (tuple, list)):
         return typecast(lat[0], x)
     else:
-        return tf.cast(x, dtype=lat.dtype)
+        if tf.is_tensor(x):
+            return tf.cast(x, dtype=lat.dtype)
+        else:
+            return tf.convert_to_tensor(x, dtype=lat.dtype)
 
 def lattice_map(lat, functor, tfunctor, *args, **kwargs):
     if isinstance(lat, Lattice):
@@ -275,6 +286,7 @@ def reduce(lat, functor, tfunctor, transform=None, scope='lattice', exclude=None
         else:
             return tfunctor([functor(x, scope=scope, exclude=exclude) for x in lat], axis=0)
     else:
+        # tf.print('reduce',scope,exclude,lat.shape)
         if transform is not None:
             lat = transform(lat)
         if exclude is None:
@@ -293,8 +305,9 @@ def reduce_max(lat, scope='lattice', exclude=None):
     return reduce(lat, reduce_max, tf.math.reduce_max, scope=scope, exclude=exclude)
 
 def norm2(lat, scope='lattice', exclude=None):
+    # tf.print('norm2',scope,exclude)
     def transform(x):
-        if x.dtype==tf.complex128 or lat.dtype==tf.complex64:
+        if x.dtype==tf.complex128 or x.dtype==tf.complex64:
             x = tf.abs(x)
         return tf.math.square(x)
     return reduce(lat, norm2, tf.math.reduce_sum, transform=transform, scope=scope, exclude=exclude)
@@ -454,6 +467,12 @@ class Lattice:
         begin = begin+[0]*l
         size = size+[-1]*l
         return tf.squeeze(tf.slice(self.data, begin=begin, size=size), axis=axis)
+    def batch_size(self):
+        bd = self.batch_dim
+        if bd<0:
+            return 0
+        else:
+            return self.data.shape[bd]
     def get_batch(self, b):
         if self.batch_dim<0:
             return self
@@ -469,9 +488,36 @@ class Lattice:
         else:
             c = tf.reshape(cond, (1,)*d + cond.shape + (1,)*(len(self.data.shape)-1-d))
             return self.wrap(tf.where(c, other.data, self.data))
-    def if_compatible(self, other, f, e=None):
+    def get_subset(self, subset):
+        return self.hypercube_partition().get_subset(subset)
+    def if_compatible(self, other, f, e=None, keep_unmatched_subset=False):
+        """
+        If compatible, run f on data, else run e on our data.
+        Result drops unmatched subset, unless keep_unmatched_subset is True.
+        Always raise ValueError if subsets do not overlap.
+        """
         if self.is_compatible(other):
-            return self.wrap(f(self.data,other.data))
+            if self.subset==other.subset:
+                return self.wrap(f(self.data,other.data))
+            elif self.subset in other.subset:
+                res = self.wrap(f(self.data,other.get_subset(self.subset).unwrap()))
+                if keep_unmatched_subset:
+                    res = combine_subsets(other.get_subset(other.subset-self.subset), res)
+                return res
+            elif other.subset in self.subset:
+                res = other.wrap(f(self.get_subset(other.subset).unwrap(),other.data))
+                if keep_unmatched_subset:
+                    res = combine_subsets(self.get_subset(self.subset-other.subset), res)
+                return res
+            else:
+                ss = self.subset.intersection(other.subset)
+                if not ss.is_empty():
+                    res = self.wrap(f(self.get_subset(ss).unwrap(),other.get_subset(ss).unwrap()), subset=ss)
+                    if keep_unmatched_subset:
+                        res = combine_subsets(self.get_subset(self.subset-ss), other.get_subset(other.subset-ss), res)
+                    return res
+                else:
+                    raise ValueError(f'subsets have no intersection {self} vs {other}')
         elif e is None:
             raise ValueError('operation only possible with Lattice object')
         else:
@@ -580,6 +626,7 @@ class Lattice:
         if scope=='lattice':
             if exclude is None:
                 exclude = (self.batch_dim,)
+            # tf.print('Lattice.reduce',scope,exclude)
             return functor(self.unwrap(), scope=scope, exclude=exclude)
         elif scope=='site':
             if exclude is None:
@@ -634,52 +681,33 @@ class Lattice:
         else:
             raise ValueError(f'reduction scope should be "lattice" or "site", but got {scope}')
     def matmul(self, mat, adjoint_l=False, adjoint_r=False):
-        if self.is_compatible(mat):
-            if self.subset==mat.subset:
-                return self.wrap(matmul(self.unwrap(), mat.unwrap(), adjoint_l=adjoint_l, adjoint_r=adjoint_r))
-            elif self.subset in mat.subset:
-                return self.wrap(matmul(self.unwrap(), mat.get_subset(self.subset).unwrap(), adjoint_l=adjoint_l, adjoint_r=adjoint_r))
-            elif mat.subset in self.subset:
-                return mat.wrap(matmul(self.get_subset(mat.subset).unwrap(), mat.unwrap(), adjoint_l=adjoint_l, adjoint_r=adjoint_r))
-            else:
-                ss = self.subset.intersection(mat.subset)
-                if not ss.is_empty():
-                    return self.wrap(matmul(self.get_subset(ss).unwrap(), mat.get_subset(ss).unwrap(), adjoint_l=adjoint_l, adjoint_r=adjoint_r), subset=ss)
-                else:
-                    raise ValueError(f'subsets have no intersection {self.subset} and {mat.subset}')
-        else:
-            raise ValueError(f'incompatible lattice {self.__class__} and {mat.__class__}')
+        return self.if_compatible(mat,
+          lambda a,b:matmul(a,b,adjoint_l=adjoint_l,adjoint_r=adjoint_r),
+          lambda a:matmul(a,mat,adjoint_l=adjoint_l,adjoint_r=adjoint_r))
     def matvec(self, vec, adjoint=False):
-        if self.is_compatible(vec):
-            if self.subset==vec.subset:
-                return self.wrap(matvec(self.unwrap(), vec.unwrap(), adjoint=adjoint))
-            elif self.subset in vec.subset:
-                return self.wrap(matvec(self.unwrap(), vec.get_subset(self.subset).unwrap(), adjoint=adjoint))
-            elif vec.subset in self.subset:
-                return vec.wrap(matvec(self.get_subset(vec.subset).unwrap(), vec.unwrap(), adjoint=adjoint))
-            elif not self.subset.intersection(vec.subset).is_empty():
-                s = self.subset.intersection(vec.subset)
-                return self.wrap(matvec(self.get_subset(s).unwrap(), vec.get_subset(s).unwrap(), adjoint=adjoint), subset=s)
-            else:
-                raise ValueError(f'subsets have no intersection {self.subset} and {vec.subset}')
-        else:
-            raise ValueError(f'incompatible lattice {self.__class__} and {vec.__class__}')
+        return self.if_compatible(vec,
+          lambda a,b:matvec(a,b,adjoint=adjoint),
+          lambda a:matvec(a,mat,adjoint=adjoint))
 
     def is_compatible(self, other):
         return isinstance(other, self.__class__) and self.__class__==other.__class__ and self.nd==other.nd and self.batch_dim==other.batch_dim
 
     # builtin generics
 
+    def __str__(self):
+        return f'{self.__class__.__name__}{(self.nd,self.batch_dim,self.subset)}'
+    def __repr__(self):
+        return f'{self.__class__.__name__}#{hex(id(self))}{(self.nd,self.batch_dim,self.subset)}'
     def __getitem__(self, key):
         return self.data[key]
     def __add__(self, other):
-        return self.if_compatible(other, lambda a,b:a+b, lambda a:a+other)
+        return self.if_compatible(other, lambda a,b:a+b, lambda a:a+other, keep_unmatched_subset=True)
     def __radd__(self, other):
-        return self.if_compatible(other, lambda a,b:b+a, lambda a:other+a)
+        return self.if_compatible(other, lambda a,b:b+a, lambda a:other+a, keep_unmatched_subset=True)
     def __sub__(self, other):
-        return self.if_compatible(other, lambda a,b:a-b, lambda a:a-other)
+        return self.if_compatible(other, lambda a,b:a-b, lambda a:a-other, keep_unmatched_subset=True)
     def __rsub__(self, other):
-        return self.if_compatible(other, lambda a,b:b-a, lambda a:other-a)
+        return self.if_compatible(other, lambda a,b:b-a, lambda a:other-a, keep_unmatched_subset=True)
     def __mul__(self, other):
         return self.if_compatible(other, lambda a,b:a*b, lambda a:a*other)
     def __rmul__(self, other):
@@ -695,18 +723,31 @@ class Lattice:
 
 class LatticeList(Lattice):
     "A list of Lattice"
-    def __init__(self, list, **kwargs):
-        subset = SubSet()
-        vol = list[0].full_volume()
+    def __init__(self, list, nd=None, batch_dim=None, subset=None, **kwargs):
+        vol = None
+        listsubset = None
         for lat in list:
             if not isinstance(lat, Lattice):
                 raise ValueError(f'lat ({lat.__class__}) is not a Lattice')
-            if vol!=lat.full_volume():
-                raise ValueError(f'incompatible volume {lat.full_volume()}, expected {vol}')
-            subset = subset.union(lat.subset)
-        super(LatticeList, self).__init__(sorted(list,key=lambda x:x.subset), **kwargs)
-        if self.subset!=subset:
-            raise ValueError(f'initialized subset {self.subset} and subset from parts {subset} mismatch')
+            if nd is None:
+                nd = lat.nd
+            elif nd!=lat.nd:
+                raise ValueError(f'incompatible nd {nd} from lattice {lat}')
+            if batch_dim is None:
+                batch_dim = lat.batch_dim
+            elif batch_dim!=lat.batch_dim:
+                raise ValueError(f'incompatible batch_dim {batch_dim} from lattice {lat}')
+            if vol is None:
+                vol = lat.full_volume()
+            elif vol!=lat.full_volume():
+                raise ValueError(f'incompatible volume {vol} from lattice {lat}')
+            if listsubset is None:
+                listsubset = lat.subset
+            else:
+                listsubset = listsubset.union(lat.subset)
+        if subset is not None and subset!=listsubset:
+            raise ValueError(f'specified {subset} and subset from parts {listsubset} mismatch')
+        super(LatticeList, self).__init__(sorted(list,key=lambda x:x.subset), nd=nd, batch_dim=batch_dim, subset=listsubset, **kwargs)
     def full_volume(self):
         return self.data[0].full_volume()
     def site_shape(self):
@@ -719,6 +760,12 @@ class LatticeList(Lattice):
         if len(ls)!=1:
             raise ValueError(f'coord {xs} found in {len(ls)} sub-lattice')
         return ls[0].get_site(*xs)
+    def batch_size(self):
+        bd = self.batch_dim
+        if bd<0:
+            return 0
+        else:
+            return self.data[0].batch_size()
     def get_batch(self, b):
         if self.batch_dim<0:
             return self
@@ -726,15 +773,44 @@ class LatticeList(Lattice):
             return self.wrap([lat.get_batch(b) for lat in self.data])
     def batch_update(self, cond, other):
         return self.wrap([lat.batch_update(cond, o) for lat,o in zip(self.data,other.data)])
-    def if_compatible(self, other, f, e=None):
+    def if_compatible(self, other, f, e=None, keep_unmatched_subset=False):
+        """
+        If compatible, run f on data, else run e on our data.
+        Result drops unmatched subset, unless keep_unmatched_subset is True.
+        Always raise ValueError if subsets do not overlap.
+        """
         if self.is_compatible(other):
-            return self.wrap([f(a,b) for a,b in zip(self.data,other.data)])
+            if self.subset==other.subset:
+                return self.wrap([f(a,b) for a,b in zip(self.data,other.data)])
+            elif self.subset in other.subset:
+                res = self.wrap([f(a,b) for a,b in zip(self.data,other.get_subset(self.subset).unwrap())])
+                if keep_unmatched_subset:
+                    res = combine_subsets(other.get_subset(other.subset-self.subset), res)
+                return res
+            elif other.subset in self.subset:
+                res = other.wrap([f(a,b) for a,b in zip(self.get_subset(other.subset).unwrap(),other.data)])
+                if keep_unmatched_subset:
+                    res = combine_subsets(self.get_subset(self.subset-other.subset), res)
+                return res
+            else:
+                ss = self.subset.intersection(other.subset)
+                if not ss.is_empty():
+                    res = self.wrap([f(a,b) for a,b in zip(self.get_subset(ss).unwrap(),other.get_subset(ss).unwrap())], subset=ss)
+                    if keep_unmatched_subset:
+                        res = combine_subsets(self.get_subset(self.subset-ss), other.get_subset(other.subset-ss), res)
+                    return res
+                else:
+                    raise ValueError(f'subsets have no intersection {self} vs {other}')
         elif e is None:
             raise ValueError('operation only possible with Lattice object')
         else:
             return self.wrap([e(a) for a in self.data])
     def get_subset(self, subset):
         return self.wrap([l for l in self.unwrap() if l.subset in subset], subset=subset)
+    def __str__(self):
+        return f'{self.__class__.__name__}{(self.nd,self.batch_dim,self.subset,self.data)}'
+    def __repr__(self):
+        return f'{self.__class__.__name__}#{hex(id(self))}{(self.nd,self.batch_dim,self.subset,self.data)}'
     def __neg__(self):
         return self.wrap([-l for l in self.data])
     def __pos__(self):
@@ -793,9 +869,10 @@ def combine_subsets(*lats):
 
 def hypercube_mask(dim, batch_size=0):
     """
-    Output: tensor with elements of 0 (even) and 1 (odd), shape dim if batch_size==0 else (batch_size,)+dim
+    Output: tensor with elements in range(1<<nd), each label a corner of the hypercube,
+            shape dim if batch_size==0 else (batch_size,)+dim
     Input:
-        dim: the lattice shape for computing even and odd
+        dim: the lattice shape for computing hypercube corners
         batch_shape: shape of the batch
     """
     nd = len(dim)
@@ -803,6 +880,28 @@ def hypercube_mask(dim, batch_size=0):
         if d%2 != 0:
             raise ValueError(f'dim is odd: {dim}')
     cube = tf.reshape(tf.range(1<<nd), (2,)*nd)
+    mask = tf.tile(cube, [x//2 for x in dim])
+    if batch_size>0:
+        mask = tf.expand_dims(mask, 0)
+        mask = tf.tile(mask, (batch_size,)+(1,)*nd)
+    return mask
+
+def evenodd_mask(dim, batch_size=0):
+    """
+    Output: tensor with elements 0 (even) or 1 (odd),
+            shape dim if batch_size==0 else (batch_size,)+dim
+    Input:
+        dim: the lattice shape for computing even and odd
+        batch_shape: shape of the batch
+    """
+    nd = len(dim)
+    if nd>4:
+        raise ValueError(f'unimplemented for dim {dim}')
+    for d in dim:
+        if d%2 != 0:
+            raise ValueError(f'dim is odd: {dim}')
+    eo = [0,1,1,0,1,0,0,1,1,0,0,1,0,1,1,0]
+    cube = tf.reshape(eo[:1<<nd], (2,)*nd)
     mask = tf.tile(cube, [x//2 for x in dim])
     if batch_size>0:
         mask = tf.expand_dims(mask, 0)

@@ -2,6 +2,17 @@ MKSHELL=$PLAN9/bin/rc
 
 SIZE_dfnorm2_l16_train=11in,6in
 SIZE_dfnormInf_l16_train=11in,6in
+SIZE_dfnormInf_b3_b6_l16_train=11in,6in
+SIZE_dfnormInf_b3_b6_l32_train=11in,6in
+
+SIZE_q_autocorr_l64_hmc=4in,3in
+SIZE_q_autocorr_inv_d16_inv_beta_vscale_hmc=4in,3in
+SIZE_q_autocorr_inv_d16_inv_beta_vscale_hmc_trained=6in,3in
+SIZE_q_autocorr_stepsize_l64_beta_hmc_trained=8in,4in
+SIZE_q_autocorr_stepsize_fixBV_hmc_trained=8in,4in
+
+SIZE_q_autocorr_stepsize_plaq_force_l64_beta_hmc_trained_fthmc=16in,6in
+SIZE_q_autocorr_stepsize_plaq_force_l64_beta_fthmc=16in,6in
 
 gps=`{echo *.gp}
 pdfs=${gps:%.gp=%.pdf}

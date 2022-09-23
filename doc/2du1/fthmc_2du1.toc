@@ -2,8 +2,6 @@
 \defcounter {refsection}{0}\relax 
 \contentsline {section}{\numberline {1}Introduction}{1}{section.1}%
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {2}Generalized field transformation}{3}{section.2}%
+\contentsline {section}{\numberline {2}Generalized field transformation \leavevmode {\color {magenta}\textsc {updated}}}{3}{section.2}%
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {3}Test with 2D U(1) model without explicit neural networks}{4}{section.3}%
-\defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {4}Discussions and plans}{5}{section.4}%
+\contentsline {section}{\numberline {3}Discussions and plans}{5}{section.3}%

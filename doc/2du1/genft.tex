@@ -1,6 +1,6 @@
 For a generic field transformation, we can take inspiration from an MD update, where
 \begin{equation}
-	U' ← U \exp[dt * \ProjTAH(M)].
+	U' ← U \exp[\dd t \ProjTAH(M)].
 \end{equation}
 $U$ is covariant and $M$ (being sum of loops) is invariant under gauge transformation.
 
@@ -66,24 +66,42 @@ If we were allowed to do the above change of constraint to $\ProjSU$, it seems w
 
 It looks like we are only one step away from
 \begin{equation}
-	U' ← U \exp\left[ \frac{\dd}{\dd U} F( \ReTr A, \ReTr B, \ReTr C, ... ) \right]
+	U' ← U \exp\left[ \frac{\dd}{\dd U} \F( \ReTr A, \ReTr B, \ReTr C, ... ) \right]
 \end{equation}
-where $F$ is any analytical function or neural network, and $A$, $B$, $C$, ... are any closed
+where $\F$ is any analytical function or neural network, and $A$, $B$, $C$, ... are any closed
 loops may or may not passing $U$.
 
 We can simplify it by moving the $U$ independent loops out and keeping
 the $U$ dependent loops simple,
 \begin{equation}
 \label{eq:gen-smear}
-	U' ← U \exp\left[ c \atan\left[F(\ReTr X, \ReTr Y, ...)\right] \left[\frac{\dd}{\dd U} \ReTr[W]\right] \right]
+	U' ← U \exp\left[ c \atan\left[\F(\ReTr X, \ReTr Y, ...)\right] \left[\frac{\dd}{\dd U} \ReTr[W]\right] \right]
 \end{equation}
-so that $F(\ReTr X, \ReTr Y, ...)$ only depends on $U$ independent loops,
-while $W$ contains $U$ dependent loops, $c*\atan(F)$ is for restricting
+so that $\F(\ReTr X, \ReTr Y, ...)$ only depends on $U$ independent loops,
+while $W$ contains $U$ dependent loops, $c \atan(\F)$ is for restricting
 the Jacobian to be positive definite, and $W$ is a sum of any loop
 and its symmetrized versions including $U$.
-The arbitrary function $F$ can take the form of a neural network.
+The arbitrary function $\F$ can take the form of a neural network.
 
 For a transformation to be usable in HMC, we want a tractable Jacobian determinant.
 One way to achieve this is updating gauge links in subsets,
 such that each update to the subset of $U$ has a Jacobian matrix,
 where the only nonzero entries are on its diagonal.
+
+\begin{figure}
+	\centering
+	\includegraphics[width=\textwidth]{filters.eps}
+	\caption{\label{fig:filters}Example generic filters for gauge covariant update of selected links.  See text for details.}
+\end{figure}
+
+Figure~\ref{fig:filters} shows an example of generic field transformation.
+We identify the subset of the gauge links to update in red, computing the
+gauge invariant Wilson loops, and mask out those loops depending on the
+to-be-updated links.
+We apply convolutional neural networks, with kernels $K_0$ for the plaquettes
+and $K_1$ for the rectangles, applying to the green unmasked Wilson loops,
+with their respective kernel sizes in yellow.
+We then stack the results of the previous networks together and apply further
+convolutional neural network $\F_c$ to it as a whole.
+The result of this neural network provides the coefficients, $c_0$ and $c_1$,
+for the local update depending on the plaquette and rectangle terms respectively.

@@ -140,7 +140,7 @@ if __name__ == '__main__':
     mom = QuadraticMomentum()
     act = SU3d4(beta=0.7796, c1=C1DBW2)
     # act = SU3d4(beta=6.0, c1=0)
-    tact = TransformedActionVectorBase(transform=transform.Ident(), action=act)
+    tact = TransformedActionVectorFromMatrixBase(transform=transform.Ident(), action=act)
     rng = tf.random.Generator.from_seed(conf.seed)
 
     if len(sys.argv)>1 and os.path.exists(sys.argv[1]):

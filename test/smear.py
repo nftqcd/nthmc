@@ -72,7 +72,7 @@ class TestSmearSlice(tu.LatticeTest):
         self.smear_shape(*self.test_shapes[2],dir=3,is_odd=True)
 
     def smear_shape(self,bd,dims,dir,is_odd):
-        mkmap = lambda:transform.StoutSmearSlice(coeff=[tf.math.tan(tf.constant(self.w.beta/3.0*4*pi,dtype=tf.float64))], dir=dir, is_odd=is_odd)
+        mkmap = lambda:transform.StoutSmearSlice(coeff=tf.math.tan(tf.constant(self.w.beta/3*4*pi,dtype=tf.float64))*tf.ones([6],tf.float64), dir=dir, is_odd=is_odd)
         lat = self.random(dims)
         gauge = g.from_tensor(lat, batch_dim=bd).projectSU()
         ss = SubSetOdd if is_odd else SubSetEven
@@ -110,7 +110,7 @@ class TestSmearSlice(tu.LatticeTest):
         with self.subTest(quantity='logDetJ'):
             self.check_eqv(logdetjref, l, tol=1e-11, rtol=1e-10)    # prec loss in direct det?
         with self.subTest(quantity='coeff'):
-            self.check_eqv(0.125*2/pi*tf.math.atan(tmap.coeff[0]), b)
+            self.check_eqv(0.75*2/pi*tf.math.atan(tmap.coeff), b)
         if is_odd:
             ss,ssfix = SubSetOdd,SubSetEven
         else:

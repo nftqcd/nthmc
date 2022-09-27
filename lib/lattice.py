@@ -89,7 +89,7 @@ class SubSet:
     def __sub__(self, x):
         if not isinstance(x, SubSet):
             raise ValueError(f'operand {x} is not a SubSet')
-        return Subset(self.s - (self.s & x.s))
+        return SubSet(self.s - (self.s & x.s))
     def from_corner_index(i):
         return SubSet(1<<i)
     def from_coord(xs):

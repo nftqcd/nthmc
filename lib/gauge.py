@@ -47,6 +47,8 @@ class LatticeWrapper:
         return self.lattice.typecast(x)
     def norm2(self, *args, **kwargs):
         return self.lattice.norm2(*args, **kwargs)
+    def trace(self):
+        return self.lattice.trace()
     def is_compatible(self, other):
         return isinstance(other, self.__class__) and self.__class__==other.__class__
     def if_compatible(self, other, f, e=None):
@@ -577,16 +579,18 @@ def plaquetteField(gauge, computeRect=False):
     rs = []
     for mu in range(1,len(gauge)):
         for nu in range(0,mu):
-            Umunu = gauge[mu](gauge[nu])
-            Unumu = gauge[nu](gauge[mu])
+            gnu = gauge[nu].shift(mu, 1)
+            gmu = gauge[mu].shift(nu, 1)
+            Umunu = gauge[mu](gnu)
+            Unumu = gauge[nu](gmu)
             ps.append(Umunu(Unumu.adjoint()))
             if computeRect:
                 Uu = gauge[nu].adjoint()(Umunu)
                 Ur = gauge[mu].adjoint()(Unumu)
-                Ul = Umunu(gauge[mu].adjoint())
-                Ud = Unumu(gauge[nu].adjoint())
-                rs.append(Ur(Ul.adjoint()))
-                rs.append(Uu(Ud.adjoint()))
+                Ul = Umunu(gmu.adjoint())
+                Ud = Unumu(gnu.adjoint())
+                rs.append(Ul(Ur.adjoint()))
+                rs.append(Ud(Uu.adjoint()))
     return ps, rs
 
 def plaquette(gauge):

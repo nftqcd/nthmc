@@ -8,10 +8,16 @@ from gauge import Gauge
 # tf.function would fail and claim some tensor cannot be accessed, if we use class and functions.
 # so we just use tuple here.
 def newEvolveStat(size):
-    ls = tf.zeros([size], tf.float64)  # lndet
-    f2s = tf.zeros([size], tf.float64)  # fnorm2
-    fms = tf.zeros([size], tf.float64)  # fnormInf
-    bs = tf.zeros([size], tf.float64)  # coeffs
+    if size==0:
+        ls = tf.zeros([], tf.float64)  # lndet
+        f2s = tf.zeros([], tf.float64)  # fnorm2
+        fms = tf.zeros([], tf.float64)  # fnormInf
+        bs = tf.zeros([], tf.float64)  # coeffs
+    else:
+        ls = tf.zeros([size], tf.float64)  # lndet
+        f2s = tf.zeros([size], tf.float64)  # fnorm2
+        fms = tf.zeros([size], tf.float64)  # fnormInf
+        bs = tf.zeros([size], tf.float64)  # coeffs
     return (ls,f2s,fms,bs)
 def recordEvolveStat(stat, i, force, lndet, coeffs):
     (ls,f2s,fms,bs) = stat

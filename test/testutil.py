@@ -55,6 +55,7 @@ class LatticeTest(ut.TestCase):
                 with self.subTest(tolerance='relative'):
                     self.assertLess(m/mn, rtol)
 
+class LatticeTestSelf(LatticeTest):
     def test_check_eqv(self):
         self.check_eqv(tf.constant(0.1,tf.float64), tf.constant(0.10000000000001,tf.float64))
         self.check_eqv(tf.constant([0.1],tf.float64), tf.constant([0.10000000000001],tf.float64))

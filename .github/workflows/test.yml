@@ -3,21 +3,20 @@ on: [push, pull_request]
 
 jobs:
   bulid:
+    runs-on: ubuntu-latest
     steps:
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.x'
     - name: install packages
-      run: |
-        python3 -m venv py_venv
-        py_venv/bin/pip install -U tensorflow
+      run: python -m pip install --upgrade pip tensorflow
     - name: system info
       run: |
         free
         cat /proc/cpuinfo
         py_venv/bin/python -c 'import sys; print(sys.version); import tensorflow as tf; print(tf.version.GIT_VERSION, tf.version.VERSION)'
-    - name: checkout
-      uses: actions/checkout@v2
-      with:
-        path: nthmc
+    - uses: actions/checkout@v3
     - name: unittest
       working-directory: nthmc/test
-      run: |
-        ../../py_venv/bin/python -m unittest discover -p '*.py'
+      run: ../../py_venv/bin/python -m unittest discover -p '*.py'

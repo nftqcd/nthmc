@@ -1,0 +1,23 @@
+name: test
+on: [push, pull_request]
+
+jobs:
+  bulid:
+    steps:
+    - name: install packages
+      run: |
+        python3 -m venv py_venv
+        py_venv/bin/pip install -U tensorflow
+    - name: system info
+      run: |
+        free
+        cat /proc/cpuinfo
+        py_venv/bin/python -c 'import sys; print(sys.version); import tensorflow as tf; print(tf.version.GIT_VERSION, tf.version.VERSION)'
+    - name: checkout
+      uses: actions/checkout@v2
+      with:
+        path: nthmc
+    - name: unittest
+      working-directory: nthmc/test
+      run: |
+        ../../py_venv/bin/python -m unittest discover -p '*.py'

@@ -124,6 +124,8 @@ class StoutSmearSlice(TransformBase):
             treal += [tf.math.real(t),tf.math.imag(t)]
         return tf.stack(treal, axis=-1)    # 306
     def compute_change(self, xin, change_only=False):
+        n_plaq = 6
+        n_chair = 48
         mu = self.dir
         x,xupd = self.filter_fixed_update(xin)
         Umu = [None]*4
@@ -147,7 +149,8 @@ class StoutSmearSlice(TransformBase):
                 loop_wo_mu.append(stu[nu].shift(nu, -1))
         Sf = [[None]*4 for _ in range(4)]
         Sb = [[None]*4 for _ in range(4)]
-        if callable(self.coeff):    # pass symmetrized wilson loops to self.coeff
+        if callable(self.coeff) or self.coeff.shape[-1]==n_plaq+n_chair:    # compute staples off mu
+            # pass symmetrized wilson loops to self.coeff if callable
             # 1. plaquette perpendicular to mu, 3 dirs
             # 2. rectangle perpendicular to mu, 2 types, 3 dirs
             loop_perp = []
@@ -165,22 +168,24 @@ class StoutSmearSlice(TransformBase):
                     Sb[nu][xi] = x[nu].adjoint()(Uxinu).shift(nu, -1)
                     Sf[nu][xi] = Unuxi(xnu.adjoint())
                     Sf[xi][nu] = Uxinu(xxi.adjoint())
-                    # PLAQUETTE
-                    plaq = power3_trace(Unuxi(Uxinu.adjoint()))
-                    # 3 more, symmetrical around the point
-                    plaq_nu = [p.shift(nu, -1) for p in plaq]
-                    plaq_xi = [p.shift(xi, -1) for p in plaq]
-                    plaq_nuxi = [p.shift(xi, -1) for p in plaq_nu]
-                    # RECTANGLE
-                    rect_lr = power3_trace(Sf[nu][xi](Sb[nu][xi].adjoint()))
-                    # 1 from back, symmetrical around the point
-                    rect_lr_xi = [r.shift(xi, -1) for r in rect_lr]
-                    rect_du = power3_trace(Sf[xi][nu](Sb[xi][nu].adjoint()))
-                    # 1 from back, symmetrical around the point
-                    rect_du_nu = [r.shift(nu, -1) for r in rect_du]
-                    # SAVE
-                    loop_perp += [*plaq, *plaq_nu, *plaq_xi, *plaq_nuxi]    # 12 numbers
-                    loop_perp += [*rect_lr, *rect_lr_xi, *rect_du, *rect_du_nu]    # 12 numbers
+                    if callable(self.coeff):
+                        # PLAQUETTE
+                        plaq = power3_trace(Unuxi(Uxinu.adjoint()))
+                        # 3 more, symmetrical around the point
+                        plaq_nu = [p.shift(nu, -1) for p in plaq]
+                        plaq_xi = [p.shift(xi, -1) for p in plaq]
+                        plaq_nuxi = [p.shift(xi, -1) for p in plaq_nu]
+                        # RECTANGLE
+                        rect_lr = power3_trace(Sf[nu][xi](Sb[nu][xi].adjoint()))
+                        # 1 from back, symmetrical around the point
+                        rect_lr_xi = [r.shift(xi, -1) for r in rect_lr]
+                        rect_du = power3_trace(Sf[xi][nu](Sb[xi][nu].adjoint()))
+                        # 1 from back, symmetrical around the point
+                        rect_du_nu = [r.shift(nu, -1) for r in rect_du]
+                        # SAVE
+                        loop_perp += [*plaq, *plaq_nu, *plaq_xi, *plaq_nuxi]    # 12 numbers
+                        loop_perp += [*rect_lr, *rect_lr_xi, *rect_du, *rect_du_nu]    # 12 numbers
+        if callable(self.coeff):
             # symmetrize about the link
             loop_perp_mu = [loop.shift(mu, 1) for loop in loop_perp]
             loop_perp += loop_perp_mu    # 144 numbers in total
@@ -195,7 +200,7 @@ class StoutSmearSlice(TransformBase):
             coeff = self.coeff
         c_scaled_real = scale_coeff(coeff,0.75)    # 3/4 for each SU(3) terms in f
         c_scaled = loop_wo_mu[0].typecast(c_scaled_real)
-        if c_scaled.shape[-1]==6+48:
+        if c_scaled.shape[-1]==n_plaq+n_chair:
             # 6-edge terms: mu,nu,-mu,xi,-nu,-xi or mu,xi,nu,-xi,-mu,-nu (6 staples along mu x 2 sides x 4 staples/side)
             for nu in range(4):
                 if nu==mu:
@@ -217,8 +222,8 @@ class StoutSmearSlice(TransformBase):
                     # R[nu] is mu-(-nu)
                     loop_wo_mu.append(Sf[xi][nu](R[nu]))
                     loop_wo_mu.append(Sb[xi][nu](R[nu]))
-        elif c_scaled.shape[-1]!=6:
-            raise ValueError(f'unsupported coeff shape {c_scaled.shape}, site dim must be 6 or 6+48')
+        elif c_scaled.shape[-1]!=n_plaq:
+            raise ValueError(f'unsupported coeff shape {c_scaled.shape}, site dim must be n_plaq or n_plaq+n_chair')
         f = 0.0
         for i,s in enumerate(loop_wo_mu):
             if len(c_scaled.shape)==1:    # global coefficients

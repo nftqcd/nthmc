@@ -187,6 +187,10 @@ def typecast(lat, x):
         else:
             return tf.convert_to_tensor(x, dtype=lat.dtype)
 
+def lattice_map_tf(lat, tfunctor, *args, **kwargs):
+    functor = lambda x: lattice_map_tf(x, tfunctor, *args, **kwargs)
+    return lattice_map(lat, functor, tfunctor, *args, **kwargs)
+
 def lattice_map(lat, functor, tfunctor, *args, **kwargs):
     if isinstance(lat, Lattice):
         return lat.map(functor, *args, **kwargs)

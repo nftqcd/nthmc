@@ -106,7 +106,7 @@ def packMCMCRes(mcmc, x, p, x0, p0, x1, p1, v0, t0, v1, t1, dH, acc, arand, ls, 
     if detail:
         inferRes = (v0,),(t0,),(v1,),(t1,),(dp2,),(f2s,),(fms,),((bs,) if len(bs.shape)>1 else None),(ls,),(dH,),(tf.exp(-dH),),(arand,),acc,(plaqWoT,),(plaq,)
     else:
-        inferRes = mean_min_max(v0),mean_min_max(t0),mean_min_max(v1),mean_min_max(t1),mean_min_max(dp2),mean_min_max(f2s),mean_min_max(fms),(mean_min_max(bs,axis=(0,1)) if len(bs.shape)>1 else None),mean_min_max(ls),mean_min_max(dH),mean_min_max(tf.exp(-dH)),mean_min_max(arand),tf.reduce_mean(tf.cast(acc,tf.float64)),mean_min_max(plaqWoT),mean_min_max(plaq)
+        inferRes = mean_min_max(v0),mean_min_max(t0),mean_min_max(v1),mean_min_max(t1),mean_min_max(dp2),mean_min_max(f2s),mean_min_max(fms),mean_min_max(bs,axis=range(len(bs.shape)-1)),mean_min_max(ls),mean_min_max(dH),mean_min_max(tf.exp(-dH)),mean_min_max(arand),tf.reduce_mean(tf.cast(acc,tf.float64)),mean_min_max(plaqWoT),mean_min_max(plaq)
     return inferRes
 
 def printMCMCRes(v0,t0,v1,t1,dp2,f2s,fms,bs,ls,dH,expmdH,arand,acc,plaqWoT,plaq):

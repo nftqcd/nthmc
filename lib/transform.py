@@ -1,7 +1,7 @@
 import tensorflow as tf
 import tensorflow.keras.layers as tl
 import gauge
-from lattice import Lattice, evenodd_mask, SubSetAll, SubSetEven, SubSetOdd, combine_subsets
+from lattice import Lattice, evenodd_mask, SubSetAll, SubSetEven, SubSetOdd, combine_subsets, lattice_map_tf
 
 def scale_coeff(x, max):
     pi_2 = 0.63661977236758134307    # 2/pi
@@ -42,15 +42,15 @@ class Ident(TransformBase):
     def transform(self, x):
         bs = x.batch_size()
         if bs==0:
-            return (x, tf.zeros([], dtype=tf.float64), tf.zeros([], dtype=tf.float64))
+            return (x, tf.zeros([], dtype=tf.float64), tf.zeros([4], dtype=tf.float64))
         else:
-            return (x, tf.zeros([bs], dtype=tf.float64), tf.zeros([bs], dtype=tf.float64))
+            return (x, tf.zeros([bs], dtype=tf.float64), tf.zeros([bs,4], dtype=tf.float64))
     def inv(self, y):
         bs = y.batch_size()
         if bs==0:
-            return (y, tf.zeros([], dtype=tf.float64), tf.zeros([], dtype=tf.float64))
+            return (y, tf.zeros([], dtype=tf.float64), tf.zeros([4], dtype=tf.float64))
         else:
-            return (y, tf.zeros([bs], dtype=tf.float64), tf.zeros([bs], dtype=tf.float64))
+            return (y, tf.zeros([bs], dtype=tf.float64), tf.zeros([bs,4], dtype=tf.float64))
 
 class StoutSmearSlice(TransformBase):
     """
@@ -194,7 +194,7 @@ class StoutSmearSlice(TransformBase):
             for nu in range(4):
                 if nu!=mu:
                     loop_para += power3_trace(stf[nu](stu[nu].adjoint()))    # already symmetrical about the link
-            sym_field = self.stack_tensors(loop_para, loop_perp)
+            sym_field = self.stack_tensors(loop_para, loop_perp)    # 2*(144+9)=306 real numbers per site
             coeff = self.coeff(sym_field)
         else:
             coeff = self.coeff
@@ -225,20 +225,62 @@ class StoutSmearSlice(TransformBase):
         elif c_scaled.shape[-1]!=n_plaq:
             raise ValueError(f'unsupported coeff shape {c_scaled.shape}, site dim must be n_plaq or n_plaq+n_chair')
         f = 0.0
-        for i,s in enumerate(loop_wo_mu):
-            if len(c_scaled.shape)==1:    # global coefficients
+        if len(c_scaled.shape)==1:    # global coefficients
+            for i,s in enumerate(loop_wo_mu):
                 f += s*c_scaled[i]
-            elif self.parted and len(c_scaled.shape) in {7,8}:    # (1 batch_dim +) 4 dim + 2 mat + 1 coeff_dim
-                f += s*Lattice(c_scaled[...,i], nd=s.unwrap().nd, batch_dim=s.unwrap().batch_dim).hypercube_partition()
-            else:    # hope for the best
-                f += s*c_scaled[...,i]
+        else:    # insert matrix dim for shape compatibility
+            c_scaled = tf.expand_dims(tf.expand_dims(c_scaled, -2), -2)
+            if self.parted:
+                c_scaled = Lattice(c_scaled, nd=loop_wo_mu[0].unwrap().nd, batch_dim=loop_wo_mu[0].unwrap().batch_dim).hypercube_partition()
+                for i,s in enumerate(loop_wo_mu):
+                    f += s*lattice_map_tf(c_scaled, lambda x:x[...,i])
+            else:
+                for i,s in enumerate(loop_wo_mu):
+                    f += s*c_scaled[...,i]
         f /= f.typecast(len(loop_wo_mu))
         if change_only:
             fexp = f(xupd.adjoint()).projectTangent().exp()
             return fexp
         else:
             fexp,logdet = f.smearIndepLogDetJacobian(xupd)
-            return fexp, logdet, c_scaled_real
+            # return mean&rms coeff per batch for easy recording in evolve
+            bs = fexp.batch_size()
+            c2 = c_scaled_real**2
+            if len(c_scaled_real.shape)==1:
+                c_mean_chair = tf.constant(0, tf.float64)
+                rc2_mean_chair = tf.constant(0, tf.float64)
+                if c_scaled_real.shape[0]>n_plaq:
+                    c_mean_chair = tf.reduce_mean(c_scaled_real[n_plaq:])
+                    rc2_mean_chair = tf.sqrt(tf.reduce_mean(c2[n_plaq:]))
+                c_mean_rms = tf.stack(
+                    (tf.reduce_mean(c_scaled_real[:n_plaq]), c_mean_chair,
+                     tf.sqrt(tf.reduce_mean(c2[:n_plaq])), rc2_mean_chair), 0)
+                # replicate per batch
+                if bs>0:
+                    c_mean_rms = tf.tile(tf.expand_dims(c_mean_rms,0),(bs,1))
+            else:    # assume a lattice
+                lataxis = range(4) if bs==0 else range(1,5)
+                c_mean = tf.reduce_mean(c_scaled_real, axis=lataxis)
+                c2_mean = tf.reduce_mean(c2, axis=lataxis)
+                if bs==0:
+                    c_mean_chair = tf.constant(0, tf.float64)
+                    rc2_mean_chair = tf.constant(0, tf.float64)
+                    if c_mean.shape[0]>n_plaq:
+                        c_mean_chair = tf.reduce_mean(c_mean[n_plaq:])
+                        rc2_mean_chair = tf.sqrt(tf.reduce_mean(c2_mean[n_plaq:]))
+                    c_mean_rms = tf.stack(
+                        (tf.reduce_mean(c_mean[:n_plaq]), c_mean_chair,
+                         tf.sqrt(tf.reduce_mean(c2_mean[:n_plaq])), rc2_mean_chair), 0)
+                else:
+                    c_mean_chair = tf.zeros([bs], tf.float64)
+                    rc2_mean_chair = tf.zeros([bs], tf.float64)
+                    if c_mean.shape[1]>n_plaq:
+                        c_mean_chair = tf.reduce_mean(c_mean[:,n_plaq:], axis=1)
+                        rc2_mean_chair = tf.sqrt(tf.reduce_mean(c2_mean[:,n_plaq:], axis=1))
+                    c_mean_rms = tf.stack(
+                        (tf.reduce_mean(c_mean[:,:n_plaq], axis=1), c_mean_chair,
+                         tf.sqrt(tf.reduce_mean(c2_mean[:,:n_plaq], axis=1)), rc2_mean_chair), -1)
+            return fexp, logdet, c_mean_rms
     def inv_iter(self, x):
         return self.compute_change(x, change_only=True)
     def inv(self, y):
@@ -311,7 +353,7 @@ class CoefficientNets(tl.Layer):
         y = x
         for nn in self.chain:
             y = nn(y)
-        return tf.expand_dims(tf.expand_dims(y,-2),-2)
+        return y
 
 class SymmetricShifts:
     """

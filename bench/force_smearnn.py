@@ -1,12 +1,12 @@
 import tensorflow as tf
+import tensorflow.keras.layers as tl
 import os, sys
 from math import pi
 from benchutil import bench, time, mem
 sys.path.append("../lib")
-from transform import TransformChain, StoutSmearSlice
+import transform
 from gauge import readGauge, random
 from action import C1DBW2, SU3d4, Dynamics, TransformedActionMatrixBase, TransformedActionVectorFromMatrixBase
-from evolve import Omelyan2MN
 from nthmc import setup, Conf
 
 conf = Conf(nbatch=1, nepoch=2, nstepEpoch=8, trajLength=0.2, stepPerTraj=2)
@@ -29,50 +29,48 @@ else:
 
 gconfP = gconf.hypercube_partition()
 
-def run(x0, act):
+def run(x, act):
     if isinstance(act, TransformedActionMatrixBase):
-        p0 = x0.randomTangent(rng)
+        p = x.randomTangent(rng)
     else:
-        p0 = x0.randomTangentVector(rng)
-    x,p = x0,p0
-    md = Omelyan2MN(conf, Dynamics(act))
-    v0,_,_ = md.dynamics.V(x)
-    t0 = md.dynamics.T(p)
-    tf.print('H0',v0+t0,v0,t0)
-    def mdfun_(x_,p_):
-        x = x0.from_tensors(x_)
-        p = p0.from_tensors(p_)
-        xn,pn,_,_,_,_ = md(x,p)
-        return xn.to_tensors(),pn.to_tensors()
-    def mdfun(f,x,p):
-        x_,p_ = f(x.to_tensors(),p.to_tensors())
-        return x.from_tensors(x_),p.from_tensors(p_)
+        p = x.randomTangentVector(rng)
+    v,_,_ = act(x)
+    tf.print('V',v)
+    def fun_(x_):
+        x_ = x.from_tensors(x_)
+        f,_,_ = act.gradient(x_)
+        return f.to_tensors()
+    def fun(fn,x):
+        f_ = fn(x.to_tensors())
+        return p.from_tensors(f_)
     mem('before')
 
-    ffun_,_ = time('tf.function',lambda:tf.function(mdfun_))
-    ffun,_ = time('fun concrete',lambda:ffun_.get_concrete_function(x.to_tensors(),p.to_tensors()))
+    # f,_ = bench('egr',lambda:fun(fun_,x))
+    # tf.print('f2',f.norm2())
+
+    ffun_,_ = time('tf.function',lambda:tf.function(fun_))
+    ffun,_ = time('fun concrete',lambda:ffun_.get_concrete_function(x.to_tensors()))
     mem('procfun')
 
-    x,p = x0,p0
-    (x,p),_ = bench('fun',lambda:mdfun(ffun,x,p))
-    v1,_,_ = md.dynamics.V(x)
-    t1 = md.dynamics.T(p)
-    tf.print('H1',v1+t1,v1,t1)
-    tf.print('dH',v1+t1-v0-t0)
+    f,_ = bench('fun',lambda:fun(ffun,x))
+    tf.print('f2',f.norm2())
 
-    fjit_,_ = time('tf.func:jit',lambda:tf.function(mdfun_,jit_compile=True))
-    fjit,_ = time('jit concrete',lambda:fjit_.get_concrete_function(x.to_tensors(),p.to_tensors()))
+    fjit_,_ = time('tf.func:jit',lambda:tf.function(fun_,jit_compile=True))
+    fjit,_ = time('jit concrete',lambda:fjit_.get_concrete_function(x.to_tensors()))
     mem('procjit')
 
-    x,p = x0,p0
-    (x,p),_ = bench('jit',lambda:mdfun(fjit,x,p))
-    v1,_,_ = md.dynamics.V(x)
-    t1 = md.dynamics.T(p)
-    tf.print('H1',v1+t1,v1,t1)
-    tf.print('dH',v1+t1-v0-t0)
+    f,_ = bench('jit',lambda:fun(fjit,x))
+    tf.print('f2',f.norm2())
 
-mktrf = lambda:TransformChain(
-    [StoutSmearSlice(coeff=tf.math.tan(tf.constant(0.1*4*pi,dtype=tf.float64))*tf.ones([6],tf.float64), dir=i, is_odd=eo)
+mktrf = lambda:transform.TransformChain(
+    [transform.StoutSmearSlice(
+        coeff=transform.CoefficientNets([
+            transform.SymmetricShifts(symmetric_shifts=1),
+            transform.FlattenSiteLocal(input_local_rank=2),
+            tl.Dense(units=64, activation='swish'),
+            transform.Normalization(),
+            tl.Dense(units=54, activation=None)]),
+        dir=i, is_odd=eo)
      for eo in {False,True} for i in range(4)])
 
 tf.print('1. Mat Mom')

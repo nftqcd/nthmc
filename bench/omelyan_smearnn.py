@@ -1,8 +1,10 @@
 import tensorflow as tf
+import tensorflow.keras.layers as tl
 import os, sys
-from benchutil import bench, time, mem
+from math import pi
+from benchutil import bench, time
 sys.path.append("../lib")
-from transform import Ident
+import transform
 from gauge import readGauge, random
 from action import C1DBW2, SU3d4, Dynamics, TransformedActionMatrixBase, TransformedActionVectorFromMatrixBase
 from evolve import Omelyan2MN
@@ -28,6 +30,12 @@ else:
 
 gconfP = gconf.hypercube_partition()
 
+def mem(s=''):
+    if tf.config.list_physical_devices('GPU'):
+        s = 'mem' if s=='' else s+' mem'
+        tf.print(s,tf.config.experimental.get_memory_info('GPU:0'))
+        tf.config.experimental.reset_memory_stats('GPU:0')
+
 def run(x0, act):
     if isinstance(act, TransformedActionMatrixBase):
         p0 = x0.randomTangent(rng)
@@ -48,6 +56,16 @@ def run(x0, act):
         return x.from_tensors(x_),p.from_tensors(p_)
     mem('before')
 
+    """
+    x,p = x0,p0
+    (x,p),_ = bench('egr',lambda:mdfun(mdfun_,x,p))
+    v1,_,_ = md.dynamics.V(x)
+    t1 = md.dynamics.T(p)
+    tf.print('H1',v1+t1,v1,t1)
+    tf.print('dH',v1+t1-v0-t0)
+    mem('egr')
+    """
+
     ffun_,_ = time('tf.function',lambda:tf.function(mdfun_))
     ffun,_ = time('fun concrete',lambda:ffun_.get_concrete_function(x.to_tensors(),p.to_tensors()))
     mem('procfun')
@@ -58,6 +76,7 @@ def run(x0, act):
     t1 = md.dynamics.T(p)
     tf.print('H1',v1+t1,v1,t1)
     tf.print('dH',v1+t1-v0-t0)
+    mem('fun')
 
     fjit_,_ = time('tf.func:jit',lambda:tf.function(mdfun_,jit_compile=True))
     fjit,_ = time('jit concrete',lambda:fjit_.get_concrete_function(x.to_tensors(),p.to_tensors()))
@@ -69,12 +88,27 @@ def run(x0, act):
     t1 = md.dynamics.T(p)
     tf.print('H1',v1+t1,v1,t1)
     tf.print('dH',v1+t1-v0-t0)
+    mem('jit')
+
+mktrf = lambda:transform.TransformChain(
+    [transform.StoutSmearSlice(
+        coeff=transform.CoefficientNets([
+            transform.SymmetricShifts(symmetric_shifts=1),
+            transform.Residue(transform.LocalSelfAttention(num_heads=2,key_dim=2)),
+            tl.Dense(units=2, activation='swish'),
+            transform.FlattenSiteLocal(input_local_rank=2),
+            transform.Normalization(),
+            transform.Residue(transform.LocalFeedForward(inner_size=64, inner_activation='swish')),
+            transform.Normalization(),
+            tl.Dense(units=54, activation=None)]),
+        dir=i, is_odd=eo)
+     for eo in {False,True} for i in range(4)])
 
 tf.print('1. Mat Mom')
-run(gconf, TransformedActionMatrixBase(transform=Ident(), action=act))
+run(gconf, TransformedActionMatrixBase(transform=mktrf(), action=act))
 tf.print('2. Vec Mom from Mat')
-run(gconf, TransformedActionVectorFromMatrixBase(transform=Ident(), action=act))
+run(gconf, TransformedActionVectorFromMatrixBase(transform=mktrf(), action=act))
 tf.print('3. Part Mat Mom')
-run(gconfP, TransformedActionMatrixBase(transform=Ident(), action=act))
+run(gconfP, TransformedActionMatrixBase(transform=mktrf(), action=act))
 tf.print('4. Part Vec Mom from Mat')
-run(gconfP, TransformedActionVectorFromMatrixBase(transform=Ident(), action=act))
+run(gconfP, TransformedActionVectorFromMatrixBase(transform=mktrf(), action=act))

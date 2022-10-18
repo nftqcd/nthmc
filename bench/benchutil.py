@@ -21,6 +21,14 @@ def time(s,f,n=1,niter=1):
                 print(f'{s}: Time {dt} sec', flush=True)
     return ret, mint
 
+def mem(s=''):
+    if tf.config.list_physical_devices('GPU'):
+        s = 'mem' if s=='' else s+' mem'
+        tf.print(s,tf.config.experimental.get_memory_info('GPU:0'))
+        tf.config.experimental.reset_memory_stats('GPU:0')
+
 def bench(s,f):
     r,t = time(s,f,n=3)
-    return time(s,f,n=3,niter=1+int(0.5/t))
+    r,t = time(s,f,n=3,niter=1+int(0.5/t))
+    mem(s)
+    return r,t

@@ -1,7 +1,7 @@
 import tensorflow as tf
-import gauge as g
-import stagD as s
-from lattice import SubSetEven, SubSetOdd, Lattice, from_hypercube_parts, norm2, redot
+from . import gauge as g
+from . import stagD as s
+from .lattice import SubSetEven, SubSetOdd, Lattice, from_hypercube_parts, norm2, redot
 
 def cg_iter(A,x,p,r,r2,r2o):
     beta = p.typecast(r2/r2o)

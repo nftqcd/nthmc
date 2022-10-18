@@ -1,9 +1,8 @@
-import nthmc
 import tensorflow as tf
 import tensorflow.keras as tk
 import tensorflow.keras.layers as tl
-from numpy import inf
-from gauge import Gauge
+from . import nthmc
+from .gauge import Gauge
 
 # tf.function would fail and claim some tensor cannot be accessed, if we use class and functions.
 # so we just use tuple here.

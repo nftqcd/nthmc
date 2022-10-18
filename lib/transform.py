@@ -1,7 +1,8 @@
+from math import pi
 import tensorflow as tf
 import tensorflow.keras.layers as tl
-import gauge
-from lattice import Lattice, evenodd_mask, SubSetAll, SubSetEven, SubSetOdd, combine_subsets, lattice_map_tf
+from . import gauge
+from .lattice import Lattice, evenodd_mask, SubSetAll, SubSetEven, SubSetOdd, combine_subsets, lattice_map_tf
 
 def scale_coeff(x, max):
     pi_2 = 0.63661977236758134307    # 2/pi
@@ -14,7 +15,7 @@ def power3_trace(x):
     x3 = x(x2)
     return x.trace(),x2.trace(),x3.trace()
 
-class TransformBase(tl.Layer):
+class TransformBase(tf.keras.Model):
     def __init__(self, name='TransformerBase', **kwargs):
         super().__init__(autocast=False, name=name, **kwargs)
         self.invMaxIter = 1
@@ -345,6 +346,14 @@ class TransformChain(TransformBase):
             tf.print(i, ':', end='')
             self.chain[i].showTransform(**kwargs)
 
+def CoefficientVariable(init, chair=None, trainable=None, name='CoefficientVariable'):
+    coeff = [init]*6
+    if chair is not None:
+        coeff += [chair]*48
+    # inverse of scale_coeff
+    v = tf.math.tan(tf.constant([c*4*pi for c in coeff],dtype=tf.float64))
+    return tf.Variable(initial_value=v, trainable=trainable, name=name)
+
 class CoefficientNets(tl.Layer):
     def __init__(self, sequence, name='CoefficientNets', **kwargs):
         super().__init__(autocast=False, name=name, **kwargs)
@@ -386,8 +395,8 @@ class Normalization(tl.Layer):
         super().__init__(autocast=False, name=name, **kwargs)
         self.epsilon = epsilon
     def build(self, input_shape):
-        self.gamma = self.add_weight(shape=input_shape[-1:], initializer='ones', trainable=True)
-        self.beta = self.add_weight(shape=input_shape[-1:], initializer='zeros', trainable=True)
+        self.gamma = self.add_weight(name='gamma', shape=input_shape[-1:], initializer='ones', trainable=True)
+        self.beta = self.add_weight(name='beta', shape=input_shape[-1:], initializer='zeros', trainable=True)
     def call(self, x):
         # assuming the batch_dim always comes before TZYXC.
         lat_rank = 5

@@ -1,6 +1,6 @@
 import math
-import group
 import tensorflow as tf
+from . import group
 
 class SubSet:
     """

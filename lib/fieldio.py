@@ -67,11 +67,14 @@ def printLimeHeaders(file):
         f.seek(next,os.SEEK_CUR)
     f.close()
 
-def readLattice(file):
+def readLattice(file, verbose=True):
     """
     Only supports SciDAC and ILDG formats in Lime.
     """
     time0 = time.clock_gettime_ns(time.CLOCK_MONOTONIC_RAW)
+    def logput(*args,**kwargs):
+        if verbose:
+            print(*args,**kwargs)
     f = open(file,'rb')
     latsize = -1
     lattypesize = -1
@@ -88,16 +91,16 @@ def readLattice(file):
         magi, vers, mbeg_end_res, size, type = struct.unpack('>ihHq128s',header)
         if magi!=limeMagic:
             raise IOError(f'lime magic number does not match, got {magi}')
-        # print(f'vers: {vers}')
+        # logput(f'vers: {vers}')
         # mbeg = 1 & mbeg_end_res>>15
         # mend = 1 & mbeg_end_res>>14
         # mres = ~(3<<14) & mbeg_end_res
-        # print(f'mbeg mend res: {mbeg} , {mend} , {mres}')
+        # logput(f'mbeg mend res: {mbeg} , {mend} , {mres}')
         type = type[:type.find(b'\0')]
-        # print(f'size: {size}')
-        # print(f'type: {type}')
+        # logput(f'size: {size}')
+        # logput(f'type: {type}')
         loca = f.tell()
-        # print(f'loca: {loca}')
+        # logput(f'loca: {loca}')
         if type==b'scidac-binary-data' or type==b'ildg-binary-data':
             lattype = type
             latsize = size
@@ -107,18 +110,18 @@ def readLattice(file):
             data = f.read(size)
             data = data[:data.find(b'\0')]
             if type==b'scidac-private-file-xml':
-                # print('version: ',xmlFind(data,'version'))
+                # logput('version: ',xmlFind(data,'version'))
                 spacetime = int(xmlFind(data,'spacetime'))
                 latdims = [int(x) for x in xmlFind(data,'dims').strip().split()]
                 if len(latdims)!=spacetime:
                     raise ValueError(f'got spacetime {spacetime} but dims {latdims}')
             elif type==b'scidac-file-xml':
-                print(f'file metadata: {data}')
+                logput(f'file metadata: {data}')
             elif type==b'scidac-private-record-xml':
-                # print('version: ',xmlFind(data,'version'))
-                print('date: ',xmlFind(data,'date'))
-                print('recordtype: ',xmlFind(data,'recordtype'))
-                print('datatype: ',xmlFind(data,'datatype'))
+                # logput('version: ',xmlFind(data,'version'))
+                logput('date: ',xmlFind(data,'date'))
+                logput('recordtype: ',xmlFind(data,'recordtype'))
+                logput('datatype: ',xmlFind(data,'datatype'))
                 precision = xmlFind(data,'precision').lower()
                 if precision==b'f':
                     latprec = 8    # complex float
@@ -130,14 +133,14 @@ def readLattice(file):
                 try:
                     latns = int(xmlFind(data,'spins'))
                 except ValueError as err:
-                    print(f'Ignore exceptions in finding "spins" in xml: {err}')
+                    logput(f'Ignore exceptions in finding "spins" in xml: {err}')
                     latns = 1
                 lattypesize = int(xmlFind(data,'typesize'))
                 latdatacount = int(xmlFind(data,'datacount'))
             elif type==b'scidac-record-xml':
-                print(f'record metadata: {data}')
+                logput(f'record metadata: {data}')
             elif type==b'scidac-checksum':
-                # print('version: ',xmlFind(data,'version'))
+                # logput('version: ',xmlFind(data,'version'))
                 latsuma = int(xmlFind(data,'suma'),16)
                 latsumb = int(xmlFind(data,'sumb'),16)
                 pass
@@ -162,9 +165,9 @@ def readLattice(file):
                 lattypesize = latnc*latnc*latprec
                 latdatacount = 4
             else:
-                print(f'unused type: {type}  data: {data}')
+                logput(f'unused type: {type}  data: {data}')
             next = 7-(size+7)%8
-        # print(f'next: {next}')
+        # logput(f'next: {next}')
         f.seek(next,os.SEEK_CUR)
     f.close()
     time1 = time.clock_gettime_ns(time.CLOCK_MONOTONIC_RAW)
@@ -180,8 +183,8 @@ def readLattice(file):
                 raise ValueError(f'No SciDAC checksum.')
             else:
                 suma,sumb = scidacChecksum(latdata, vol, latdatacount*lattypesize)
-                # print(f'computed sum {suma:x} {sumb:x}')
-                # print(f'expected sum {latsuma:x} {latsumb:x}')
+                # logput(f'computed sum {suma:x} {sumb:x}')
+                # logput(f'expected sum {latsuma:x} {latsumb:x}')
                 if suma!=latsuma or sumb!=latsumb:
                     raise IOError(f'Checksum error: expected {latsuma:x} {latsumb:x}, computed {suma:x} {sumb:x}')
     else:
@@ -198,7 +201,7 @@ def readLattice(file):
     else:
         raise ValueError(f'unsupported contents in file: {file}')
     time2 = time.clock_gettime_ns(time.CLOCK_MONOTONIC_RAW)
-    print(f'read time: io {(time1-time0)*1e-6} ms, proc {(time2-time1)*1e-6} ms')
+    logput(f'read time: io {(time1-time0)*1e-6} ms, proc {(time2-time1)*1e-6} ms')
     return lat,latdims
 
 def writeLattice(gauge, file):

@@ -1,44 +1,16 @@
 import tensorflow as tf
 import tensorflow.keras as tk
 import datetime, os
-import gauge
+from . import gauge
 import sys
 
 class Conf:
     def __init__(self,
-            nbatch = 16,
-            nepoch = 4,
-            nstepEpoch = 256,
-            nstepMixing = 16,
-            nstepPostTrain = 0,
-            nconfStepTune = 512,
-            initDt = None,
-            trainDt = True,
-            stepPerTraj = 10,
-            trajLength = None,
-            accRate = 0.8,
-            checkReverse = False,
-            refreshOpt = True,
             nthr = 4,
             nthrIop = 1,
             softPlace = True,
             xlaCluster = False,
             seed = 876543211):
-        if initDt is None and trajLength is None:
-            raise ValueError('missing argument: initDt or trajLength')
-        self.nbatch = nbatch
-        self.nepoch = nepoch
-        self.nstepEpoch = nstepEpoch
-        self.nstepMixing = nstepMixing
-        self.nstepPostTrain = nstepPostTrain
-        self.nconfStepTune = nconfStepTune
-        self.initDt = trajLength/stepPerTraj if initDt is None else initDt
-        self.trainDt = trainDt
-        self.stepPerTraj = stepPerTraj
-        self.trajLength = initDt*stepPerTraj if trajLength is None else trajLength
-        self.accRate = accRate
-        self.checkReverse = checkReverse
-        self.refreshOpt = refreshOpt
         self.nthr = nthr
         self.nthrIop = nthrIop
         self.softPlace = softPlace

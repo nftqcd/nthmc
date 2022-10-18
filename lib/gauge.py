@@ -1,6 +1,6 @@
 import tensorflow as tf
-import field,fieldio,group
-import lattice as l
+from . import field,fieldio,group
+from . import lattice as l
 
 class LatticeWrapper:
     """
@@ -540,11 +540,24 @@ def from_hypercube_parts(parts, **kwargs):
     nd = len(parts)
     return Gauge([Transporter(l.from_hypercube_parts(p, **kwargs), field.Path(i+1)) for i,p in enumerate(parts)])
 
-def readGauge(file):
-    t,d = fieldio.readLattice(file)
+def readGauge(file, verbose=False):
+    t0 = tf.timestamp()
+    if isinstance(file, (list,tuple)):
+        ts,ds = zip(*[fieldio.readLattice(f, verbose=verbose) for f in file])
+        d = ds[0]
+        t = tf.stack(ts, axis=1)    # 0 axis is dir
+        bd = 0
+        fn = ''
+        for f in file:
+            fn += ', '+f
+        fn = fn[2:]
+    else:
+        t,d = fieldio.readLattice(file, verbose=verbose)
+        bd = -1
+        fn = file
     nd = len(d)
-    print(f'read gauge conf, size {d}')
-    return Gauge([Transporter(l.Lattice(tf.constant(t[i]),nd), field.Path(i+1)) for i in range(nd)])
+    tf.print('# read gauge conf, time',tf.timestamp()-t0,'sec size',d,'file',fn,summarize=-1)
+    return Gauge([Transporter(l.Lattice(tf.constant(t[i]),nd=nd,batch_dim=bd), field.Path(i+1)) for i in range(nd)])
 
 def unit(dims, nbatch=0, nc=3):
     """

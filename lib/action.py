@@ -1,6 +1,6 @@
 import tensorflow as tf
 import tensorflow.keras.layers as tl
-import gauge, lattice
+from . import gauge, lattice
 
 C1Symanzik = -1.0/12.0  # tree-level
 C1Iwasaki = -0.331

@@ -308,6 +308,9 @@ def reduce_mean(lat, scope='lattice', exclude=None):
 def reduce_max(lat, scope='lattice', exclude=None):
     return reduce(lat, reduce_max, tf.math.reduce_max, scope=scope, exclude=exclude)
 
+def reduce_logsumexp(lat, scope='lattice', exclude=None):
+    return reduce(lat, reduce_logsumexp, tf.math.reduce_logsumexp, scope=scope, exclude=exclude)
+
 def norm2(lat, scope='lattice', exclude=None):
     # tf.print('norm2',scope,exclude)
     def transform(x):
@@ -648,6 +651,8 @@ class Lattice:
         return self.reduce(reduce_mean, scope=scope, exclude=exclude)
     def reduce_max(self, scope='lattice', exclude=None):
         return self.reduce(reduce_max, scope=scope, exclude=exclude)
+    def reduce_logsumexp(self, scope='lattice', exclude=None):
+        return self.reduce(reduce_logsumexp, scope=scope, exclude=exclude)
     def norm2(self, scope='lattice', exclude=None):
         return self.reduce(norm2, scope=scope, exclude=exclude)
     def redot(self, other, scope='lattice', exclude=None):

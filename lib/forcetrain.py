@@ -28,6 +28,20 @@ class NormLoss:
         if self.cNormInf != 0:
             tf.print(label+'dfnormInf:', ldfI, summarize=-1)
 
+class LSELoss:
+    def __call__(self, x, y):
+        v = x.full_volume()
+        df = (x-y).norm2(scope='site')
+        loss = tf.reduce_mean(df.reduce_logsumexp())    # mean over batch, LSE over lattice
+        loss -= tf.math.log(df.typecast(v))    # remove the volume factor
+        df2 = tf.reduce_mean(df.reduce_mean())
+        dfM = tf.reduce_mean(df.reduce_max())
+        return loss, (df2,dfM)
+    def printCallResults(self, res, label=""):
+        df2,dfM = res
+        tf.print(label+'dfnorm2:', df2, summarize=-1)
+        tf.print(label+'dfnormInf:', dfM, summarize=-1)
+
 class LRDecay:
     def __init__(self, halfLife):
         if halfLife<=0:

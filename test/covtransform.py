@@ -1,12 +1,9 @@
 from math import pi
-import sys
-sys.path.append("../lib")
-import action, lattice, field
-import gauge as g
-import transform
+from . import testutil as tu
+from ..lib import action, lattice, field, transform
+from ..lib import gauge as g
 import tensorflow as tf
 import tensorflow.keras.layers as tl
-import testutil as tu
 
 class TestSmearSliceCovariance(tu.LatticeTest):
     def setUp(self):

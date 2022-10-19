@@ -1,13 +1,10 @@
 from math import pi
 import tensorflow as tf
 import tensorflow.keras.layers as tl
-import testutil as tu
-import sys
-sys.path.append("../lib")
-import action
-from lattice import SubSetEven, SubSetOdd
-import gauge as g
-import transform
+from . import testutil as tu
+from ..lib import action, transform
+from ..lib import gauge as g
+from ..lib.lattice import SubSetEven, SubSetOdd
 
 class TestSmearSliceNN(tu.LatticeTest):
     def setUp(self):

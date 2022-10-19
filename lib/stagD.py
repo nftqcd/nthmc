@@ -1,8 +1,8 @@
 ## Staggered Dslash in 4D
 
 import tensorflow as tf
-from lattice import SubSetAll, SubSetEven, SubSetOdd, Lattice, combine_subsets
-from gauge import Gauge
+from .lattice import SubSetAll, SubSetEven, SubSetOdd, Lattice, combine_subsets
+from .gauge import Gauge
 
 def phase(gauge):
     """

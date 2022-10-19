@@ -1,10 +1,8 @@
-import sys
-sys.path.append("../lib")
-import lattice as l
-import group as p
-import gauge as g
+from . import testutil as tu
+from ..lib import lattice as l
+from ..lib import group as p
+from ..lib import gauge as g
 import tensorflow as tf
-import testutil as tu
 
 class TestGaugeOp(tu.LatticeTest):
     """ Examples:

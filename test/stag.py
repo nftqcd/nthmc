@@ -1,9 +1,6 @@
-import sys
-sys.path.append("../lib")
-import gauge
-import stagD
+from . import testutil as tu
+from ..lib import gauge, stagD
 import tensorflow as tf
-import testutil as tu
 
 class TestGauge(tu.LatticeTest):
     """ Examples:

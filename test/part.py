@@ -1,9 +1,7 @@
-import sys
-sys.path.append("../lib")
-import lattice as l
-import group as g
+from . import testutil as tu
+from ..lib import lattice as l
+from ..lib import group as g
 import tensorflow as tf
-import testutil as tu
 
 class TestHypercube(tu.LatticeTest):
     """ Examples:

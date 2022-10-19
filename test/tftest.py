@@ -1,5 +1,6 @@
 import unittest
 import tensorflow as tf
+
 class MyLayer:
     def __init__(self, c):
         self.c = c

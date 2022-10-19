@@ -1,12 +1,9 @@
 from math import pi
-import sys
-sys.path.append("../lib")
-import action
-from lattice import SubSetEven, SubSetOdd
-import gauge as g
-import transform
+from . import testutil as tu
+from ..lib import action, transform
+from ..lib import gauge as g
+from ..lib.lattice import SubSetEven, SubSetOdd
 import tensorflow as tf
-import testutil as tu
 
 class TestSmearSlice(tu.LatticeTest):
     def setUp(self):

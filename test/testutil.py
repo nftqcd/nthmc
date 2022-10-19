@@ -1,8 +1,6 @@
 import unittest as ut
-import sys
-sys.path.append("../lib")
-import lattice, gauge
-import group as g
+from ..lib import lattice, gauge
+from ..lib import group as g
 import tensorflow as tf
 
 ut.TestCase.defaultTestResult = None

@@ -1,9 +1,7 @@
-import sys
-sys.path.append("../lib")
-import field as f
-import group as g
-import tensorflow as tf
 import unittest as ut
+from ..lib import field as f
+from ..lib import group as g
+import tensorflow as tf
 
 class TestOrderedPaths(ut.TestCase):
     """ Examples:

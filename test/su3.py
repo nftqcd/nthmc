@@ -1,8 +1,6 @@
-import sys
-sys.path.append("../lib")
-import group as g
-import tensorflow as tf
 import unittest as ut
+from ..lib import group as g
+import tensorflow as tf
 
 mul = tf.linalg.matmul
 mulv = tf.linalg.matvec

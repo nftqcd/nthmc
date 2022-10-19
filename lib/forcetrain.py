@@ -6,7 +6,6 @@ class NormLoss:
         self.cNormList = cNormList
         self.cNormInf = cNormInf
     def __call__(self, x, y):
-        v = x.full_volume()
         df = (x-y).norm2(scope='site')    # TODO: try element level squared, too.
         dfn = df
         ldf = []
@@ -19,7 +18,7 @@ class NormLoss:
         if self.cNormInf == 0:
             ldfI = 0
         else:
-            ldfI = tf.reduce_mean(df.reduce_max())
+            ldfI = tf.reduce_mean(tf.math.sqrt(df.reduce_max()))
             loss += self.cNormInf*ldfI
         return loss, (ldf,ldfI)
     def printCallResults(self, res, label=""):

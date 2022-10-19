@@ -49,7 +49,7 @@ def run(beta=0.7796, targetBeta=0.7099, nbatch=4, nbatchValidate=1, batch_size=1
     dt = tf.timestamp()-t0
     tf.print('# initialization time:',dt,'sec')
     trainer = forcetrain.Trainer(
-        loss=forcetrain.LSELoss(),
+        loss=forcetrain.LMELoss(),
         opt=tk.optimizers.Adam(learning_rate=0.000001),
         transformedAction=transformedAct,
         targetAction=target,

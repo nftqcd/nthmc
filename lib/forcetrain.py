@@ -28,12 +28,12 @@ class NormLoss:
         if self.cNormInf != 0:
             tf.print(label+'dfnormInf:', ldfI, summarize=-1)
 
-class LSELoss:
+class LMELoss:
     def __call__(self, x, y):
         v = x.full_volume()
         df = (x-y).norm2(scope='site')
         loss = tf.reduce_mean(df.reduce_logsumexp())    # mean over batch, LSE over lattice
-        loss -= tf.math.log(df.typecast(v))    # remove the volume factor
+        loss -= tf.math.log(df.typecast(4*v))    # remove the dims*volume factor
         df2 = tf.reduce_mean(df.reduce_mean())
         dfM = tf.reduce_mean(df.reduce_max())
         return loss, (df2,dfM)

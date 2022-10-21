@@ -223,6 +223,9 @@ def det(lat):
     """
     return lattice_map(lat, det, tf.linalg.det)
 
+def sqrt(lat):
+    return lattice_map(lat, sqrt, tf.math.sqrt)
+
 def exp(lat):
     return lattice_map(lat, exp, group.exp)
 
@@ -615,6 +618,8 @@ class Lattice:
         return self.map(trace)
     def det(self):
         return self.map(det)
+    def sqrt(self):
+        return self.map(sqrt)
     def exp(self):
         return self.map(exp)
     def projectSU(self):

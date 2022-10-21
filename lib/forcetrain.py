@@ -42,6 +42,22 @@ class LMELoss:
         tf.print(label+'dfnorm2:', df2, summarize=-1)
         tf.print(label+'dfnormInf:', dfM, summarize=-1)
 
+class LMEl2Loss:
+    def __call__(self, x, y):
+        "RMS per site"
+        v = x.full_volume()
+        df = (x-y).norm2(scope='site')
+        # the sqrt is the only thing different from LMELoss
+        loss = tf.reduce_mean(df.sqrt().reduce_logsumexp())    # mean over batch, LSE over lattice
+        loss -= tf.math.log(df.typecast(4*v))    # remove the dims*volume factor
+        df2 = tf.reduce_mean(df.reduce_mean())
+        dfM = tf.reduce_mean(df.reduce_max())
+        return loss, (df2,dfM)
+    def printCallResults(self, res, label=""):
+        df2,dfM = res
+        tf.print(label+'dfnorm2:', df2, summarize=-1)
+        tf.print(label+'dfnormInf:', dfM, summarize=-1)
+
 class LRDecay:
     def __init__(self, halfLife):
         if halfLife<=0:

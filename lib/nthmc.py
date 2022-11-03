@@ -18,11 +18,10 @@ class Conf:
         self.seed = seed
 
 class Metropolis(tk.Model):
-    def __init__(self, conf, generator, name='Metropolis', **kwargs):
+    def __init__(self, generator, checkReverse=False, name='Metropolis', **kwargs):
         super(Metropolis, self).__init__(autocast=False, name=name, **kwargs)
-        tf.print(self.name, 'init with conf', conf, summarize=-1)
         self.generate = generator
-        self.checkReverse = conf.checkReverse
+        self.checkReverse = checkReverse
     def call(self, x0, p0, accrand):
         v0, l0, b0 = self.generate.dynamics.V(x0)
         t0 = self.generate.dynamics.T(p0)
@@ -69,7 +68,10 @@ class Metropolis(tk.Model):
                     show(xr,pr)
 
 def mean_min_max(x,**kwargs):
-    return tf.reduce_mean(x,**kwargs),tf.reduce_min(x,**kwargs),tf.reduce_max(x,**kwargs)
+    if len(x.shape)==0 or x.shape[0]==1:
+        return (x,)
+    else:
+        return tf.reduce_mean(x,**kwargs),tf.reduce_min(x,**kwargs),tf.reduce_max(x,**kwargs)
 
 def packMCMCRes(mcmc, x, p, x0, p0, x1, p1, v0, t0, v1, t1, dH, acc, arand, ls, f2s, fms, bs, detail=False):
     plaqWoT = gauge.plaq(x)

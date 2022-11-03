@@ -40,6 +40,8 @@ def run(beta=0.7796, targetBeta=0.7099, nbatch=64, nbatchValidate=1, batch_size=
     tf.print('chainLen:',chainLen)
     tf.print('lrInit:',lrInit)
     tf.print('lrSteps:',lrSteps)
+    if shift>0 and attnHeads>0 and chainLen>1:
+        raise ValueError('Not enough memory for the hyperparameter set')
     confLoader = dataset.TrainLoader(nbatch=nbatch, batch_size=batch_size)
     validateLoader = dataset.ValidateLoader(nbatch=nbatchValidate, batch_size=batch_size)
     tf.print('Training set',confLoader.set,summarize=-1)

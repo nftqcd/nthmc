@@ -20,7 +20,7 @@ from ..lib import action, gauge, transform, nthmc, forcetrain
 # 0.800164
 def run(beta=0.7796, targetBeta=0.7099, nbatch=64, nbatchValidate=1, batch_size=1, nepoch=16,
         dense0Unit=8, shift0=1, dense1Unit=8, shift1=1, dense2Unit=8, denseOut=6,
-    =1, chainLen=1,
+        dimChainLen=1, chainLen=1,
         lrInit=0.000001, lrSteps=[(1/4, 0.02), (7/8, 0.02), (1, 0.0)]):
     nthmc.setup(nthmc.Conf())
     t0 = tf.timestamp()

@@ -7,7 +7,7 @@ from .lattice import Lattice, evenodd_mask, SubSetAll, SubSetEven, SubSetOdd, co
 def scale_coeff(x, max):
     pi_2 = 0.63661977236758134307    # 2/pi
     if not tf.is_tensor(x):
-        x = tf.math.atan(tf.convert_to_tensor(x,dtype=tf.float64))
+        x = tf.convert_to_tensor(x,dtype=tf.float64)
     return tf.constant(pi_2*max,dtype=tf.float64) * tf.math.atan(x)
 
 def power3_trace(x):

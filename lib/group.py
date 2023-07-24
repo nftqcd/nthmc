@@ -683,7 +683,8 @@ def SU3JacobianTFMat(f, x, is_SU3=True):
             z = tf.linalg.matmul(Z,tf.stop_gradient(Z),adjoint_b=True)
         else:
             z = Z
-        z = tf.cast(su3vec(z), tf.complex128)
+        z = su3vec(z)
+        z = tf.dtypes.complex(z, tf.zeros(z.shape, dtype=z.dtype))
     jzx = t.jacobian(z,x,experimental_use_pfor=False)
     tj = tf.math.real(tf.einsum('aik,kj,bij->ba', su3gen(), x, tf.math.conj(jzx)))
     return Z,tj

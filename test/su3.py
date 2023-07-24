@@ -243,7 +243,7 @@ class TestSU3(ut.TestCase):
                 M = ep * mul(x,mul(Z,Y),adjoint_b=True)
                 return g.projectTAH(M)
             F,tj = g.SU3JacobianTF(f, X, is_SU3=False)
-            tjC = tf.cast(tj, tf.complex128)
+            tjC = tf.dtypes.complex(tj, tf.zeros(tj.shape, dtype=tj.dtype))
         tj2m = t.jacobian(tjC, Y, experimental_use_pfor=False)
         tj2 = re(tf.einsum('cml,ln,abmn->abc', T, Y, conj(tj2m)))
         for i in range(8):

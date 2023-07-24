@@ -108,7 +108,7 @@ class TestSmearSlice(tu.LatticeTest):
             self.check_eqv(logdetjref, l, tol=1e-11, rtol=1e-10)    # prec loss in direct det?
         with self.subTest(quantity='coeff'):
             scaled_coeff = tf.reduce_mean(0.75*2/pi*tf.math.atan(tmap.coeff))
-            scaled_coeff = tf.stack([scaled_coeff,0,scaled_coeff,0])
+            scaled_coeff = tf.stack([scaled_coeff,0,0,scaled_coeff,scaled_coeff,0,0,0,0,0])
             bs = gauge.batch_size()
             if bs==0:
                 self.check_eqv(scaled_coeff, b)

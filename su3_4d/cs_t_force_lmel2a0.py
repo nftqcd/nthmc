@@ -58,7 +58,7 @@ def run(beta=0.7796, targetBeta=0.7099, nbatch=64, nbatchValidate=1, batch_size=
     ti = tf.timestamp()
     ft,lndet,cs = transformedAct.gradient(mappedConf)
     tf.print('lndet:',lndet)
-    tf.print('cs:',cs)
+    tf.print('cs:',cs,summarize=-1)
     tf.print('# transformedAct.gradient time:', tf.timestamp()-ti, 'sec')
     ti = tf.timestamp()
     f0,_,_ = target.gradient(mappedConf)

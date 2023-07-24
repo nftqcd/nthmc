@@ -43,15 +43,15 @@ class Ident(TransformBase):
     def transform(self, x):
         bs = x.batch_size()
         if bs==0:
-            return (x, tf.zeros([], dtype=tf.float64), tf.zeros([4], dtype=tf.float64))
+            return (x, tf.zeros([], dtype=tf.float64), tf.zeros([10], dtype=tf.float64))
         else:
-            return (x, tf.zeros([bs], dtype=tf.float64), tf.zeros([bs,4], dtype=tf.float64))
+            return (x, tf.zeros([bs], dtype=tf.float64), tf.zeros([bs,10], dtype=tf.float64))
     def inv(self, y):
         bs = y.batch_size()
         if bs==0:
-            return (y, tf.zeros([], dtype=tf.float64), tf.zeros([4], dtype=tf.float64))
+            return (y, tf.zeros([], dtype=tf.float64), tf.zeros([10], dtype=tf.float64))
         else:
-            return (y, tf.zeros([bs], dtype=tf.float64), tf.zeros([bs,4], dtype=tf.float64))
+            return (y, tf.zeros([bs], dtype=tf.float64), tf.zeros([bs,10], dtype=tf.float64))
 
 class StoutSmearSlice(TransformBase):
     """
@@ -246,42 +246,73 @@ class StoutSmearSlice(TransformBase):
             fexp,logdet = f.smearIndepLogDetJacobian(xupd)
             # return mean&rms coeff per batch for easy recording in evolve
             bs = fexp.batch_size()
-            c2 = c_scaled_real**2
             if len(c_scaled_real.shape)==1:
-                c_mean_chair = tf.constant(0, tf.float64)
-                rc2_mean_chair = tf.constant(0, tf.float64)
+                c_chair_mean = tf.constant(0, tf.float64)
+                c_chair_std = tf.constant(0, tf.float64)
+                c_chair_min = tf.constant(0, tf.float64)
+                c_chair_max = tf.constant(0, tf.float64)
                 if c_scaled_real.shape[0]>n_plaq:
-                    c_mean_chair = tf.reduce_mean(c_scaled_real[n_plaq:])
-                    rc2_mean_chair = tf.sqrt(tf.reduce_mean(c2[n_plaq:]))
-                c_mean_rms = tf.stack(
-                    (tf.reduce_mean(c_scaled_real[:n_plaq]), c_mean_chair,
-                     tf.sqrt(tf.reduce_mean(c2[:n_plaq])), rc2_mean_chair), 0)
+                    c_chair_mean = tf.math.reduce_mean(c_scaled_real[n_plaq:])
+                    c_chair_std = tf.math.reduce_std(c_scaled_real[n_plaq:])
+                    c_chair_min = tf.math.reduce_min(c_scaled_real[n_plaq:])
+                    c_chair_max = tf.math.reduce_max(c_scaled_real[n_plaq:])
+                c_stats = tf.stack(
+                    (tf.math.reduce_mean(c_scaled_real[:n_plaq]),
+                     tf.math.reduce_std(c_scaled_real[:n_plaq]),
+                     0.0,
+                     tf.math.reduce_min(c_scaled_real[:n_plaq]),
+                     tf.math.reduce_max(c_scaled_real[:n_plaq]),
+                     c_chair_mean, c_chair_std, 0.0, c_chair_min, c_chair_max), 0)
                 # replicate per batch
                 if bs>0:
-                    c_mean_rms = tf.tile(tf.expand_dims(c_mean_rms,0),(bs,1))
+                    c_stats = tf.tile(tf.expand_dims(c_stats,0),(bs,1))
             else:    # assume a lattice
                 lataxis = range(4) if bs==0 else range(1,5)
-                c_mean = tf.reduce_mean(c_scaled_real, axis=lataxis)
-                c2_mean = tf.reduce_mean(c2, axis=lataxis)
+                # mean/std/min/max over individual lattice
+                c_mean = tf.math.reduce_mean(c_scaled_real, axis=lataxis)
+                c_std = tf.math.reduce_std(c_scaled_real, axis=lataxis)
+                c_min = tf.math.reduce_min(c_scaled_real, axis=lataxis)
+                c_max = tf.math.reduce_max(c_scaled_real, axis=lataxis)
+                # mean over 6 plaq 48 chair numbers of lattice mean/std
                 if bs==0:
-                    c_mean_chair = tf.constant(0, tf.float64)
-                    rc2_mean_chair = tf.constant(0, tf.float64)
+                    c_chair_mean = tf.constant(0, tf.float64)
+                    c_chair_stdmean = tf.constant(0, tf.float64)
+                    c_chair_std = tf.constant(0, tf.float64)
+                    c_chair_min = tf.constant(0, tf.float64)
+                    c_chair_max = tf.constant(0, tf.float64)
                     if c_mean.shape[0]>n_plaq:
-                        c_mean_chair = tf.reduce_mean(c_mean[n_plaq:])
-                        rc2_mean_chair = tf.sqrt(tf.reduce_mean(c2_mean[n_plaq:]))
-                    c_mean_rms = tf.stack(
-                        (tf.reduce_mean(c_mean[:n_plaq]), c_mean_chair,
-                         tf.sqrt(tf.reduce_mean(c2_mean[:n_plaq])), rc2_mean_chair), 0)
+                        c_chair_mean = tf.math.reduce_mean(c_mean[n_plaq:]) # mean of lattice mean
+                        c_chair_stdmean = tf.math.reduce_std(c_mean[n_plaq:]) # std of lattice mean
+                        c_chair_std = tf.math.reduce_mean(c_std[n_plaq:]) # mean of lattice std
+                        c_chair_min = tf.math.reduce_min(c_min[n_plaq:]) # min of lattice min
+                        c_chair_max = tf.math.reduce_max(c_max[n_plaq:]) # max of lattice max
+                    c_stats = tf.stack(
+                        (tf.math.reduce_mean(c_mean[:n_plaq]), # mean of lattice mean
+                         tf.math.reduce_std(c_mean[:n_plaq]), # std of lattice mean
+                         tf.math.reduce_mean(c_std[:n_plaq]), # mean of lattice std
+                         tf.math.reduce_min(c_min[:n_plaq]), # min of lattice min
+                         tf.math.reduce_max(c_max[:n_plaq]), # max of lattice max
+                         c_chair_mean, c_chair_stdmean, c_chair_std, c_chair_min, c_chair_max), 0)
                 else:
-                    c_mean_chair = tf.zeros([bs], tf.float64)
-                    rc2_mean_chair = tf.zeros([bs], tf.float64)
+                    c_chair_mean = tf.zeros([bs], tf.float64)
+                    c_chair_stdmean = tf.zeros([bs], tf.float64)
+                    c_chair_std = tf.zeros([bs], tf.float64)
+                    c_chair_min = tf.zeros([bs], tf.float64)
+                    c_chair_max = tf.zeros([bs], tf.float64)
                     if c_mean.shape[1]>n_plaq:
-                        c_mean_chair = tf.reduce_mean(c_mean[:,n_plaq:], axis=1)
-                        rc2_mean_chair = tf.sqrt(tf.reduce_mean(c2_mean[:,n_plaq:], axis=1))
-                    c_mean_rms = tf.stack(
-                        (tf.reduce_mean(c_mean[:,:n_plaq], axis=1), c_mean_chair,
-                         tf.sqrt(tf.reduce_mean(c2_mean[:,:n_plaq], axis=1)), rc2_mean_chair), -1)
-            return fexp, logdet, c_mean_rms
+                        c_chair_mean = tf.math.reduce_mean(c_mean[:,n_plaq:], axis=1) # mean of lattice mean
+                        c_chair_stdmean = tf.math.reduce_std(c_mean[:,n_plaq:], axis=1) # std of lattice mean
+                        c_chair_std = tf.math.reduce_mean(c_std[:,n_plaq:], axis=1) # mean of lattice std
+                        c_chair_min = tf.math.reduce_min(c_min[:,n_plaq:], axis=1) # min of lattice min
+                        c_chair_max = tf.math.reduce_max(c_max[:,n_plaq:], axis=1) # max of lattice max
+                    c_stats = tf.stack(
+                        (tf.math.reduce_mean(c_mean[:,:n_plaq], axis=1), # mean of lattice mean
+                         tf.math.reduce_std(c_mean[:,:n_plaq], axis=1), # std of lattice mean
+                         tf.math.reduce_mean(c_std[:,:n_plaq], axis=1), # mean of lattice std
+                         tf.math.reduce_min(c_min[:,:n_plaq], axis=1), # min of lattice min
+                         tf.math.reduce_max(c_max[:,:n_plaq], axis=1), # max of lattice max
+                         c_chair_mean, c_chair_stdmean, c_chair_std, c_chair_min, c_chair_max), 1)
+            return fexp, logdet, c_stats
     def inv_iter(self, x):
         return self.compute_change(x, change_only=True)
     def inv(self, y):

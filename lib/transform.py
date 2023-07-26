@@ -377,12 +377,16 @@ class TransformChain(TransformBase):
             tf.print(i, ':', end='')
             self.chain[i].showTransform(**kwargs)
 
-def CoefficientVariable(init, chair=None, trainable=None, name='CoefficientVariable'):
+def CoefficientVariable(init, chair=None, trainable=None, name='CoefficientVariable', rng=None, coeff_stddev=1e-2):
     coeff = [init]*6
     if chair is not None:
         coeff += [chair]*48
+    coeff = tf.constant(coeff, dtype=tf.float64)
+    if rng is not None:
+        coeff = rng.normal(coeff.shape, dtype=coeff.dtype, mean=coeff, stddev=coeff_stddev)
+        tf.print('CoefficientVariable init:', coeff, summarize=-1)
     # inverse of scale_coeff
-    v = tf.math.tan(tf.constant([c*4*pi for c in coeff],dtype=tf.float64))
+    v = tf.math.tan((4*pi)*coeff)
     return tf.Variable(initial_value=v, trainable=trainable, name=name)
 
 class CoefficientNets(tl.Layer):

@@ -227,14 +227,14 @@ def writeLattice(gauge, file):
     dims = ''
     for d in latdims:
         vol *= d
-        dims += str(d) + ' '
+        dims = str(d) + ' ' + dims
     latsize = vol*latdatacount*lattypesize
     lattype = b'scidac-binary-data'
 
     ndim = len(latdims)
     # gauge = numpy.transpose(gauge, axes=list(range(ndim,-1,-1))+list(range(ndim+1,ndim+3)))
     # move ndim to the back, keep TZYX order
-    gauge = numpy.transpose(gauge, axes=[ndim]+list(range(ndim))+list(range(ndim+1,ndim+3)))
+    gauge = numpy.transpose(gauge, axes=list(range(1, ndim+1))+[0]+list(range(ndim+1, ndim+3)))
     binary = numpy.ascontiguousarray(gauge, dtype=f'>c{latprec}').tobytes()
     suma,sumb = scidacChecksum(binary, vol, latdatacount*lattypesize)
 
@@ -263,11 +263,10 @@ if __name__=='__main__':
     gconf,lat = test_read(sys.argv[1])
 
     import tensorflow as tf
-    import group
-    sys.path.append("../su3_4d")
-    import gauge
+    from . import gauge, group, lattice, field
 
     def check(g,lat):
+        nd = len(lat)
         g = tf.expand_dims(g, axis=0)
         if g.dtype==tf.complex64:
             g = tf.cast(g, tf.complex128)
@@ -279,29 +278,18 @@ if __name__=='__main__':
             print(f'[1,0,0,0],{i},[0,0] {g[0,i,1,0,0,0,0,0].numpy()}')
         a,m = group.checkSU(g)
         print(f'checkSU avg: {a[0].numpy()} max: {m[0].numpy()}')
-        act = gauge.SU3d4(tf.random.Generator.from_seed(1234567), nbatch=1,
-            beta=0.7796, beta0=0.7796, c1=gauge.C1DBW2, size=lat)
-        ps,_ = act.plaqFieldsWoTrans(g)
+        g = gauge.Gauge([gauge.Transporter(lattice.Lattice(tf.constant(g[:,i]),nd=nd,batch_dim=0), field.Path(i+1)) for i in range(nd)])
+        ps,rs = gauge.plaquetteField(g, computeRect=True)
         for pl in ps:
-            print(f'{pl.shape} first element {pl[0,0,0,0,0].numpy()}')
-        for pl in act.plaquetteList(g):
+            print(f'plaquette first element\n{pl.lattice.data[0,0,0,0,0].numpy()}')
+        for pl in rs:
+            print(f'rectangle first element\n{pl.lattice.data[0,0,0,0,0].numpy()}')
+        for pl in gauge.plaquette(g):
             print(pl[0].numpy())
-        print(f'action {act(g)}')
-        f,_,_ = act.derivAction(g)
-        for i in range(4):
-            print(f'force norm2 dim {i} : {group.norm2(f[0,i],axis=range(6))}')
-        print('projectSU')
-        g = group.projectSU(g)
-        a,m = group.checkSU(g)
-        print(f'checkSU avg: {a[0].numpy()} max: {m[0].numpy()}')
-        print(g.shape)
-        for pl in act.plaquetteList(g):
-            print(pl[0].numpy())
-        return g[0].numpy()
 
-    gconf = check(gconf,lat)
+    check(gconf,lat)
 
-    outfn = sys.argv[1]+'.test'
+    outfn = 'tmp.test.lime'
     print(f'writing out: {outfn}')
     writeLattice(gconf, outfn)
 

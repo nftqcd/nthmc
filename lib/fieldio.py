@@ -60,7 +60,9 @@ def printLimeHeaders(file):
             next = (size+7)//8*8
         else:
             data = f.read(size)
-            data = data[:data.find(b'\0')]
+            s = data.find(b'\0')
+            if s>0:
+                data = data[:s]
             print(f'* DATA: {data}')
             next = 7-(size+7)%8
         # print(f'next: {next}')

@@ -197,6 +197,10 @@ class Transporter(LatticeWrapper):
     def randomTangentVector(self, rng):
         c = self.nc
         return TangentVector(self.lattice.randomNormal(rng, new_site_shape=[c*c-1], dtype=tf.float64))
+    def tangent_from_tensors(self, tensors):
+        return TangentMatrix(self.lattice.from_tensors(tensors))
+    def tangentVector_from_tensors(self, tensors):
+        return TangentVector(self.lattice.from_tensors(tensors))
     def unit(self):
         return self.wrap(self.lattice.unit())
     def det(self):
@@ -371,6 +375,10 @@ class Gauge(Transporters):
         return Tangent([t.randomTangent(rng) for t in self.data])
     def randomTangentVector(self, rng):
         return TangentVectors([t.randomTangentVector(rng) for t in self.data])
+    def tangent_from_tensors(self, tensors):
+        return Tangent([d.tangent_from_tensors(t) for d,t in zip(self.data,tensors)])
+    def tangentVector_from_tensors(self, tensors):
+        return TangentVectors([d.tangentVector_from_tensors(t) for d,t in zip(self.data,tensors)])
 
 class TangentMatrix(Transporter):
     """

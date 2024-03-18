@@ -119,3 +119,5 @@ def setup(conf):
     tf.print('TensorFlow', tf.version.VERSION, tf.version.GIT_VERSION, tf.version.COMPILER_VERSION, summarize=-1)
     tf.print('Device', *tf.config.get_visible_devices(), summarize=-1)
     tf.print('RandomSeed', conf.seed, summarize=-1)
+    tf.print('inter_op_threads', conf.nthrIop, summarize=-1)
+    tf.print('intra_op_threads', conf.nthr, summarize=-1)

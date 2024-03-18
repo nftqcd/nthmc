@@ -1,5 +1,4 @@
 import tensorflow as tf
-import tensorflow.keras.layers as tl
 from . import gauge, lattice
 
 C1Symanzik = -1.0/12.0  # tree-level
@@ -57,12 +56,11 @@ class SU3d4:
             f[mu] = ((cp/3.0)*x[mu](f[mu].adjoint())).projectTangent()
         return gauge.Tangent(f)
 
-class TransformedActionBase(tl.Layer):
+class TransformedActionBase():
     def __init__(self, transform, action, name='TransformedActionBase', **kwargs):
-        super(TransformedActionBase, self).__init__(autocast=False, name=name, **kwargs)
         self.action = action
         self.transform = transform
-    def call(self, x):
+    def __call__(self, x):
         "Returns the action, the log Jacobian, and extra info from transform."
         y, l, bs = self.transform(x)
         a = self.action(y)
@@ -77,7 +75,7 @@ class TransformedActionMatrixBase(TransformedActionBase):
         with tf.GradientTape(watch_accessed_variables=False) as tape:
             tape.watch(x.to_tensors())
             v, l, b = self(x)
-        d = x.from_tensors(tape.gradient(v, x.to_tensors()))(x.adjoint()).projectTangent()
+        d = 0.5*x.from_tensors(tape.gradient(v, x.to_tensors()))(x.adjoint()).projectTangent()
         return d, l, b
 
 class TransformedActionVectorBase(TransformedActionBase):
@@ -134,13 +132,19 @@ class Dynamics:
 
 if __name__ == '__main__':
     import sys, os
-    import nthmc, evolve, transform
-    conf = nthmc.Conf(nbatch=1, nepoch=2, nstepEpoch=8, trajLength=4.0, stepPerTraj=128, softPlace = False)
+    from . import nthmc, evolve, transform
+    conf = nthmc.Conf()
+    nbatch=1
+    nepoch=2
+    nstepEpoch=8
+    trajLength=4.0
+    stepPerTraj=128
     nthmc.setup(conf)
     mom = QuadraticMomentum()
     act = SU3d4(beta=0.7796, c1=C1DBW2)
     # act = SU3d4(beta=6.0, c1=0)
     tact = TransformedActionVectorFromMatrixBase(transform=transform.Ident(), action=act)
+    #tact = TransformedActionVectorBase(transform=transform.Ident(), action=act)
     rng = tf.random.Generator.from_seed(conf.seed)
 
     if len(sys.argv)>1 and os.path.exists(sys.argv[1]):
@@ -176,7 +180,7 @@ if __name__ == '__main__':
 
     dyn = Dynamics(V=tact, T=mom)
 
-    mdLF = evolve.LeapFrog(conf, dyn)
+    mdLF = evolve.LeapFrog(dynamics=dyn, trajLength=trajLength, stepPerTraj=stepPerTraj)
     for i in range(3):
         tbegin = tf.timestamp()
         x, p, _, _, _, _ = mdfun(x0,p0,mdLF)
@@ -188,8 +192,8 @@ if __name__ == '__main__':
     tf.print('H1', v1+t1, v1, t1)
     tf.print('dH', v1+t1-(v0+t0))
 
-    conf.stepPerTraj = 64
-    mdOM = evolve.Omelyan2MN(conf, dyn)
+    stepPerTraj = 64
+    mdOM = evolve.Omelyan2MN(dynamics=dyn, trajLength=trajLength, stepPerTraj=stepPerTraj)
     for i in range(3):
         tbegin = tf.timestamp()
         x, p, _, _, _, _ = mdfun(x0,p0,mdOM)
@@ -210,9 +214,9 @@ if __name__ == '__main__':
     def mcmcfun(x,p,r):
         x_, p_, x1_, p1_, v0, t0, v1, t1, dH, acc, arand, ls, f2s, fms, bs = mcmcfun_(x.to_tensors(),p.to_tensors(),r)
         return x.from_tensors(x_),p.from_tensors(p_),x.from_tensors(x1_),p.from_tensors(p1_), v0, t0, v1, t1, dH, acc, arand, ls, f2s, fms, bs
-    mcmc = nthmc.Metropolis(conf, mdOM)
+    mcmc = nthmc.Metropolis(mdOM)
 
-    for i in range(16):
+    for i in range(64):
         tbegin = tf.timestamp()
         p = x.randomTangentVector(rng)
         xn, pn, x1, p1, v0, t0, v1, t1, dH, acc, arand, ls, f2s, fms, bs = mcmcfun(x, p, rng.uniform([], dtype=tf.float64))
@@ -220,6 +224,5 @@ if __name__ == '__main__':
         nthmc.printMCMCRes(*nthmc.packMCMCRes(mcmc, xn, pn, x, p, x1, p1, v0, t0, v1, t1, dH, acc, arand, ls, f2s, fms, bs))
         x, p = xn, pn
 
-    conf.checkReverse=True
-    mcmcChRev = nthmc.Metropolis(conf, mdOM)
+    mcmcChRev = nthmc.Metropolis(mdOM, checkReverse=True)
     mcmcChRev(x,p,rng.uniform([], dtype=tf.float64))

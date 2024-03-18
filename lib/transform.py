@@ -328,12 +328,13 @@ class StoutSmearSlice(TransformBase):
             ft = f.from_tensors(f_)
             d = tf.math.reduce_mean((ft(xt[self.dir])(ydir.adjoint())-u).norm2(scope='site').reduce_mean())
             # tf.print('inv',i_,d)
-            return i_<self.invMaxIter and d>c
+            #return i_<self.invMaxIter and d>c
+            return d>c
         def body(i_,x_,f_):
             xt = x.from_tensors(x_)
             xn = self.slice_apply(f.from_tensors(f_).adjoint(),y)
             return i_+1, xn.to_tensors(), self.inv_iter(xn).to_tensors()
-        i,x_,f_ = tf.while_loop(cond, body, [0, x.to_tensors(), f.to_tensors()])
+        i,x_,f_ = tf.while_loop(cond, body, (0, x.to_tensors(), f.to_tensors()), maximum_iterations=self.invMaxIter)
         x = x.from_tensors(x_)
         f = f.from_tensors(f_)
         x = self.slice_apply(f.adjoint(),y)
@@ -401,7 +402,7 @@ class CoefficientNets(tl.Layer):
     def build(self, shape):
         # Keras 3 requires explicit building the layers
         for nn in self.chain:
-            # tf.print(f'CoefficientNets {type(nn)} shape {shape}')
+            #tf.print(f'CoefficientNets.build {type(nn)} shape {shape}')
             nn.build(shape)
             # if hasattr(nn, 'output_shape'):
             #     tf.print(f'CoefficientNets {type(nn)} output_shape {nn.output_shape}')
@@ -411,7 +412,9 @@ class CoefficientNets(tl.Layer):
     def call(self, x):
         y = x
         for nn in self.chain:
+            #tf.print(f'CoefficientNets.call {type(nn)} shape {y.shape}')
             y = nn(y)
+            #tf.print(f'CoefficientNets.call {type(nn)} returns shape {y.shape}')
         return y
 
 class SymmetricShifts:
